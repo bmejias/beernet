@@ -1,0 +1,27 @@
+This is the template header that is recomended to be used for source code
+files. Don't forget to add the keyword properties to the file by doing (of
+course, replace Filename.oz by the corresponding filename)
+
+svn propset svn:keywords "Date Author Revision" Filename.oz
+
+/*-------------------------------------------------------------------------
+ *
+ * Filename.oz
+ *
+ *    Short Description
+ *
+ * License should come here
+ * 
+ * IDENTIFICATION 
+ *
+ *    $Date$
+ *
+ *    $Revision$ $Author$
+ *
+ * NOTES
+ *      
+ *    Here it comes a better explanation about what the code does.
+ *
+ *-------------------------------------------------------------------------
+ */
+
