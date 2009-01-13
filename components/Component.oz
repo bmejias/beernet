@@ -64,7 +64,6 @@ define
 
       %% Loop through the EventStream. Every event is handle with the state as
       %% extra parameter and a new state is returned.
-
       proc {UponEvent EventStream}
          case EventStream
          of Event|NewStream then
@@ -83,6 +82,8 @@ define
       Component
    end
 
+   %% This component is useful when you want to discard events triggered by
+   %% another component
    proc {Dummy _}
       skip
    end
