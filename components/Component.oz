@@ -26,7 +26,7 @@
  * 
  * IDENTIFICATION 
  *
- *    Author: Boriss Mejias 
+ *    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
  *
  *    Last change: $Revision$ $Author$
  *
