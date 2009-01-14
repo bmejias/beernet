@@ -43,6 +43,17 @@ svn propset svn:keywords "Date Author Revision" Filename.oz
  *      
  *    Here it comes a better explanation about what the code does.
  *
+ * EVENTS
+ *
+ *    Accepts: < event_name | args > Events that can be triggered on this
+ *    component to request a service.
+ *
+ *    Confirmation: < event_name | args > Events used by a component to
+ *    confirm the completion of a request.
+ *
+ *    Indication: < event_name | args > Events used by a given component to
+ *    deliver information to another component
+ *    
  *-------------------------------------------------------------------------
  */
 
