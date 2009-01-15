@@ -11,24 +11,18 @@ import
 define
    
    fun {MakeSpeaker}
+      FullComponent
       Listener
       proc {Say Event}
          say(Text) = Event
       in
          {@Listener listen(Text)}
       end
-      proc {SetListener Event}
-         setListener(NewListener) = Event
-      in
-         Listener := NewListener
-      end
-      Events = events(
-                  say:           Say
-                  setListener:   SetListener
-                  )
+      Events = events(say: Say)
    in
-      Listener = {Cell.new Component.dummy}
-      {Component.make Events}
+      FullComponent = {Component.makeFull Events}
+      Listener = FullComponent.listener
+      FullComponent.trigger
    end
 
    fun {MakeListener Id}

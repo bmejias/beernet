@@ -100,7 +100,7 @@ define
             {UponEvent CompStream}
          end
       end
-      CompListener = Dummy 
+      CompListener = {NewCell Dummy} 
 
       component(trigger:Trigger
                 listener:CompListener)
