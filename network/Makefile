@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=pp2p
+SRCS=Network Pp2p
 
 all: $(foreach source, $(SRCS), src_$(source))
 
