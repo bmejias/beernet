@@ -8,8 +8,7 @@
  *
  *    Copyright (c) 2009 Universite catholique de Louvain
  *
- *    This file is part of Beernet
- *
+ *    Beernet is released under the MIT License (see file LICENSE) 
  * 
  * IDENTIFICATION 
  *
