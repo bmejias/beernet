@@ -46,6 +46,9 @@
 
 functor
 
+import
+   System
+
 export
    Make
    MakeFull
@@ -83,7 +86,7 @@ define
                   CompListener := NewListener
                   {UponEvent NewStream} % Loop for new events
                else
-                  skip %% Discard unkown event
+                  {System.show 'Unknown event'#Event}
                end
             end
          [] nil then %% Component close
