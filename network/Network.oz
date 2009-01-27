@@ -2,7 +2,7 @@
  *
  * Network.oz
  *
- *    Higher level comunication layer
+ *    Comunication layer. Higher level than point-to-point
  *
  * LICENSE
  *
@@ -26,7 +26,11 @@
  *
  * EVENTS
  *
- *    Accepts: sendTo(Dest Msg) - Sends message Msg to Node Dest.
+ *    Accepts: sendTo(Dest Msg) - Sends message Msg to Node Dest. Dest has to
+ *    be an oz port. Msg can be anything.
+ * 
+ *    Accepts: getPort(P) - Binds P to the port of this site. It is a way of
+ *    building a self reference to give to others.
  *
  *    Indication: It triggers whatever message is delivered by pp2p link as an
  *    event on the listener.
