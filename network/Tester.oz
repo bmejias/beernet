@@ -131,7 +131,7 @@ define
       proc {GetRef Event}
          getRef(Ref) = Event
       in
-         {ComLayer getPort(Ref)}
+         Ref = node(id:Id port:{ComLayer getPort($)})
       end
 
       proc {SetId Event}

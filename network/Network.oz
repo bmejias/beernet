@@ -22,12 +22,16 @@
  *      
  *    Implementation of the component that provides high level events to
  *    comunicate with other nodes on the network. It uses the perfect
- *    point-to-point link (pp2p) to send and deliver messages 
+ *    point-to-point link (pp2p) to send and deliver messages. It assigns an
+ *    incremented number to every message that is sent, logging all the
+ *    information to a setable logger. Nodes are supposed to be identified by
+ *    an Id, and reachable via an Oz port.
  *
  * EVENTS
  *
- *    Accepts: sendTo(Dest Msg) - Sends message Msg to Node Dest. Dest has to
- *    be an oz port. Msg can be anything.
+ *    Accepts: sendTo(Dest Msg) - Sends message Msg to Node Dest. Dest is a
+ *    record of the form node(id:Id port:P), where Id is the identifier
+ *    equivalent to self identifier, and P is an oz port. Msg can be anything.
  * 
  *    Accepts: getPort(P) - Binds P to the port of this site. It is a way of
  *    building a self reference to give to others.
@@ -50,26 +54,45 @@ export
 define
 
    fun {Make}
-      ComLayer
-      Listener
-      Self
+      ComLayer    % Low level communication layer
+      Listener    % Component where the deliver messages will be triggered
+      Logger      % Component to log every sent and received message
+      MsgCounter  % Identifier for every node
+      Self        % Full Component
+      SelfId      % Id that can be assinged by a external component
+      SelfPort    % Refernce to the port of the low level communication layer
+      
+      %% --- Utils ---
 
-      proc {SendTo Event}
-         sendTo(Dest Msg) = Event
+      proc {NewMsgId ?New}
+         Old
       in
-         {@ComLayer pp2pSend(Dest Msg)}
+         Old = MsgCounter := New
+         New = Old + 1
       end
 
+      %%--- Events ---
+
       proc {Deliver Event}
-         pp2pDeliver(_ Msg) = Event
+         pp2pDeliver(_ '#'(SrcId MsgId Msg)) = Event
       in
+         {@Logger 'in'(src:SrcId n:MsgId dest:@SelfId msg:Msg tag:network)}
          {@Listener Msg}
       end
 
       proc {GetPort Event}
          getPort(P) = Event
       in
-         {@ComLayer getPort(P)}
+         P = SelfPort
+      end
+
+      proc {SendTo Event}
+         sendTo(Dest Msg) = Event
+         MsgId
+      in
+         MsgId = {NewMsgId}
+         {@Logger out(src:@SelfId n:MsgId dest:Dest.id msg:Msg tag:network)}
+         {@ComLayer pp2pSend(Dest.port '#'(@SelfId MsgId Msg))}
       end
 
       proc {SetComLayer Event}
@@ -79,17 +102,28 @@ define
          {@ComLayer setListener(Self.trigger)}
       end
 
+      proc {SetId Event}
+         setId(NewId) = Event
+      in
+         SelfId := NewId
+      end
+
       Events = events(
                   getPort:       GetPort
                   pp2pDeliver:   Deliver
                   sendTo:        SendTo
                   setComLayer:   SetComLayer
+                  setId:         SetId
                   )
       in
-         ComLayer = {NewCell {Pp2p.make}}
-         Self = {Component.makeFull Events}
+         ComLayer    = {NewCell {Pp2p.make}}
+         MsgCounter  = {NewCell 0}
+         Logger      = {NewCell Component.dummy}
+         Self        = {Component.makeFull Events}
+         SelfPort    = {@ComLayer getPort($)}
+         SelfId      = {NewCell none}
+         Listener    = Self.listener
          {@ComLayer setListener(Self.trigger)}
-         Listener = Self.listener
          Self.trigger
       end
 end
