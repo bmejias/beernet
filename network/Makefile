@@ -7,6 +7,7 @@ src_%:
 	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf
 
 tester: Tester.oz
+	ozc -c TestPlayers.oz -o TestPlayers.ozf
 	ozc -x Tester.oz -o tester
 
 clean:

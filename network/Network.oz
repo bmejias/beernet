@@ -108,12 +108,19 @@ define
          SelfId := NewId
       end
 
+      proc {SetLogger Event}
+         setLogger(NewLogger) = Event
+      in
+         Logger := NewLogger
+      end
+
       Events = events(
                   getPort:       GetPort
                   pp2pDeliver:   Deliver
                   sendTo:        SendTo
                   setComLayer:   SetComLayer
                   setId:         SetId
+                  setLogger:     SetLogger
                   )
       in
          ComLayer    = {NewCell {Pp2p.make}}
