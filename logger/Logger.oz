@@ -40,16 +40,14 @@
 functor
 
 import
-   Open
    System
    Component   at '../corecomp/Component.ozf'
+   TextFile    at '../utils/TextFile.ozf'
 
 export
    Make
 
 define
-
-   class TextFile from Open.text Open.file end
 
    fun {Make FileName}
       Key
@@ -68,11 +66,11 @@ define
       proc {UponEvent EventStream}
          case EventStream
          of close(!Key)|_ then
-            {LogFile putS("\n")}
+            {LogFile write("\n")}
             {LogFile close}
          [] AnyEvent|NewStream then
             {@LogListener AnyEvent}
-            {LogFile putS({Value.toVirtualString AnyEvent 1000 1000})}
+            {LogFile write(AnyEvent)}
             {UponEvent NewStream}
          end
       end
@@ -81,7 +79,7 @@ define
       if FileName == none then
          LogFile = Component.dummy
       else
-         LogFile = {New TextFile init(name:  LogFile
+         LogFile = {TextFile.new init(name:  LogFile
                                       flags: [write create truncate text])}
       end
       {System.show 'logfile created'}

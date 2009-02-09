@@ -1,6 +1,6 @@
 MAKE=make
 
-SUBDIRS=corecomp logger network timer
+SUBDIRS=corecomp logger network timer utils
 
 all: sublibs
 
