@@ -53,25 +53,38 @@ in
    [BoardA SubscriberA] = {Board.make}
    [BoardB SubscriberB] = {Board.make}
    %% Triggering some events and composing components
+   {System.showInfo "Saying foo    to no subscribers"}
    {Speaker say(foo)}
+   {System.showInfo "              set Client1 as listener"}
    {Speaker setListener(Client1)}
    {Delay 1000}
+   {System.showInfo "Saying first  with Client1 as listener"}
    {Speaker say(first)}
+   {System.showInfo "     boardA - subscribing Client2"}
    {SubscriberA Client2}
+   {System.showInfo "              set BoardA as listener (Client2)"}
    {Speaker setListener(BoardA)}
    {Delay 1000}
+   {System.showInfo "Saying second with BoardA (Client2) as listener"}
    {Speaker say(second)}
-   {Delay 1000}
+   {System.showInfo "     boardA - subscribing Client1"}
    {SubscriberA Client1}
-   {Speaker say(third)}
-   {Speaker setListener(BoardB)}
-   {Speaker say(forth)}
    {Delay 1000}
+   {System.showInfo "Saying third  with BoardA as listener (Client1 Clien2)"}
+   {Speaker say(third)}
+   {System.showInfo "              set BoardB as listener (empty)"}
+   {Speaker setListener(BoardB)}
+   {Delay 1000}
+   {System.showInfo "Saying forth  with BoardA as listener (empty)"}
+   {Speaker say(forth)}
+   {System.showInfo "     boardB - subscribing Client3"}
    {SubscriberB Client3}
    {Delay 1000}
+   {System.showInfo "Saying fifth  with BoardB as listener (Client3)"}
    {Speaker say(fifth)}
-   {Delay 1000}
+   {System.showInfo "     boardB - subscribing BoardA"}
    {SubscriberB BoardA}
    {Delay 1000}
+   {System.showInfo "Saying sixth  with BoardB as listener (Client3 bA(C1 C2))"}
    {Speaker say(sixth)}
 end 

@@ -16,6 +16,7 @@ define
       proc {Obj Msg}
          case Msg
          of release then
+            {System.show 'going to release'#S}
             for X in S do
                {System.show X}
             end
@@ -37,14 +38,15 @@ in
       ThisLogger
       LogListener
       ThisCloser
+      ThisSetListener
    in
       SiteA       = {Player.makeNetworkPingPongPlayer}
       SiteB       = {Player.makeNetworkPingPongPlayer}
-      [ThisLogger  ThisCloser] = {Logger.make none}
+      ThisLogger#ThisCloser#ThisSetListener = {Logger.make 'none.log'}
       {System.show 'after creating this logger'}
       LogListener = {NewLogListener}
       {System.show 'after creating log listener'}
-      {ThisLogger setListener(LogListener)}
+      {ThisSetListener LogListener}
       {System.show 'after setting loglistener'}
       {SiteA setId(netfoo)}
       {SiteB setId(netbar)}
@@ -61,6 +63,7 @@ in
       {System.show 'finishing NetworkPingPong'}
       {System.show 'letting the log listener do its job'}
       {LogListener release}
+      {ThisCloser}
       {System.show 'check also file test.log'}
    end
    {Application.exit 1}

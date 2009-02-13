@@ -52,12 +52,24 @@ define
             try
                {TheFile close}
             catch E then
-               {System.show 'Error: Problem closing file '#E}
+               {System.show 'Error: Problem closing file '#Args.name}
+               {System.show 'Exception: '#E}
             end
          end
       end
    in
-      TheFile = {Object.new TextFile Args}
+      try
+         TheFile = {Object.new TextFile Args}
+      catch E then
+         {System.show 'Error: Trying to open file '#Args.name}
+         {System.show 'Exception: '#E}
+         try
+            {TheFile close}
+         catch _ then
+            skip
+         end
+      end
+      %% Return the file object
       Obj
    end
 

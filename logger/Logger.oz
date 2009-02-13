@@ -20,11 +20,15 @@
  *
  * NOTES
  *      
- *    This component writes whatever information is given into a file and to a
- *    listener. One possible use is to attached it as extra listener (in a
- *    board) of another component in order to automatically log events.  It
- *    does not use the tipical core Component framework because it can handle
- *    any event.
+ *    This component writes into a file whatever information is given to it.
+ *    The information is also forwarded to a listener.  It does not use the
+ *    tipical core Component framework because it logs any event, even
+ *    'setListener'. This is why it has its own way on setting the log
+ *    listener.  There are two ways of using a logger. You use it as a
+ *    component and you explicitly send the events you want to log. The second
+ *    choice is to put it in a board together with another component. Then,
+ *    every message sent to the board will be automatically handle by the
+ *    component and sent to the logger.
  *
  * EVENTS
  *
@@ -50,7 +54,8 @@ export
 define
 
    fun {Make FileName}
-      Key
+      KeyCloser
+      KeyListener
       LogFile
       LogListener
       LogPort
@@ -60,14 +65,21 @@ define
       end
 
       proc {Closer}
-         {Port.send LogPort close(Key)}
+         {Port.send LogPort close(KeyCloser)}
+      end
+
+      proc {SetListener NewListener}
+         {Port.send LogPort setListener(KeyListener NewListener)}
       end
 
       proc {UponEvent EventStream}
          case EventStream
-         of close(!Key)|_ then
+         of close(!KeyCloser)|_ then
             {LogFile write("\n")}
             {LogFile close}
+         [] setListener(!KeyListener NewListener)|NewStream then
+            LogListener := NewListener
+            {UponEvent NewStream}
          [] AnyEvent|NewStream then
             {@LogListener AnyEvent}
             {LogFile write(AnyEvent)}
@@ -79,12 +91,13 @@ define
       if FileName == none then
          LogFile = Component.dummy
       else
-         LogFile = {TextFile.new init(name:  LogFile
+         LogFile = {TextFile.new init(name:  FileName
                                       flags: [write create truncate text])}
       end
       {System.show 'logfile created'}
       LogListener = {NewCell Component.dummy}
-      Key = {NewName}
+      KeyCloser   = {NewName}
+      KeyListener = {NewName}
       {System.show 'loglistener and key created'}
       local
          LogStream
@@ -95,7 +108,7 @@ define
          end
       end
       {System.show 'loop launched'}
-      [Logger Closer]
+      Logger#Closer#SetListener
    end
 end
 
