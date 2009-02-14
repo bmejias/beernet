@@ -139,6 +139,7 @@ define
          setId(TheId) = Event
       in
          Id = TheId
+         {ComLayer setId(TheId)}
       end
 
       proc {SetFlag Event}
