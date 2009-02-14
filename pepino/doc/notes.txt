@@ -1,0 +1,33 @@
+/*-------------------------------------------------------------------------
+ *
+ * notes.txt
+ *
+ *    Small initial notes on the documentation of PEPINO
+ *
+ * LICENSE
+ *
+ *    Copyright (c) 2009 Universite catholique de Louvain
+ *
+ *    PEPINO is released under the MIT License (see file LICENSE) 
+ * 
+ * IDENTIFICATION
+ *
+ *    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
+ *
+ *    Last change: $Revision$ $Author$
+ *
+ *    $Date$
+ *
+ *-------------------------------------------------------------------------
+ */
+
+PEPINO is a graphical PEer-to-Peer network INspectOr running on top of
+Beernet, a structured overlay network using the Relaxed-Ring topology. The
+goal is to monitor the network by detecting failures, and by observing the
+messages sent between peers. A dynamic and self-organizing view of the network
+is presented to the user, who can interacts with it to inject failures or send
+messages in order to study the network protocols.
+
+This is a reimplementation of PEPINO 0.2, which was the last one released
+using P2PS. It is strongly based on the work of Donatien Grolaux, Raphael
+Collet and Boriss Mejias.
