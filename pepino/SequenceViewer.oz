@@ -52,138 +52,64 @@ in
 end
 
 fun{InteractiveLogViewer Log}  %% Log is a stream or a list
-   Window={New Tk.toplevel tkInit(delete:proc{$} {@OnClose Window} end)}
+   Window = {New Tk.toplevel tkInit(delete:proc{$}
+                                               {@OnClose Window}
+                                            end)}
    {Tk.send wm(title Window "PEPINO")}
-%      {Tk.send wm(state Window zoomed)}
-   PanedWindow={New {Tk.newWidgetClass noCommand panedwindow} tkInit(parent:Window orient:horizontal showhandle:true sashrelief:raised opaqueresize:true)}
-      
+   PanedWindow = {New {Tk.newWidgetClass noCommand panedwindow}
+                  tkInit(parent:Window
+                         orient:horizontal
+                         showhandle:true
+                         sashrelief:raised
+                         opaqueresize:true)}
+   
    ControlFrame = {New Tk.frame tkInit(parent:Window)}
       
    LogFrame     = {New Tk.frame tkInit(parent:PanedWindow relief:raised)}
-   GraphCanvas  = {New Tk.canvas tkInit(parent:PanedWindow bg:white relief:raised)}
+   GraphCanvas  = {New Tk.canvas tkInit(parent:PanedWindow
+                                        bg:white
+                                        relief:raised)}
       
-   LogCanvas={New Tk.canvas tkInit(parent:LogFrame bg:white)}
-   Title={New Tk.canvas tkInit(parent:LogFrame height:LineWidth*2 bg:white)}
-   ScrollH={New Tk.scrollbar tkInit(parent:LogFrame orient:horizontal)}
-   ScrollV={New Tk.scrollbar tkInit(parent:LogFrame orient:vertical)}
+   LogCanvas = {New Tk.canvas tkInit(parent:LogFrame bg:white)}
+   Title = {New Tk.canvas tkInit(parent:LogFrame height:LineWidth*2 bg:white)}
+   ScrollH = {New Tk.scrollbar tkInit(parent:LogFrame orient:horizontal)}
+   ScrollV = {New Tk.scrollbar tkInit(parent:LogFrame orient:vertical)}
    {Window tkBind(event:'<MouseWheel>' args:[int('D')]
                   action:proc{$ D}
                             {LogCanvas tk(yview scroll (D div ~120) units)}
                          end)}
 
-      
    {Tk.send grid(rowconfigure Window 0 weight:1)}
    {Tk.send grid(columnconfigure Window 0 weight:1)}
    {Tk.send grid(configure PanedWindow column:0 row:0 sticky:nswe)}
    {Tk.send grid(configure ControlFrame column:0 row:1 sticky:swe)}
 
-   %% Trying to group the Transactional panel related widget on this area
-   %% +----------------------+
-   %% |TransWindow           |
-   %% |+--------------------+|
-   %% || CodeFrame          ||
-   %% |+--------------------+|
-   %% |+--------------------+|
-   %% || DebugFrame         ||
-   %% |+--------------------+|
-   %% |+--------------------+|
-   %% || OutputFrame        ||
-   %% |+--------------------+|
-   %% +----------------------+
-   %%
-   TransWindow  = {New {Tk.newWidgetClass noCommand panedwindow}
-                   tkInit(parent:PanedWindow
-                          orient:vertical
-                          sashrelief:raised
-                          showhandle:true
-                          opaqueresize:false)}
-   CodeWindow   = {New {Tk.newWidgetClass noCommand panedwindow}
-                   tkInit(parent:TransWindow
-                          orient:vertical
-                          sashrelief:raised
-                          showhandle:false
-                          opaqueresize:false)}
-   DebugFrame   = {New Tk.frame tkInit(parent:TransWindow)}
-   OutputWindow = {New {Tk.newWidgetClass noCommand panedwindow}
-                   tkInit(parent:TransWindow
-                          orient:vertical
-                          sashrelief:raised
-                          showhandle:false
-                          opaqueresize:false)}
+   {PanedWindow tk(add LogFrame GraphCanvas)}
 
-   TransLabel   = {New Tk.label tkInit(parent:CodeWindow text:"Transaction")}
-   CodeArea     = {New Tk.text
-                   tkInit(parent:CodeWindow
-                          height:12
-                          width:40)}
-   {CodeArea tk(insert 'end' '#'("proc {Trans Obj}\n"
-                                 "   V\n"
-                                 "in\n"
-                                 "   {Obj write(aachen p2p)}\n"
-                                 "   {Obj read(aachen V)}\n"
-                                 "   {Say V}\n"
-                                 "   {Obj commit}\n"
-                                 "end"))}
-   %% This part goes bellow the code area
-   CodeButFrame = {New Tk.frame tkInit(parent:CodeWindow)}
-   OutcomeLabel = {New Tk.label tkInit(parent:CodeButFrame text:"Outcome: ")}
-   OutcomeArea  = {New Tk.text tkInit(parent:CodeButFrame height:1 width:9)}      
-   RunButton    = {New Tk.button tkInit(parent:CodeButFrame
-                                        text:"Run"
-                                           %relief:raised
-                                        action:proc{$}
-                                                  Str
-                                               in
-                                                     %{System.show 'Trying to recover something'}
-                                                  Str = {CodeArea tkReturnString(get p(1 0) p(12 40) $)}
-                                                  {Wait Str}
-                                                     %{System.show Str}
-                                                  {@OnRunTrans Str}
-                                               end)}
-   {Tk.send pack(side:left OutcomeLabel OutcomeArea)}
-   {Tk.send pack(side:right RunButton)}
-   {CodeWindow tk(add TransLabel CodeArea CodeButFrame)}
-
-   %% Buttons for the debug frame
-   BreakPointButton = {New Tk.button tkInit(parent:DebugFrame
-                                            text:"BreakPoint"
-                                            relief:raised
-                                            action:proc{$}
-                                                      {@OnBreakPoint unit}
-                                                   end)}
-   ResumeButton     = {New Tk.button tkInit(parent:DebugFrame
-                                            text:"Resume TM"
-                                            relief:raised
-                                            action:proc{$}
-                                                      {@OnResume unit}
-                                                   end)}
-   CrashButton      = {New Tk.button tkInit(parent:DebugFrame
-                                            text:"Crash TM!"
-                                            relief:raised
-                                            action:proc{$}
-                                                      {@OnCrashTM unit}
-                                                   end)}
-   {Tk.send pack(side:left BreakPointButton ResumeButton CrashButton)}      
-
-   %% The output frame
-   OutputLabel = {New Tk.label tkInit(parent:OutputWindow text:"Output")}
-   OutputArea  = {New Tk.text
-                  tkInit(parent:OutputWindow
-                         height:7
-                         width:40)}
-   {OutputWindow tk(add OutputLabel OutputArea)}
-      
-   {TransWindow tk(add CodeWindow DebugFrame OutputWindow)}
-   %% End initial setting Transactional panel
-      
-   {PanedWindow tk(add LogFrame GraphCanvas TransWindow)}
-
-   StopButton={New Tk.button tkInit(parent:ControlFrame text:"[]" relief:sunken action:CO#stop)}
-   FrameButton={New Tk.button tkInit(parent:ControlFrame text:"|>" relief:raised action:CO#oneFrame)}
-   PlayButton={New Tk.button tkInit(parent:ControlFrame text:">" relief:raised action:CO#play(speed:250))}
-   FFButton={New Tk.button tkInit(parent:ControlFrame text:">>" relief:raised action:CO#play(speed:100))}
-   FFFButton={New Tk.button tkInit(parent:ControlFrame text:">>>" relief:raised action:CO#play(speed:50))}
-   ToEndButton={New Tk.button tkInit(parent:ControlFrame text:">|" relief:raised action:CO#runToEnd)}
+   StopButton  = {New Tk.button tkInit(parent:ControlFrame
+                                       text:"[]"
+                                       relief:sunken
+                                       action:CO#stop)}
+   FrameButton = {New Tk.button tkInit(parent:ControlFrame
+                                       text:"|>"
+                                       relief:raised
+                                       action:CO#oneFrame)}
+   PlayButton  = {New Tk.button tkInit(parent:ControlFrame
+                                       text:">"
+                                       relief:raised
+                                       action:CO#play(speed:250))}
+   FFButton    = {New Tk.button tkInit(parent:ControlFrame
+                                       text:">>"
+                                       relief:raised
+                                       action:CO#play(speed:100))}
+   FFFButton   = {New Tk.button tkInit(parent:ControlFrame
+                                       text:">>>"
+                                       relief:raised
+                                       action:CO#play(speed:50))}
+   ToEndButton = {New Tk.button tkInit(parent:ControlFrame
+                                       text:">|"
+                                       relief:raised
+                                       action:CO#runToEnd)}
    IndexVar={New Tk.variable tkInit(0)}
    IndexText={New Tk.entry tkInit(parent:ControlFrame textvariable:IndexVar)}
    {IndexText tkBind(event:'<Return>'
@@ -1018,21 +944,6 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
       end
       meth onClose(P)
          OnClose:=P
-      end
-      meth say(S)
-         Old New
-      in
-         Old = outputline := New
-         New = Old + 1
-         try
-            {OutputArea tk(insert p(New 1) S#"\n")}
-         catch _ then
-            {OutputArea tk(insert p(New 1) "error(KEY NOT FOUND)\n")}
-         end
-      end
-      meth setOutcome(OC)
-         {OutcomeArea tk(delete p(1 0) p(1 9))}
-         {OutcomeArea tk(insert p(1 1) OC)}
       end
       meth addEdge(F T C)
          {AddEdge F T C}
