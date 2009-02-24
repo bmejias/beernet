@@ -33,23 +33,8 @@
  */
                                                                                              
 declare
-ColWidth=100
-LineWidth=16
-Weight=100.
-MaxSpeed=16.0
-MinSpeed=2.0
-MaxDistance=500.0
-Attraction = {NewCell 0.3}
-Repulsion  = {NewCell 0.1}
-fun {Head Xs} Xs.1 end
-fun {Tail Xs} Xs.2 end
-
-fun {Distance A#B C#D}
-   AC=A-C
-   BD=B-D
-in
-   {Max {Sqrt AC*AC + BD*BD} 1.0}
-end
+COL_WIDTH  = 100
+LINE_WIDTH = 16
 
 fun{InteractiveLogViewer Log}  %% Log is a stream or a list
    Window = {New Tk.toplevel tkInit(delete:proc{$}
@@ -68,7 +53,7 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
    LogFrame     = {New Tk.frame tkInit(parent:PanedWindow relief:raised)}
 
    LogCanvas = {New Tk.canvas tkInit(parent:LogFrame bg:white)}
-   Title = {New Tk.canvas tkInit(parent:LogFrame height:LineWidth*2 bg:white)}
+   Title = {New Tk.canvas tkInit(parent:LogFrame height:LINE_WIDTH*2 bg:white)}
    ScrollH = {New Tk.scrollbar tkInit(parent:LogFrame orient:horizontal)}
    ScrollV = {New Tk.scrollbar tkInit(parent:LogFrame orient:vertical)}
    {Window tkBind(event:'<MouseWheel>' args:[int('D')]
@@ -151,7 +136,7 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
    {ScrollH tk(configure command:xscroll2)}
    {Tk.addYScrollbar LogCanvas ScrollV}
 
-   {PanedWindow tk(sash place 0 300 0)}
+%   {PanedWindow tk(sash place 0 300 0)}
       
    NodeCount={NewCell 0}
    LineIdx={NewCell ~1}
@@ -174,28 +159,28 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
    in
       {Exchange LineIdx O N}
       N=O+1
-      {LogCanvas tk(configure scrollregion:q(~ColWidth 0
-                                             {Access NodeCount}*ColWidth (N+3)*LineWidth))}
-      {Title tk(configure scrollregion:q(~ColWidth 0
-                                         {Access NodeCount}*ColWidth LineWidth*2))}
+      {LogCanvas tk(configure scrollregion:q(~COL_WIDTH 0
+                                             {Access NodeCount}*COL_WIDTH (N+3)*LINE_WIDTH))}
+      {Title tk(configure scrollregion:q(~COL_WIDTH 0
+                                         {Access NodeCount}*COL_WIDTH LINE_WIDTH*2))}
       {LogCanvas tk(yview moveto 1.0)}
       N
    end
    PI=3.14159264
    proc{AddNode Id}
       if {Not {Dictionary.member NodeDict Id}} then
-%         Col={Length {Dictionary.keys NodeDict}}+1
+         Col={Length {Dictionary.keys NodeDict}}+1
          Col
       in
          NodeCount:=@NodeCount+1
          Col = @NodeCount
          {Dictionary.put NodeDict Id unit#0#Col}
-         {Title tk(create text ColWidth*Col-(ColWidth div 2) LineWidth text:Id)}
+         {Title tk(create text COL_WIDTH*Col-(COL_WIDTH div 2) LINE_WIDTH text:Id)}
          {LogCanvas tk(create
                        line
-                       ColWidth*Col-(ColWidth div 2)
-                       LineWidth
-                       ColWidth*Col-(ColWidth div 2)
+                       COL_WIDTH*Col-(COL_WIDTH div 2)
+                       LINE_WIDTH
+                       COL_WIDTH*Col-(COL_WIDTH div 2)
                        100000)}
       end
    end
@@ -294,10 +279,10 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
                Tags={GetTags Sender_id Receiver_id}
                AId={LogCanvas
                     tkReturnInt(create(line
-                                       OrgCol*ColWidth-(ColWidth div 2)
-                                       (OrgLine+2)*LineWidth
-                                       DestCol*ColWidth-(ColWidth div 2)
-                                       (DestLine+2)*LineWidth
+                                       OrgCol*COL_WIDTH-(COL_WIDTH div 2)
+                                       (OrgLine+2)*LINE_WIDTH
+                                       DestCol*COL_WIDTH-(COL_WIDTH div 2)
+                                       (DestLine+2)*LINE_WIDTH
                                        fill:{CondSelect Nx color gray}
                                        arrow:last
                                        tags:Tags.2
@@ -307,8 +292,8 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
                end
                TId={LogCanvas
                     tkReturnInt(create(text
-                                       (OrgCol*ColWidth-(ColWidth div 2)+DestCol*ColWidth-(ColWidth div 2)) div 2
-                                       (((OrgLine+2)*LineWidth+(DestLine+2)*LineWidth) div 2)-(LineWidth div 3)
+                                       (OrgCol*COL_WIDTH-(COL_WIDTH div 2)+DestCol*COL_WIDTH-(COL_WIDTH div 2)) div 2
+                                       (((OrgLine+2)*LINE_WIDTH+(DestLine+2)*LINE_WIDTH) div 2)-(LINE_WIDTH div 3)
                                        fill:{CondSelect Nx color gray}
                                        tags:Tags.1
                                        text:{Value.toVirtualString Message 10000 10000}) $)}
@@ -362,8 +347,8 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
             Line={IncLineIdx}
             Tags={GetTags ~1 ~1}
             TId={LogCanvas tkReturnInt(create(text
-                                              (ColWidth div 2)
-                                              (Line+2)*LineWidth
+                                              (COL_WIDTH div 2)
+                                              (Line+2)*LINE_WIDTH
                                               anchor:w
                                               fill:Color
                                               tags:Tags.1
@@ -384,8 +369,8 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
                 Site_id
                 {CondSelect Nx thid unit}#Line#Col}
                TId={LogCanvas tkReturnInt(create(text
-                                                 Col*ColWidth-(ColWidth div 2)
-                                                 (Line+2)*LineWidth
+                                                 Col*COL_WIDTH-(COL_WIDTH div 2)
+                                                 (Line+2)*LINE_WIDTH
                                                  fill:{CondSelect Nx color red}
                                                  tags:Tags.1
                                                  text:{Value.toVirtualString
@@ -401,8 +386,8 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
       else 
          Line={IncLineIdx}
       in
-         {LogCanvas tk(create line 0 (Line+2)*LineWidth
-                       100000 (Line+2)*LineWidth)}
+         {LogCanvas tk(create line 0 (Line+2)*LINE_WIDTH
+                       100000 (Line+2)*LINE_WIDTH)}
          {CO stop}
       end
    end
@@ -578,10 +563,11 @@ fun{ReadLog FileName}
       try
          {TextFile.new init(name:FileName)}=FN
          proc{Loop}
-            {Browse 'into the loop'}
+            {Browse 'into the loop'#FN}
             if {FN atEnd($)} then
                raise atEnd end
             end
+            {Browse 'into the loop dos'}
             Str1={FN getS($)}
             Str={Replace Str1}
          in
