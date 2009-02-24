@@ -55,6 +55,8 @@ define
                {System.show 'Error: Problem closing file '#Args.name}
                {System.show 'Exception: '#E}
             end
+         else
+            {TheFile Msg}
          end
       end
    in
