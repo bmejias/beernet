@@ -66,10 +66,7 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
    ControlFrame = {New Tk.frame tkInit(parent:Window)}
       
    LogFrame     = {New Tk.frame tkInit(parent:PanedWindow relief:raised)}
-   GraphCanvas  = {New Tk.canvas tkInit(parent:PanedWindow
-                                        bg:white
-                                        relief:raised)}
-      
+
    LogCanvas = {New Tk.canvas tkInit(parent:LogFrame bg:white)}
    Title = {New Tk.canvas tkInit(parent:LogFrame height:LineWidth*2 bg:white)}
    ScrollH = {New Tk.scrollbar tkInit(parent:LogFrame orient:horizontal)}
@@ -84,7 +81,7 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
    {Tk.send grid(configure PanedWindow column:0 row:0 sticky:nswe)}
    {Tk.send grid(configure ControlFrame column:0 row:1 sticky:swe)}
 
-   {PanedWindow tk(add LogFrame GraphCanvas)}
+   {PanedWindow tk(add LogFrame)}
 
    StopButton  = {New Tk.button tkInit(parent:ControlFrame
                                        text:"[]"
@@ -131,13 +128,10 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
                                     %{System.show Str}
                                     %{@OnEnter Str}
                               end)}
-   ColorFrame={New Tk.frame tkInit(parent:ControlFrame)}
-   ColorButtons={Dictionary.new}
-   CurrentAttractorColor={NewCell black}
-
-   {Tk.send pack(side:left StopButton FrameButton PlayButton FFButton FFFButton ToEndButton IndexText Label)}
+   {Tk.send pack(side:left
+                 StopButton FrameButton PlayButton FFButton FFFButton
+                 ToEndButton IndexText Label)}
    {Tk.send pack(side:left fill:x expand:true PatternText)}
-   {Tk.send pack(side:right fill:x ColorFrame)}
 
    {Tk.send grid(rowconfigure LogFrame 1 weight:1)}
    {Tk.send grid(columnconfigure LogFrame 0 weight:1)}
@@ -167,26 +161,6 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
 
    MaxX={NewCell 100.0}
    MaxY={NewCell 100.0}
-   GraphNodes={Dictionary.new}
-   GraphEdges={Dictionary.new}
-   GraphAttractors={Dictionary.new}
-   Attractors={NewCell c}
-%      Repulsors={NewCell c}
-   Active = {NewCell _}   % whether the nodes are active in the window
-   {GraphCanvas tkBind(event:"<Enter>" action:proc {$} @Active = unit end)}
-   {GraphCanvas tkBind(event:"<Leave>" action:proc {$} unit = Active := _ end)}
-   {GraphCanvas tkBind(event:"<Configure>" action:proc{$}
-                                                     {Assign MaxX {Tk.returnFloat winfo(width GraphCanvas)}}
-                                                     {Assign MaxY {Tk.returnFloat winfo(height GraphCanvas)}}
-%                    @Active = unit
-%                    thread
-%                       {Delay 100}
-%                       O N
-%                    in
-%                       {Exchange Active O N}
-%                       if {IsFree O} then N=O end
-%                    end
-                                                  end)}
    OnParse      = {NewCell proc{$ _} skip end}
    OnClick      = {NewCell proc{$ _} skip end}
    OnEnter      = {NewCell proc{$ _} skip end}
@@ -208,437 +182,21 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
       N
    end
    PI=3.14159264
-   fun{Complement L}
-      D={Dictionary.clone GraphNodes}
-   in
-      {ForAll L proc{$ K} {Dictionary.remove D K} end}
-      {Dictionary.keys D}
-   end
-   proc{AddColor C}
-      O N
-   in
-      {Dictionary.condExchange ColorButtons C unit O N}
-      if O==unit then
-         N={New Tk.button tkInit(parent:ColorFrame text:C
-                                 action:proc{$}
-                                           {ForAll {Dictionary.items ColorButtons}
-                                            proc{$ L}
-                                               {L tk(configure relief:if L==N then sunken else raised end)}
-                                            end}
-                                           {SetAttractorColor C}
-                                        end
-                                 bg:C)}
-         {Tk.send pack(side:left N)}
-         if C==@CurrentAttractorColor then
-            {N tk(configure relief:sunken)}
-         end
-      else
-         N=O
-      end
-   end
    proc{AddNode Id}
       if {Not {Dictionary.member NodeDict Id}} then
-         fun{Loop N}
-            %% divide the circle in sections
-            %% N>=0 & N<2 =>angle=0+(n*pi)
-            %% N>=2 & N<4 => angle=pi/2+((n-2)*pi)
-            %% N>=4 & N<8 => angle=pi/4+((n-4)*(pi/2))
-            %% N>=8 & N<16 => angle=pi/8+((n-8)*(pi/4))
-            fun{ILoop C Delta Seg}
-               if N>=C andthen N<(C*2) then
-                  Delta+{Int.toFloat (N-C)}*Seg
-               else
-                  {ILoop C*2 Delta/2.0 Seg/2.0}
-               end
-            end
-         in
-            if N==0 then 0.0 elseif N==1 then PI
-            else
-               {ILoop 2 PI/2.0 PI}
-            end
-         end
-         Col={Length {Dictionary.keys NodeDict}}+1
-         T={New Tk.canvasTag tkInit(parent:GraphCanvas)}
-         T2={New Tk.canvasTag tkInit(parent:GraphCanvas)}
-         T3={New Tk.canvasTag tkInit(parent:GraphCanvas)}
-       
-         Angle={Loop @NodeCount}
-       
-         W={Max 50.0 {Min @MaxX @MaxY}/2.0-20.0}
-         X=@MaxX/2.0+W*{Cos Angle}
-         Y=@MaxY/2.0+W*{Sin Angle}
-       
-%      {GraphCanvas tk(create text 100 100+10*Col text:{Value.toVirtualString node(id:Id x:X y:Y angle:Angle w:W maxx:@MaxX maxy:@MaxY) 1000 1000})}
-%      OI={GraphCanvas tkReturnInt(create(oval X-10. Y-10. X+10. Y+10. fill:white tags:T) $)}
-         TI={GraphCanvas tkReturnInt(create(text X Y text:Id tags:T) $)}
-         [X1 Y1 X2 Y2]={GraphCanvas tkReturnListInt(bbox(TI) $)}
-         BI={GraphCanvas tkReturnInt(create(rect X1-2 Y1-2 X2+2 Y2+2 fill:white outline:black tags:T) $)}
-         {GraphCanvas tk('raise' TI)}
-         {T tkBind(event:'<Enter>' action:proc{$}
-                                             unit = Active := _
-                                             {GraphCanvas tk('raise' TI)}
-                                             {GraphCanvas tk(lower BI TI)}
-                                             {GraphCanvas tk(itemconfigure T2 width:3)}
-                                             {GraphCanvas tk(itemconfigure T3 width:3 stipple:gray50)}
-                                          end)}
-         {T tkBind(event:'<Leave>' action:proc{$}
-                                             @Active=unit
-                                             {GraphCanvas tk(lower TI)}
-                                             {GraphCanvas tk(lower BI TI)}
-                                             {GraphCanvas tk(itemconfigure T2 width:1)}
-                                             {GraphCanvas tk(itemconfigure T3 width:1 stipple:'')}
-                                          end)}
-         {T tkBind(event:'<3>'
-                   args:[int(x) int(y)]
-                   action:proc{$ X Y}
-                             {@OnClick node(Id
-                                            tag:T
-                                            canvas:GraphCanvas
-                                            x:X
-                                            y:Y)}
-                          end)}
-
-
-         Dragging = {NewCell false}
-         DragTo   = {NewCell nil}
-         {T tkBind(event:  "<Button-1>"
-                   args:   [float(x) float(y)]
-                   action: proc {$ X Y} DragTo := X#Y Dragging := true @Active = unit end)}
-         {T tkBind(event:  "<Motion>"
-                   args:   [float(x) float(y)]
-                   action: proc {$ X Y}
-                              if @Dragging then DragTo := X#Y end
-                           end)}
-         {T tkBind(event:  "<ButtonRelease-1>"
-                   action: proc {$} Dragging := false end)}
+%         Col={Length {Dictionary.keys NodeDict}}+1
+         Col
       in
+         NodeCount:=@NodeCount+1
+         Col = @NodeCount
          {Dictionary.put NodeDict Id unit#0#Col}
          {Title tk(create text ColWidth*Col-(ColWidth div 2) LineWidth text:Id)}
-         {LogCanvas tk(create line ColWidth*Col-(ColWidth div 2) LineWidth
-                       ColWidth*Col-(ColWidth div 2) 100000)}
-         NodeCount:=@NodeCount+1
-         {Dictionary.put GraphNodes Id n(t:T
-                                         'from':T2
-                                         to:T3
-                                         box:BI
-                                         text:TI
-                                         c:(X#Y)|_)}
-         thread
-            %% constant update node position
-            proc{Loop OX#OY CheckAtt Att Rep}
-               {Delay 100}
-               {Wait @Active}
-               Old=GraphNodes.Id
-               NCheckAtt NAtt NRep
-               X1#Y1=if @Dragging then
-                        NAtt=Att
-                        NRep=Rep
-                        NCheckAtt=CheckAtt            
-                        @DragTo
-                     else
-                        %% list of attractors is GraphAttractors.Id
-                        %% list of repulsors is {Complement Id|GraphAttractors.Id}
-                        if @Attractors==CheckAtt then
-                           NAtt=Att
-                           NRep=Rep
-                           NCheckAtt=CheckAtt
-                        else
-                           NCheckAtt=@Attractors
-                           if {CondSelect NCheckAtt Id nil}==nil then
-                              NAtt=nil
-                              NRep=nil %% unconnected nodes don't count
-%            {Map {List.filter {Dictionary.keys GraphNodes}
-%                  fun{$ K} K\=Id andthen {CondSelect NCheckAtt K nil}\=nil end}
-%                  fun{$ K}
-%                {Dictionary.get GraphNodes K}.c
-%                  end}
-                           else
-                              NAtt={Map NCheckAtt.Id
-                                    fun{$ K}
-                                       {Dictionary.get GraphNodes K}.c
-                                    end}
-                              NRep={Map {List.filter
-                                         {Complement Id|NCheckAtt.Id}
-                                         fun{$ K}
-%                     {CondSelect @Repulsors K false}\=false
-                                            {CondSelect @Attractors K nil}\=nil
-                                         end}
-                                    fun{$ K}
-                                       {Dictionary.get GraphNodes K}.c
-                                    end}
-%            {Show Id#NCheckAtt.Id#{List.filter
-%                  {Complement Id|NCheckAtt.Id}
-%                  fun{$ K} {CondSelect @Attractors K nil}\=nil end}#@Attractors}
-                           end
-                        end
-                        Moves1={Map NAtt
-                                fun{$ X}
-                                   A#B={Head X}
-                                   D = {Distance A#B OX#OY}
-                                   F = (@Attraction * (D-Weight) / D)
-                                in
-                                   (F*(A-OX))#(F*(B-OY))
-                                end}
-                        Moves2={Map NRep
-                                fun{$ X}
-                                   A#B={Head X}
-                                   D = {Distance A#B OX#OY}
-                                   F=(if D>MaxDistance then
-                                         0.0
-                                      else
-                                         @Repulsion * Weight * Weight / (D*D)
-                                      end)
-                                in
-                                   (F*(OX-A))#(F*(OY-B))
-                                end}
-                     in
-                        {FoldL {Append Moves1 Moves2}
-                         fun {$ A#B C#D} (A+C)#(B+D) end OX#OY}
-                     end
-               X2#Y2={Min {Max 10.0 X1} {Access MaxX}-10.0}#{Min {Max 10.0 Y1} {Access MaxY}-10.0}
-               ND={Distance OX#OY X2#Y2}
-               XN#YN=if @Dragging then
-                        X2#Y2 %% no speed limit for the user
-                     elseif ND<MinSpeed then OX#OY
-                     elseif ND<MaxSpeed then X2#Y2 else
-                        (OX+(X2-OX)*MaxSpeed/ND)#(OY+(Y2-OY)*MaxSpeed/ND)
-                     end
-               N
-            in
-               {GraphCanvas tk(move T XN-OX YN-OY)}
-               Old.c.2=(XN#YN)|N
-               {Dictionary.put GraphNodes Id
-                {Record.adjoinAt Old c (XN#YN)|N}}
-%       if @Dragging then
-%          {Loop XN#YN CheckAtt Att Rep}
-%       else§
-               {Loop XN#YN NCheckAtt {List.map NAtt Tail} {List.map NRep Tail}}
-%       end
-            end
-         in
-            {Loop X#Y c nil nil}
-%         {Loop X#Y nil nil {Map {List.filter {Dictionary.keys GraphNodes}
-%                  fun{$ K} K\=Id end}
-%             fun{$ K}
-%                  {Dictionary.get GraphNodes K}.c
-%             end}}
-         end
-      end
-   end
-   proc{AddEdge From To Color}
-      {AddNode From}
-      {AddNode To}
-      {AddColor Color}
-      D1={Dictionary.condGet GraphEdges From unit}
-      D2=if D1==unit then
-            {Dictionary.put GraphEdges From D2}
-            {Dictionary.new}
-         else D1 end
-      D3={Dictionary.condGet D2 To unit}
-      D=if D3==unit then
-           {Dictionary.put D2 To D}
-           {Dictionary.new}
-        else D3 end
-      Tag={New Tk.canvasTag tkInit(parent:GraphCanvas)}
-      LI={GraphCanvas tkReturnInt(create(line 0. 0. 0. 0.
-                                         tags:q(Tag {Dictionary.get GraphNodes From}.'from' {Dictionary.get GraphNodes To}.'to')
-                                         arrow:last fill:Color smooth:true) $)}
-      {Dictionary.put D LI e(c:Color
-                             tag:Tag
-                             t:F)} %% when F is bound, edge is removed
-      {Tag tkBind(event:'<Enter>' action:proc{$}
-                                            unit = Active := _
-                                            {GraphCanvas tk(itemconfigure LI width:3)}
-                                         end)}
-      {Tag tkBind(event:'<Leave>' action:proc{$}
-                                            @Active=unit
-                                            {GraphCanvas tk(itemconfigure LI width:1)}
-                                         end)}
-      {Tag tkBind(event:'<3>'
-                  args:[int(x) int(y)]
-                  action:proc{$ X Y}
-                            {@OnClick edge(From To
-                                           tag:Tag
-                                           canvas:GraphCanvas
-                                           x:X y:Y)}
-                         end)}
-      F
-
-      Dist={Length {Dictionary.keys D}}
-   in
-      if Color==@CurrentAttractorColor then
-         {AddAttractor From To}
-      end
-      thread
-         proc{Loop C1 C2 OFrom OTo}
-            Which={Record.waitOr c(C1 C2 F)}
-         in
-            if Which==3 then
-               {Dictionary.remove D LI}
-               {GraphCanvas tk(delete LI)}
-            else
-               NFrom
-               NTo
-               NC1 NC2
-               if Which==1 then
-                  NTo=OTo
-                  NC2=C2
-                  case C1 of X#Y|Ls then
-                     NFrom=X#Y
-                     NC1=Ls
-                  else
-                     F=unit
-                     NC1=_
-                     NFrom=unit
-                  end
-               else
-                  NFrom=OFrom
-                  NC1=C1
-                  case C2 of X#Y|Ls then
-                     NTo=X#Y
-                     NC2=Ls
-                  else
-                     F=unit
-                     NC2=_
-                     NTo=unit
-                  end
-               end
-            in
-               if NFrom\=unit andthen NTo\=unit then
-                  %% set coords
-                  X1#Y1=NFrom
-                  X2#Y2=NTo
-                  D = {Distance X1#Y1 X2#Y2}
-                  Xa#Ya=X1#Y1
-                  Xb#Yb=X2+(X1-X2)*10./D#Y2+(Y1-Y2)*10./D
-                  Xc#Yc=((Xb+Xa)/2.0)#((Yb+Ya)/2.0)
-                  Xd#Yd=(~Yb+Ya)#(Xb-Xa)
-%          {GraphCanvas tk(delete ttfg1)}
-%          {GraphCanvas tk(create line Xa Ya (Xa+Xd) (Ya+Yd) fill:red tags:ttfg1)}
-%          Xe#Ye=(Xc+(((D/5.0)*{Int.toFloat Dist})*Xd)/N)#(Yc+(((D/5.0)*{Int.toFloat Dist})*Yd)/N)
-                  Ecart={Min D/6.0 20.0}*{Int.toFloat Dist}
-                  Xe#Ye=(Xc+(Ecart*Xd)/D)#(Yc+(Ecart*Yd)/D)
-               in
-                  {GraphCanvas tk(coords LI Xa Ya Xe Ye Xb Yb)}
-               end
-               {Loop NC1 NC2 NFrom NTo}
-            end
-         end
-      in
-         {Loop GraphNodes.From.c GraphNodes.To.c unit unit}
-      end
-   end
-   proc{RemoveEdge From To Color}
-      D1={Dictionary.condGet GraphEdges From unit}
-      D2=if D1==unit then
-            {Dictionary.put GraphEdges From D2}
-            {Dictionary.new}
-         else D1 end
-      D3={Dictionary.condGet D2 To unit}
-      D=if D3==unit then
-           {Dictionary.put D2 To D}
-           {Dictionary.new}
-        else D3 end
-   in
-      if Color==@CurrentAttractorColor then
-         {RemoveAttractor From To}
-      end
-      {ForAll {Dictionary.entries D}
-       proc{$ _/*Id*/#E}
-          if E.c==Color then
-             E.t=unit
-          end
-       end}
-   end
-   proc{SetAttractorColor C}
-      CurrentAttractorColor:=C
-      {Dictionary.removeAll GraphAttractors}
-      {ForAll {Dictionary.entries GraphEdges}
-       proc{$ From#D}
-          {ForAll {Dictionary.entries D}
-           proc{$ To#DD}
-              {ForAll {Dictionary.items DD}
-               proc{$ E}
-                  if E.c==C then
-                     D1={Dictionary.condGet GraphAttractors From unit}
-                     D2=if D1==unit then
-                           {Dictionary.put GraphAttractors From D2}
-                           {Dictionary.new}
-                        else D1 end
-                     Old={Dictionary.condGet D2 To 0}
-                  in
-                     {Dictionary.put D2 To Old+1}
-                  end
-               end}
-           end}
-       end}
-     
-      {UpdateAttractors}
-   end
-   proc{RemoveAllOutEdges From}
-      D1={Dictionary.condGet GraphEdges From unit}
-      D2=if D1==unit then
-            {Dictionary.put GraphEdges From D2}
-            {Dictionary.new}
-         else D1 end
-   in
-      {ForAll {Dictionary.entries D2}
-       proc{$ _#D}
-          {ForAll {Dictionary.items D}
-           proc{$ E} E.t=unit end}
-       end}
-      {Dictionary.remove GraphAttractors From}
-      {UpdateAttractors}
-   end
-   proc{UpdateAttractors}
-      Nodes={Dictionary.keys GraphNodes}
-      A={List.toRecord g {List.map Nodes fun{$ K} K#{Dictionary.new} end}}
-   in
-%   Repulsors:=c
-      {ForAll {Dictionary.entries GraphAttractors}
-       proc{$ From#ToDict}
-          {ForAll {Dictionary.keys ToDict}
-           proc{$ To}
-              if To\=From then
-                 A.From.To:=unit
-                 A.To.From:=unit
-%         if {CondSelect @Repulsors To false}==false then
-%            Repulsors:={Record.adjoinAt @Repulsors To true}
-%         end
-              end
-           end}
-       end}
-%   {Show updAttr#{List.toRecord c {List.map {Dictionary.entries GraphAttractors} fun{$ Id#D} Id#{Dictionary.entries D} end}}}
-      Attractors:={Record.map A Dictionary.keys}
-   end
-   proc{AddAttractor From To}
-      {AddNode From}
-      {AddNode To}
-      D1={Dictionary.condGet GraphAttractors From unit}
-      D2=if D1==unit then
-            {Dictionary.put GraphAttractors From D2}
-            {Dictionary.new}
-         else D1 end
-      Old={Dictionary.condGet D2 To 0}
-   in
-      {Dictionary.put D2 To Old+1}
-      if Old==0 then
-         {UpdateAttractors}
-      end
-   end
-   proc{RemoveAttractor From To}
-      D1={Dictionary.condGet GraphAttractors From unit}
-      D2=if D1==unit then
-            {Dictionary.put GraphAttractors From D2}
-            {Dictionary.new}
-         else D1 end
-      Old={Dictionary.condGet D2 To ~1}
-   in
-      if Old>1 then
-         {Dictionary.put D2 To Old-1}
-      elseif Old>0 then
-         {Dictionary.remove D2 To}
-         {UpdateAttractors}
+         {LogCanvas tk(create
+                       line
+                       ColWidth*Col-(ColWidth div 2)
+                       LineWidth
+                       ColWidth*Col-(ColWidth div 2)
+                       100000)}
       end
    end
    proc{StoreIdx K1 K2 K3 V}
@@ -718,11 +276,13 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
       {CO SetIndex(I)}
       case N of Nx|Ns then
          case Nx
-         of 'in'(Message_id Receiver_id Receiver_thread_id Sender_id Message ...) then
+         of 'in'(n:Message_id dest:Receiver_id src:Sender_id msg:Message ...) then
             {AddNode Sender_id}
             {AddNode Receiver_id}
             Color={CondSelect Nx color gray}
+            Receiver_thread_id=777
          in
+            {Browse 'i got an in message'}
             if {CondSelect @Conf Color true} then
                OrgLine={GetIdx Sender_id Receiver_id Message_id}
                DestLine={IncLineIdx}
@@ -732,39 +292,54 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
                DestCol=Node.3
                %% draw an arrow between (orgline,orgcol) and (destline,destcol)
                Tags={GetTags Sender_id Receiver_id}
-               AId={LogCanvas tkReturnInt(create(line OrgCol*ColWidth-(ColWidth div 2) (OrgLine+2)*LineWidth
-                                                 DestCol*ColWidth-(ColWidth div 2) (DestLine+2)*LineWidth
-                                                 fill:{CondSelect Nx color gray}
-                                                 arrow:last
-                                                 tags:Tags.2
-                                                 arrowshape:q(10 10 5)) $)}
+               AId={LogCanvas
+                    tkReturnInt(create(line
+                                       OrgCol*ColWidth-(ColWidth div 2)
+                                       (OrgLine+2)*LineWidth
+                                       DestCol*ColWidth-(ColWidth div 2)
+                                       (DestLine+2)*LineWidth
+                                       fill:{CondSelect Nx color gray}
+                                       arrow:last
+                                       tags:Tags.2
+                                       arrowshape:q(10 10 5)) $)}
                if {IsFree FirstArrowId} then
                   {Wait AId} FirstArrowId=AId
                end
-               TId={LogCanvas tkReturnInt(create(text
-                                                 (OrgCol*ColWidth-(ColWidth div 2)+DestCol*ColWidth-(ColWidth div 2)) div 2
-                                                 (((OrgLine+2)*LineWidth+(DestLine+2)*LineWidth) div 2)-(LineWidth div 3)
-                                                 fill:{CondSelect Nx color gray}
-                                                 tags:Tags.1
-                                                 text:{Value.toVirtualString Message 10000 10000}) $)}
+               TId={LogCanvas
+                    tkReturnInt(create(text
+                                       (OrgCol*ColWidth-(ColWidth div 2)+DestCol*ColWidth-(ColWidth div 2)) div 2
+                                       (((OrgLine+2)*LineWidth+(DestLine+2)*LineWidth) div 2)-(LineWidth div 3)
+                                       fill:{CondSelect Nx color gray}
+                                       tags:Tags.1
+                                       text:{Value.toVirtualString Message 10000 10000}) $)}
                [X1 Y1 X2 Y2]={LogCanvas tkReturnListInt(bbox(TId) $)}
-               BId={LogCanvas tkReturnInt(create(rect X1-2 Y1-2 X2+2 Y2+2 fill:white outline:white tags:Tags.3) $)}
+               BId={LogCanvas
+                    tkReturnInt(create(rect
+                                       X1-2
+                                       Y1-2
+                                       X2+2
+                                       Y2+2
+                                       fill:white
+                                       outline:white
+                                       tags:Tags.3) $)}
             in
                {LogCanvas tk(lower AId)}
                {LogCanvas tk('raise' BId FirstArrowId)}
                {LogCanvas tk('raise' TId)}
             end
-         [] out(Message_id Sender_id Sender_thread_id Receiver_id ...) then
+         [] out(n:Message_id src:Sender_id dest:Receiver_id ...) then
+            {Browse 'OUT'}
             {AddNode Sender_id}
             {AddNode Receiver_id}
             Color={CondSelect Nx color gray}
+            Sender_thread_id = 666
          in
             if {CondSelect @Conf Color true} then
-               %% outgoing message
-               %% this message should not be drawed yet, instead we remember where we are
-               %% so that can draw it when it is received
-               %% where we are is either the next available line,
-               %% or the continuation of where this node already is (same thread_id)
+               %% outgoing message this message should not be drawed
+               %% yet, instead we remember where we are so that can
+               %% draw it when it is received where we are is either
+               %% the next available line, or the continuation of
+               %% where this node already is (same thread_id)
                Line
                Node={Dictionary.get NodeDict Sender_id}
             in
@@ -787,20 +362,12 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
             Line={IncLineIdx}
             Tags={GetTags ~1 ~1}
             TId={LogCanvas tkReturnInt(create(text
-                                              (ColWidth div 2) (Line+2)*LineWidth
+                                              (ColWidth div 2)
+                                              (Line+2)*LineWidth
                                               anchor:w
                                               fill:Color
                                               tags:Tags.1
                                               text:I#": "#{Value.toVirtualString Message 10000 10000}) $)}
-            /*
-            LId={LogCanvas tkReturnInt(create(line
-                                              0 (Line+2)*LineWidth
-                                              10000 (Line+2)*LineWidth
-                                              tags:Tags.2
-                                              fill:Color) $)}
-            [X1 Y1 X2 Y2]={LogCanvas tkReturnListInt(bbox(TId) $)}
-            BId={LogCanvas tkReturnInt(create(rect X1-2 Y1-2 X2+2 Y2+2 fill:white tags:Tags.3 outline:white) $)}
-            */
          in
             {LogCanvas tk('raise' TId)}   
          [] event(Site_id Message ...) then
@@ -812,31 +379,19 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
                Node={Dictionary.get NodeDict Site_id}
                Line={IncLineIdx}
                Col=Node.3
-               {Dictionary.put NodeDict Site_id {CondSelect Nx thid unit}#Line#Col}
+               {Dictionary.put
+                NodeDict
+                Site_id
+                {CondSelect Nx thid unit}#Line#Col}
                TId={LogCanvas tkReturnInt(create(text
                                                  Col*ColWidth-(ColWidth div 2)
                                                  (Line+2)*LineWidth
                                                  fill:{CondSelect Nx color red}
                                                  tags:Tags.1
-                                                 text:{Value.toVirtualString Message 10000 10000}) $)}
-%                  [X1 Y1 X2 Y2]={LogCanvas tkReturnListInt(bbox(TId) $)}
-%                  BId={LogCanvas tkReturnInt(create(rect X1-2 Y1-2 X2+2 Y2+2 fill:white tags:Tags.3 outline:white) $)}
-%       ECmd={VirtualString.toAtom e#TId}
-%       LCmd={VirtualString.toAtom l#TId}
-%       {Tk.defineUserCmd ECmd
-%        proc{$}
-%           {LogCanvas tk('raise' TId)}
-%           {LogCanvas tk(lower BId TId)}
-%           {LogCanvas tk(itemconfigure BId outline:black fill:white)}
-%        end nil _}
-%       {Tk.defineUserCmd LCmd
-%        proc{$}
-%           {LogCanvas tk(itemconfigure BId fill:white outline:white)}
-%        end nil _}
+                                                 text:{Value.toVirtualString
+                                                       Message 10000 10000}) $)}
             in
                {LogCanvas tk('raise' TId)}     
-%       {LogCanvas tk(bind TId '<Enter>' ECmd)}
-%       {LogCanvas tk(bind TId '<Leave>' LCmd)}
             end
          else
             {System.show ignored#Nx}
@@ -846,7 +401,8 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
       else 
          Line={IncLineIdx}
       in
-         {LogCanvas tk(create line 0 (Line+2)*LineWidth 100000 (Line+2)*LineWidth)}
+         {LogCanvas tk(create line 0 (Line+2)*LineWidth
+                       100000 (Line+2)*LineWidth)}
          {CO stop}
       end
    end
@@ -945,42 +501,6 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
       meth onClose(P)
          OnClose:=P
       end
-      meth addEdge(F T C)
-         {AddEdge F T C}
-      end
-      meth removeEdge(F T C)
-         {RemoveEdge F T C}
-      end
-      meth removeAllOutEdges(F)
-         {RemoveAllOutEdges F}
-      end
-      meth addAttractor(F T)
-         lock
-            {AddAttractor F T}
-         end
-      end
-      meth removeAttractor(F T)
-         lock
-            {RemoveAttractor F T}
-         end
-      end
-      meth setAttractorColor(C)
-         lock
-            {SetAttractorColor C}
-         end
-      end
-      meth getNodeInfo(F $)
-         R={Dictionary.condGet GraphNodes F unit}
-      in
-         if R\=unit then
-            node(id:F
-                 canvas:GraphCanvas
-                 box:R.box
-                 text:R.text
-                 tag:R.t
-                 c:R.c)
-         else R end
-      end
       meth play(speed:Speed<=100)
          N
       in
@@ -1032,3 +552,256 @@ in
 end
 
 
+declare
+[TextFile] = {Module.link ['../utils/TextFile.ozf']}
+FN
+fun{ReadLog FileName}
+   Out
+   S={NewCell Out}
+   DummyPort={NewPort _}
+   DummyChunk={Chunk.new c}
+   DummyName={NewName}
+   
+   fun{Replace Str}
+      case Str
+      of &<|&P|&o|&r|&t|&>|Ls then
+         &D|&u|&m|&m|&y|&P|&o|&r|&t|{Replace Ls}
+      [] &<|&C|&h|&u|&n|&k|&>|Ls then
+         &D|&u|&m|&m|&y|&C|&h|&u|&n|&k|{Replace Ls}
+      [] &<|&N|&>|Ls then
+         &D|&u|&m|&m|&y|&N|&a|&m|&e|{Replace Ls}      
+      [] Lx|Ls then
+         Lx|{Replace Ls}
+      else nil end
+   end
+   thread
+      try
+         {TextFile.new init(name:FileName)}=FN
+         proc{Loop}
+            {Browse 'into the loop'}
+            if {FN atEnd($)} then
+               raise atEnd end
+            end
+            Str1={FN getS($)}
+            Str={Replace Str1}
+         in
+            try
+               M={Compiler.evalExpression Str env('DummyPort':DummyPort 'DummyChunk':DummyChunk 'DummyName':DummyName) _ $}
+               O N
+               in
+               {Exchange S O N}
+               {Browse ['got' M]}
+               O=M|N
+            catch _ then 
+               {System.showInfo "Ignored line "#Str1}
+            end
+            {Loop}
+         end
+      in
+         {Loop}
+      catch _ then
+         try {Access S}=nil catch _ then skip end
+         thread try {FN close} catch _ then skip end end
+      end
+   end
+in
+   Out
+end
+
+declare
+O={InteractiveLogViewer {ReadLog 'test0.log'}}
+proc{Do P Proc}
+   {ForAll P|{List.subtract @MarkedNodes P} Proc}
+end
+proc{Mark P}
+   OM NM
+in
+   OM=MarkedNodes:=NM
+   if {Not {List.member P OM}} then
+      Info={O getNodeInfo({P getId($)} $)}
+   in
+      {Info.canvas tk(itemconfigure Info.box width:3)}
+      NM=P|OM
+   else
+      NM=OM
+   end
+end
+
+proc{UnMark P}
+   OM NM
+in
+   OM=MarkedNodes:=NM
+   if {List.member P OM} then
+      Info={O getNodeInfo({P getId($)} $)}
+   in
+      {Info.canvas tk(itemconfigure Info.box width:1)}
+      NM={List.subtract OM P}
+   else
+      NM=OM
+   end
+end
+
+MarkedNodes={NewCell nil}
+Logger = proc{$ _} skip end
+{O display(green:false
+           red:true
+           blue:false
+           black:true
+           gray:false
+           network:true
+           darkblue:false)}
+%{O setAttractorColor(green)}
+{O onParse(proc{$ E}
+              {Browse [going to test E]}
+              case E
+              of event(_ event(connect#node(_ id:_)) color:blue ...) then
+                 skip
+                       %{O addEdge(F T black)}
+              [] event(F event(disconnect#node(_ id:T)) color:blue ...) then
+                 {O removeEdge(F T black)}
+              [] event(F event(permFail#node(_ id:T)) color:blue ...) then
+                 for Colour in [black green red lightblue] do
+                    {O removeEdge(F T Colour)}
+                 end
+                       %{O removeEdge(F M red)}
+                       %{O addEdge(F N red)}
+              [] comment(permFail(Dead) color:red ...) then
+                 Info={O getNodeInfo(Dead $)}
+              in
+                 {O removeAllOutEdges(Dead)}
+                 {Info.canvas tk(itemconfigure Info.box fill:red)}
+              [] event(F succChanged(N M) color:darkblue ...) then
+                 {O removeEdge(F M green)}
+%         {O removeAttractor(F M)}
+                 {O addEdge(F N green)}
+%         {O addAttractor(F N)}
+              [] event(F succDisco(N) color:darkblue ...) then
+                 {O removeEdge(F N green)}
+                 {O removeAttractor(F N)}
+              [] event(F rangeChanged(N M) color:darkblue ...) then
+                 {O removeEdge(F M red)}
+                 {O addEdge(F N red)}
+%      [] event(F succListChanged(N M) color:darkblue ...) then
+%         {ForAll M proc{$ E} if {Not {List.member E N}} then {O removeEdge(F E yellow)} end end}
+%         {ForAll N proc{$ E} if {Not {List.member E M}} then {O addEdge(F E yellow)} end end}
+              [] event(_/*F*/ predSetChanged(_ _) color:darkblue ...) then
+                 skip
+                       %{ForAll M proc{$ E} if {Not {List.member E N}} then {O removeEdge(F E lightblue)} end end}
+                       %{ForAll N proc{$ E} if {Not {List.member E M}} then {O addEdge(F E lightblue)} end end}
+              [] event(_ join(_ F) color:darkblue ...) then
+                 {O removeAllOutEdges(F)} %% F has left, all its connections must go away
+                 Info={O getNodeInfo(F $)}
+                 SomePeers
+              in
+                 SomePeers = nil
+                 
+                 {ForAll SomePeers proc{$ P}
+                                      if {P getId($)}==F then
+                                         {UnMark P}
+                                      end
+                                   end}
+                 {Info.canvas tk(itemconfigure Info.box fill:gray)}
+              [] event(F onRing(true) color:darkblue ...) then
+                 Info={O getNodeInfo(F $)}
+              in
+                 {Info.canvas tk(itemconfigure Info.box fill:yellow)}
+              [] event(F onRing(false) color:darkblue ...) then
+                 Info={O getNodeInfo(F $)}
+              in
+                 {Info.canvas tk(itemconfigure Info.box fill:white)}
+              [] event(F leader ...) then
+                 Info={O getNodeInfo(F $)}
+              in
+                 {Info.canvas tk(itemconfigure Info.box fill:green)}
+              [] event(F rtm ...) then
+                 Info={O getNodeInfo(F $)}
+              in
+                 {Info.canvas tk(itemconfigure Info.box fill:cyan)}
+              [] event(F participant color:darkblue ...) then
+                 Info={O getNodeInfo(F $)}
+              in
+                 {Info.canvas tk(itemconfigure Info.box fill:lightblue)}
+              [] event(F 'lock'(true) color:darkblue ...) then
+                 Info={O getNodeInfo(F $)}
+              in
+                 {Info.canvas tk(itemconfigure Info.box fill:darkblue)}
+              [] event(F 'lock'(false) color:darkblue ...) then
+                 Info={O getNodeInfo(F $)}
+              in
+                 {Info.canvas tk(itemconfigure Info.box fill:yellow)}
+              else
+                 skip
+              end       
+           end)}
+{O onClick(proc{$ E}
+              proc{RunMenu L}
+                 Menu={New Tk.menu tkInit(parent:E.canvas)}
+                 {ForAll L
+                  proc{$ E}
+                     case E of nil then
+                        {New Tk.menuentry.separator tkInit(parent:Menu) _}
+                     [] T#P then
+                        {New Tk.menuentry.command tkInit(parent:Menu
+                                                         label:T
+                                                         action:P) _}
+                     end
+                  end}
+              in
+                 {Menu tk(post {Tk.returnInt winfo(rootx E.canvas)}+E.x
+                          {Tk.returnInt winfo(rooty E.canvas)}+E.y)}
+              end
+           in
+              case E of node(N ...) then
+                 SomePeers
+              in
+                 SomePeers = nil
+                 {ForAll SomePeers
+                  proc{$ P}
+                     if {P getId($)}==N then
+                        {RunMenu ["Info..."#proc{$} {Browse {P dump($)}} end
+                                  nil
+                                  "Mark"#proc{$} {Mark P} end
+                                  "UnMark"#proc{$} {UnMark P} end
+                                  nil
+                                  "Leave"#proc{$} {Do P proc{$ P}
+                                                           {P leave}
+                                                           {Logger comment(leave({P getId($)}) color:red)}
+                                                        end} end
+                                  nil
+                                  "tempFail"#proc{$} {Do P proc{$ P} {P injectTempFail} end} end
+                                  "normal"#proc{$} {Do P proc{$ P} {P injectNormal} end} end
+                                  "permFail"#proc{$}
+                                                {Do P proc{$ P}
+                                                         {O removeAllOutEdges({P getId($)})}
+                                                         Info={O getNodeInfo({P getId($)} $)}
+                                                      in
+                                                         {Info.canvas tk(itemconfigure Info.box fill:red)}
+                                                         thread {P injectPermFail} end
+                                                         {Logger comment(permFail({P getId($)}) color:red)}
+                                                         {UnMark P}
+                                                      end}
+                                             end]}
+                     end
+                  end}
+              [] edge(_/*From*/ _/*To*/ ...) then
+                 {RunMenu ["tempFail"#proc{$} skip end
+                           "normal"#proc{$} skip end]}
+              else skip end
+           end)}
+      
+%      case E of node(N ...) then
+%         {ForAll Peers
+%          proc{$ P}
+%        if {P getId($)}==N then
+%           {P leave}
+%        end
+%          end}
+%      else skip end
+
+%{O onClose(proc{$ C}
+%              {CloseLogFile}
+%              {FN close}
+%              {C tkClose}
+%              {Application.exit 0}
+%           end)}
+                
