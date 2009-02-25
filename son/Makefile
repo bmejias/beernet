@@ -1,6 +1,6 @@
 MAKE=make
 
-SUBDIRS=corecomp logger network son timer utils
+SUBDIRS=relaxed-ring
 
 all: sublibs
 
@@ -17,4 +17,4 @@ clean: cleanlibs
 subclean_%:
 	$(MAKE) -C $(subst subclean_,,$@) clean
 
-.PHONY: all
+.PHONY: all clean
