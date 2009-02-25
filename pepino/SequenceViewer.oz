@@ -591,7 +591,7 @@ in
 end
 
 declare
-O={InteractiveLogViewer {ReadLog 'test0.log'}}
+O={InteractiveLogViewer {ReadLog 'test1.log'}}
 Logger = proc{$ _} skip end
 {O display(network:true)}
 {O onParse(proc{$ E}
