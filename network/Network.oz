@@ -60,7 +60,7 @@ define
       MsgCounter  % Identifier for every node
       Self        % Full Component
       SelfId      % Id that can be assinged by a external component
-      SelfPort    % Refernce to the port of the low level communication layer
+      SelfPort    % Reference to the port of the low level communication layer
       
       %% --- Utils ---
 
@@ -76,7 +76,7 @@ define
       proc {Deliver Event}
          pp2pDeliver(_ '#'(SrcId MsgId Msg)) = Event
       in
-         {@Logger 'in'(src:SrcId n:MsgId dest:@SelfId msg:Msg tag:network)}
+         {@Logger 'in'(src:SrcId n:MsgId dest:@SelfId msg:Msg)}
          {@Listener Msg}
       end
 
@@ -87,11 +87,17 @@ define
       end
 
       proc {SendTo Event}
-         sendTo(Dest Msg) = Event
+         sendTo(Dest Msg ...) = Event
          MsgId
+         LogTag
       in
          MsgId = {NewMsgId}
-         {@Logger out(src:@SelfId n:MsgId dest:Dest.id msg:Msg tag:network)}
+         if {HasFeature Event log} then
+            LogTag = Event.log
+         else
+            LogTag = network
+         end
+         {@Logger out(src:@SelfId n:MsgId dest:Dest.id msg:Msg tag:LogTag)}
          {@ComLayer pp2pSend(Dest.port '#'(@SelfId MsgId Msg))}
       end
 
@@ -122,15 +128,15 @@ define
                   setId:         SetId
                   setLogger:     SetLogger
                   )
-      in
-         ComLayer    = {NewCell {Pp2p.make}}
-         MsgCounter  = {NewCell 0}
-         Logger      = {NewCell Component.dummy}
-         Self        = {Component.makeFull Events}
-         SelfPort    = {@ComLayer getPort($)}
-         SelfId      = {NewCell none}
-         Listener    = Self.listener
-         {@ComLayer setListener(Self.trigger)}
-         Self.trigger
-      end
+   in
+      ComLayer    = {NewCell {Pp2p.make}}
+      MsgCounter  = {NewCell 0}
+      Logger      = {NewCell Component.dummy}
+      Self        = {Component.makeFull Events}
+      SelfPort    = {@ComLayer getPort($)}
+      SelfId      = {NewCell none}
+      Listener    = Self.listener
+      {@ComLayer setListener(Self.trigger)}
+      Self.trigger
+   end
 end
