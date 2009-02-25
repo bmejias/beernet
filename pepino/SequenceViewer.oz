@@ -313,7 +313,6 @@ fun{InteractiveLogViewer Log}  %% Log is a stream or a list
                {LogCanvas tk('raise' TId)}
             end
          [] out(n:Message_id src:Sender_id dest:Receiver_id ...) then
-            {Browse 'OUT'}
             {AddNode Sender_id}
             {AddNode Receiver_id}
             Color={CondSelect Nx color gray}
@@ -563,11 +562,9 @@ fun{ReadLog FileName}
       try
          {TextFile.new init(name:FileName)}=FN
          proc{Loop}
-            {Browse 'into the loop'#FN}
             if {FN atEnd($)} then
                raise atEnd end
             end
-            {Browse 'into the loop dos'}
             Str1={FN getS($)}
             Str={Replace Str1}
          in
@@ -576,7 +573,6 @@ fun{ReadLog FileName}
                O N
                in
                {Exchange S O N}
-               {Browse ['got' M]}
                O=M|N
             catch _ then 
                {System.showInfo "Ignored line "#Str1}
@@ -596,47 +592,8 @@ end
 
 declare
 O={InteractiveLogViewer {ReadLog 'test0.log'}}
-proc{Do P Proc}
-   {ForAll P|{List.subtract @MarkedNodes P} Proc}
-end
-proc{Mark P}
-   OM NM
-in
-   OM=MarkedNodes:=NM
-   if {Not {List.member P OM}} then
-      Info={O getNodeInfo({P getId($)} $)}
-   in
-      {Info.canvas tk(itemconfigure Info.box width:3)}
-      NM=P|OM
-   else
-      NM=OM
-   end
-end
-
-proc{UnMark P}
-   OM NM
-in
-   OM=MarkedNodes:=NM
-   if {List.member P OM} then
-      Info={O getNodeInfo({P getId($)} $)}
-   in
-      {Info.canvas tk(itemconfigure Info.box width:1)}
-      NM={List.subtract OM P}
-   else
-      NM=OM
-   end
-end
-
-MarkedNodes={NewCell nil}
 Logger = proc{$ _} skip end
-{O display(green:false
-           red:true
-           blue:false
-           black:true
-           gray:false
-           network:true
-           darkblue:false)}
-%{O setAttractorColor(green)}
+{O display(network:true)}
 {O onParse(proc{$ E}
               {Browse [going to test E]}
               case E
@@ -674,19 +631,6 @@ Logger = proc{$ _} skip end
                  skip
                        %{ForAll M proc{$ E} if {Not {List.member E N}} then {O removeEdge(F E lightblue)} end end}
                        %{ForAll N proc{$ E} if {Not {List.member E M}} then {O addEdge(F E lightblue)} end end}
-              [] event(_ join(_ F) color:darkblue ...) then
-                 {O removeAllOutEdges(F)} %% F has left, all its connections must go away
-                 Info={O getNodeInfo(F $)}
-                 SomePeers
-              in
-                 SomePeers = nil
-                 
-                 {ForAll SomePeers proc{$ P}
-                                      if {P getId($)}==F then
-                                         {UnMark P}
-                                      end
-                                   end}
-                 {Info.canvas tk(itemconfigure Info.box fill:gray)}
               [] event(F onRing(true) color:darkblue ...) then
                  Info={O getNodeInfo(F $)}
               in
@@ -746,27 +690,8 @@ Logger = proc{$ _} skip end
                      if {P getId($)}==N then
                         {RunMenu ["Info..."#proc{$} {Browse {P dump($)}} end
                                   nil
-                                  "Mark"#proc{$} {Mark P} end
-                                  "UnMark"#proc{$} {UnMark P} end
                                   nil
-                                  "Leave"#proc{$} {Do P proc{$ P}
-                                                           {P leave}
-                                                           {Logger comment(leave({P getId($)}) color:red)}
-                                                        end} end
-                                  nil
-                                  "tempFail"#proc{$} {Do P proc{$ P} {P injectTempFail} end} end
-                                  "normal"#proc{$} {Do P proc{$ P} {P injectNormal} end} end
-                                  "permFail"#proc{$}
-                                                {Do P proc{$ P}
-                                                         {O removeAllOutEdges({P getId($)})}
-                                                         Info={O getNodeInfo({P getId($)} $)}
-                                                      in
-                                                         {Info.canvas tk(itemconfigure Info.box fill:red)}
-                                                         thread {P injectPermFail} end
-                                                         {Logger comment(permFail({P getId($)}) color:red)}
-                                                         {UnMark P}
-                                                      end}
-                                             end]}
+                                  nil]}
                      end
                   end}
               [] edge(_/*From*/ _/*To*/ ...) then
