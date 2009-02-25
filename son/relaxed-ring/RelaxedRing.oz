@@ -64,6 +64,17 @@ define
          {@ComLayer sendTo(Target Msg log:rlxring)}
       end
 
+      %TODO: This should come from Range utils
+      fun {BelongsTo Id From To}
+         false
+      end
+
+      %TODO: Decide whether I need a coroner or not
+      proc {Coroner _} skip end
+
+      %TODO: Forward following the routing strategy
+      proc {Forward _ _ } skip end
+
       %%--- Events ---
 
       proc {Join Event}
@@ -79,23 +90,23 @@ define
                {Zend Src joinOk(pred:OldPred succ:@SelfRef succList:@SuccList)}
                Pred := Src
                %% set a failure detector on the predecessor 
-               {Self.var.coroner register(watcher:@(Self.ref) target:Sender)} 
+               {Coroner register(watcher:@SelfRef target:Src)} 
                %{Blabla @(Self.id)#" accepts new pred "#Sender.id}
                for OldP in @PredList do
-                  {Zend OldP hint(Sender) Self}
+                  {Zend OldP hint(Src)}
                end
-               (Self.predList) := OldPred|@(Self.predList)
+               PredList := OldPred|@PredList
             elseif Last then
-               {Zend @(Self.pred) Msg Self}
-               {Blabla @(Self.id)#" forwards join of "#Sender.id#" to pred "
-                        #@(Self.pred).id}
-            elseif {BelongsTo Sender.id @(Self.id) @(Self.succ).id} then
-               {Zend @(Self.succ) join(sender:Sender last:true) Self}
-               {Blabla @(Self.id)#" forwards join of "#Sender.id#" to "
-                        #@(Self.succ).id}
+               {Zend @Pred Event}
+               %{Blabla @(Self.id)#" forwards join of "#Sender.id#" to pred "
+               %         #@(Self.pred).id}
+            elseif {BelongsTo Src.id @SelfRef.id @Succ.id} then
+               {Zend @Succ join(src:Src last:true)}
+               %{Blabla @SelfRef.id#" forwards join of "#Sender.id#" to "
+               %         #@(Self.succ).id}
             else
-               {Forward Msg Sender.id Self}
-               {Blabla @(Self.id)#" forwards join of "#Sender.id}
+               {Forward Event Src.id}
+               %{Blabla @SelfRef.id#" forwards join of "#Src.id}
             end
          end
       end
