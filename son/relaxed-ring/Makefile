@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=RelaxedRing
+SRCS=KeyRanges RelaxedRing
 
 all: $(foreach source, $(SRCS), src_$(source))
 
