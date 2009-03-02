@@ -58,6 +58,34 @@ define
       pbeer(id:666 port:{Port.new _})
    end
 
+   %% Like Take
+   fun {Keep N L}
+      case L
+      of H|T then
+         if N > 0 then
+            H|{Keep N - 1 T}
+         else
+            nil
+         end
+      [] nil then
+         nil
+      end
+   end
+
+   %% Remove a Peer from a List
+   fun {Remove Peer L}
+      case L
+      of H|T then
+         if H.id == Peer.id then
+            T
+         else
+            H|{Remove Peer T}
+         end
+      [] nil then
+      nil
+      end
+   end
+
    fun {Make}
       Pred        % Reference to the predecessor
       PredList    % To remember peers that haven't acked joins of new preds
@@ -132,7 +160,9 @@ define
       end
 
       proc {JoinAck Event}
-         skip
+         joinAck(OldPred) = Event
+      in
+         PredList := {Remove OldPred @PredList}
       end
 
       proc {JoinLater Event}
@@ -184,14 +214,28 @@ define
          {Zend NewSucc join(src:@SelfRef)}
       end
 
+      proc {UpdSuccList Event}
+         updSuccList(src:Src succList:NewSuccList counter:Counter) = Event
+      in
+         if @Succ.id == Src.id then
+            SuccList := Src|{Keep SUCC_LIST_SIZE - 1 @SuccList}
+            if Counter > 0 then
+               {Zend @Pred updSuccList(src:@SelfRef
+                                       succList:@SuccList
+                                       counter:Counter - 1)}
+            end
+         end
+      end
+
       Events = events(
-                  hint:       Hint
-                  join:       Join
-                  joinAck:    JoinAck
-                  joinLater:  JoinLater
-                  joinOk:     JoinOk
-                  newSucc:    NewSucc
-                  startJoin:  StartJoin
+                  hint:          Hint
+                  join:          Join
+                  joinAck:       JoinAck
+                  joinLater:     JoinLater
+                  joinOk:        JoinOk
+                  newSucc:       NewSucc
+                  startJoin:     StartJoin
+                  updSuccList:   UpdSuccList
                   )
    in
       %% Creating the component and collaborators
