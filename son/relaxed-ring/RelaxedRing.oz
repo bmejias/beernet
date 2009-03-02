@@ -100,6 +100,7 @@ define
             %{Blabla "sending try to join later"}
             {Zend Src joinLater}
          else
+            %TODO: I should use Better predecessor here
             if {BelongsTo Src.id @Pred.id @SelfRef.id} then
                OldPred = @Pred
             in
@@ -112,6 +113,7 @@ define
                   {Zend OldP hint(succ:Src)}
                end
                PredList := OldPred|@PredList
+            %% 'join' not for me. Forward it.
             elseif {HasFeature Event last} andthen Event.last then
                %TODO: check also a possible forward to PredList
                {Zend @Pred Event}
@@ -141,32 +143,24 @@ define
          SuccList := NuSucc|NuSuccList %TODO: get a good size for this
          %% set a failure detector on the successor
          {Watcher register(watcher:@(Self.ref) target:Succ)} 
-         if @(Self.pred) == nil orelse
-            {BelongsTo Pred.id @(Self.pred).id @(Self.id)} then
-            if {GetConnection Self} then
-               {Zend Pred newSucc(newSucc:@(Self.ref)
-                                 oldSucc:@(Self.succ)
-                                 succList:@(Self.succList)) Self}
-               (Self.pred) := Pred
-               %% set a failure detector on the predecessor
-               {Self.var.coroner register(watcher:@(Self.ref) target:Pred)} 
-            else
-               Blacklist = {Dictionary.condGet Self.var blacklist nil}
-            in
-               Self.var.blackList := Pred.id|Blacklist
-               {Blabla @(Self.id)#" didn't get connection to "#Pred.id}
-               (Self.pred) := Pred
-            end
+         if @Pred == nil orelse {BelongsTo NuPred.id @Pred.id @SelfRef.id} then
+            {Zend NuPred newSucc(newSucc:@SelfRef
+                                 oldSucc:@Succ
+                                 succList:@SuccList)}
+            Pred := NuPred
+            %% set a failure detector on the predecessor
+            {Watcher register(watcher:@SelfRef target:NuPred)} 
          end
-         {Blabla @(Self.id)#" joined as pred of "#@(Self.succ).id}
-         {FindAndConnectToFingers Self}
-         unit = {Dictionary.condGet Self.var joinAck unit}
+         %{Blabla @SelfRef.id#" joined as pred of "#@Succ.id}
+         %TODO: This should be triggered only the first I'm connected
+         %not on failure recovery
+         %{FindAndConnectToFingers}
       end
 
       proc {StartJoin Event}
          startJoin(NuSucc) = Event
       in
-         {Zend NuSucc startJoin(src:@SelfRef)}
+         {Zend NuSucc join(src:@SelfRef)}
       end
 
       Events = events(
@@ -174,6 +168,7 @@ define
                   join:       Join
                   joinLater:  JoinLater
                   joinOk:     JoinOk
+                  newSucc:    NewSucc
                   startJoin:  StartJoin
                   )
    in
