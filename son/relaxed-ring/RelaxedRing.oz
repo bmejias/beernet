@@ -48,8 +48,9 @@ export
    Make
 
 define
-   JOIN_WAIT   = 5000 % Milliseconds to wait to retry a join 
-   BelongsTo   = KeyRanges.belongsTo
+   JOIN_WAIT      = 5000 % Milliseconds to wait to retry a join 
+   SUCC_LIST_SIZE = 7
+   BelongsTo      = KeyRanges.belongsTo
 
    %TODO: define if this is global or local to the peer
    %TODO: implement it correctly
@@ -84,7 +85,7 @@ define
       %%--- Events ---
 
       proc {Hint Event}
-         hint(succ:NuSucc) = Event
+         hint(succ:NewSucc) = Event
       in
          %TODO. First I need to guarantee that this is a safe message
          skip
@@ -130,26 +131,30 @@ define
          end
       end
 
+      proc {JoinAck Event}
+         skip
+      end
+
       proc {JoinLater Event}
-         joinLater(NuSucc) = Event
+         joinLater(NewSucc) = Event
       in
-         {Timer JOIN_WAIT Self startJoin(succ:NuSucc)}
+         {Timer JOIN_WAIT Self startJoin(succ:NewSucc)}
       end
 
       proc {JoinOk Event}
-         joinOk(pred:NuPred succ:NuSucc succList:NuSuccList) = Event
+         joinOk(pred:NewPred succ:NewSucc succList:NewSuccList) = Event
       in
-         Succ := NuSucc
-         SuccList := NuSucc|NuSuccList %TODO: get a good size for this
+         Succ := NewSucc
+         SuccList := NewSucc|NewSuccList %TODO: get a good size for this
          %% set a failure detector on the successor
          {Watcher register(watcher:@(Self.ref) target:Succ)} 
-         if @Pred == nil orelse {BelongsTo NuPred.id @Pred.id @SelfRef.id} then
-            {Zend NuPred newSucc(newSucc:@SelfRef
+         if @Pred == nil orelse {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
+            {Zend NewPred newSucc(newSucc:@SelfRef
                                  oldSucc:@Succ
                                  succList:@SuccList)}
-            Pred := NuPred
+            Pred := NewPred
             %% set a failure detector on the predecessor
-            {Watcher register(watcher:@SelfRef target:NuPred)} 
+            {Watcher register(watcher:@SelfRef target:NewPred)} 
          end
          %{Blabla @SelfRef.id#" joined as pred of "#@Succ.id}
          %TODO: This should be triggered only the first I'm connected
@@ -157,15 +162,32 @@ define
          %{FindAndConnectToFingers}
       end
 
-      proc {StartJoin Event}
-         startJoin(NuSucc) = Event
+      proc {NewSucc Event}
+         newSucc(newSucc:NewSucc oldSucc:OldSucc succList:NewSuccList) = Event
       in
-         {Zend NuSucc join(src:@SelfRef)}
+         %{BlablaNonl NewSucc.id#" wannabe my new succ of "#@(Self.id)} 
+         if @Succ.id == OldSucc.id then
+            %{Blabla " and she is"}
+            SuccList := NewSucc|NewSuccList
+            {Zend OldSucc joinAck(@SelfRef)}
+            {Zend @Pred updSuccList(src:@SelfRef
+                                    succList:@SuccList
+                                    counter:SUCC_LIST_SIZE)}
+            Succ := NewSucc
+            {Watcher register(watcher:@SelfRef target:NewSucc)}
+         end
+      end
+
+      proc {StartJoin Event}
+         startJoin(NewSucc) = Event
+      in
+         {Zend NewSucc join(src:@SelfRef)}
       end
 
       Events = events(
                   hint:       Hint
                   join:       Join
+                  joinAck:    JoinAck
                   joinLater:  JoinLater
                   joinOk:     JoinOk
                   newSucc:    NewSucc
