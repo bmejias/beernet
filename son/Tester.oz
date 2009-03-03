@@ -19,7 +19,10 @@ define
 
    proc {LoopNetwork Pbeer}
       fun {Loop Current Pred First Counter OK Error}
-         if Current.id == First.id then
+         if Current == nil then
+            result(passed:false
+                   error:Error#" - Wrong Size "#Counter#" != "#SIZE)
+         elseif Current.id == First.id then
             {System.showInfo Current.id}
             if Counter == SIZE then
                if OK then
@@ -49,7 +52,7 @@ define
    in
       ComLayer = {Network.make}
       First = {Pbeer getRingRef($)}
-      {System.showInfo "Network "#First.name}
+      {System.showInfo "Network "#First.ring.name}
       {System.printInfo First.pbeer.id#"->"}
       Result = {Loop {Pbeer getSucc($)} 
                      First.pbeer 
@@ -58,9 +61,9 @@ define
                      true
                      nil}
       if Result.passed then
-         {System.showInfo "+++ PASSED +++"}
+         {System.showInfo "\n+++ PASSED +++"}
       else
-         {System.showInfo "+++ FAILED +++"}
+         {System.showInfo "\n+++ FAILED +++"}
          {System.showInfo "Error: "#Result.error}
       end
    end

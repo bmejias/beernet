@@ -49,14 +49,10 @@ export
 
 define
    JOIN_WAIT      = 5000 % Milliseconds to wait to retry a join 
+   MAX_KEY        = 100000
    SUCC_LIST_SIZE = 7
-   BelongsTo      = KeyRanges.belongsTo
 
-   %TODO: define if this is global or local to the peer
-   %TODO: implement it correctly
-   fun {GetPBeerRef}
-      pbeer(id:666 port:{Port.new _})
-   end
+   BelongsTo      = KeyRanges.belongsTo
 
    %% Like Take
    fun {Keep N L}
@@ -86,7 +82,8 @@ define
       end
    end
 
-   fun {Make}
+   fun {Make Args}
+      MaxKey      % Maximum value for a key
       Pred        % Reference to the predecessor
       PredList    % To remember peers that haven't acked joins of new preds
       Ring        % Ring Reference ring(name:<atom> id:<name>)
@@ -108,6 +105,11 @@ define
          if RoutingTable.succ \= nil then
             {Zend RoutingTable.succ Event}
          end
+      end
+
+      fun {GetNewPBeerRef}
+         pbeer(id:{KeyRanges.getRandomKey MaxKey}
+               port:{@ComLayer getPort($)})
       end
 
       proc {Route Event Target}
@@ -144,17 +146,29 @@ define
          skip %% TODO: trigger some error message
       end
 
+      proc {GetId Event}
+         getId(Res) = Event
+      in
+         Res = @SelfRef.id
+      end
+
       proc {GetPred Event}
          getSucc(Peer) = Event
       in
          Peer = @Pred
       end
 
+      proc {GetRange Event}
+         getRange(Res) = Event
+      in
+      	Res = (@Pred.id+1 mod MaxKey)#@SelfRef.id
+      end
+
       proc {GetRingRef Event}
          getRingRef(RingRef) = Event
       in
          {Wait @Ring}
-         RingRef = {Record.adjoinAt @Ring pbeer @SelfRef}
+         RingRef = ref(pbeer:@SelfRef ring:@Ring)
       end
 
       proc {GetSucc Event}
@@ -171,7 +185,6 @@ define
       end
 
       proc {Init Event}
-         %% TODO: Get id
          %% TODO: Get a ring reference
          RoutTable = rt(fingers: {NewCell nil}
                         pred:    Pred
@@ -288,7 +301,9 @@ define
 
       Events = events(
                   badRingRef:    BadRingRef
+                  getId:         GetId
                   getPred:       GetPred
+                  getRange:      GetRange
                   getRingRef:    GetRingRef
                   getSucc:       GetSucc
                   hint:          Hint
@@ -301,7 +316,8 @@ define
                   startJoin:     StartJoin
                   updSuccList:   UpdSuccList
                   )
-   in
+
+   in %% --- Make starts ---
       %% Creating the component and collaborators
       local
          FullComponent
@@ -311,14 +327,35 @@ define
          Listener = FullComponent.listener
       end
       Timer = {TimerMaker.make}
+      ComLayer = {NewCell {Network.make}}
+
+      if {HasFeature Args maxKey} then
+         MaxKey = Args.maxKey
+      else
+         MaxKey = MAX_KEY
+      end
 
       %% Peer State
-      SelfRef  = {GetPBeerRef}
+      if {HasFeature Args id} then
+         SelfRef = {NewCell pbeer(id:Args.id)}
+      else
+         SelfRef = {NewCell pbeer(id:{KeyRanges.getRandomKey MaxKey})}
+      end
+      SelfRef := {Record.adjoinAt @SelfRef port {@ComLayer getPort($)}}
+
       Pred     = {NewCell nil}    
       PredList = {NewCell nil}
       Succ     = {NewCell nil}
       SuccList = {NewCell nil} 
+      Ring     = {NewCell ring(name:lucifer id:{NewName})}
 
+      RoutTable = rt(fingers: {NewCell nil}
+                     pred:    Pred
+                     'self':  SelfRef
+                     succ:    Succ)
+      Forward = {NewCell BasicForward}
+
+      %% Return the component
       Self
    end
 end

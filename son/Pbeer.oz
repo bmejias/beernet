@@ -74,30 +74,10 @@ define
          skip
       end
       
-      proc {GetId Event}
-         getId(Res) = Event
-      in
-         skip
+      proc {ForwardToNode Event}
+         {@Node Event}
       end
-      
-      proc {GetRange Event}
-         getRange(Res) = Event
-      in
-         skip
-      end
-      
-      proc {GetRingRef Event}
-         getRingRef(Res) = Event
-      in
-         skip
-      end
-      
-      proc {GetSuccRef Event}
-         getRingRef(Res) = Event
-      in
-         skip
-      end
-      
+
       proc {InjectPermFail Event}
          injectPermFail = Event
       in
@@ -107,7 +87,7 @@ define
       proc {Join Event}
          join(RingRef) = Event
       in
-         skip
+         {@Node startJoin(succ:RingRef.pbeer ring:RingRef.ring)} 
       end
       
       proc {Leave Event}
@@ -130,10 +110,11 @@ define
       
       Events = events(
                   broadcast:        Broadcast
-                  getId:            GetId
-                  getRange:         GetRange
-                  getRingRef:       GetRingRef
-                  getSuccRef:       GetSuccRef
+                  getId:            ForwardToNode
+                  getPred:          ForwardToNode
+                  getRange:         ForwardToNode
+                  getRingRef:       ForwardToNode
+                  getSucc:          ForwardToNode
                   injectPermFail:   InjectPermFail
                   join:             Join
                   leave:            Leave
@@ -153,6 +134,7 @@ define
          Self     = FullComponent.trigger
          Listener = FullComponent.listener
       end
+      Node = {NewCell {RelaxedRing.make args}}
 
       Self
    end
