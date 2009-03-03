@@ -6,7 +6,7 @@ functor
 import
    Application
    System
-   Network        at '../Network.ozf'
+   Network        at '../network/Network.ozf'
    PbeerMaker     at 'Pbeer.ozf'
 
 define
