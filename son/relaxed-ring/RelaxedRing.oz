@@ -154,7 +154,7 @@ define
          getRingRef(RingRef) = Event
       in
          {Wait @Ring}
-         RingRef = {Record.adjoinAt @Ring pbeer:@SelfRef}
+         RingRef = {Record.adjoinAt @Ring pbeer @SelfRef}
       end
 
       proc {GetSucc Event}
