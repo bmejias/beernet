@@ -74,8 +74,9 @@ in
    for Pbeer in Pbeers do
       Pbeer = {PbeerMaker.make args}
       {Pbeer join(RingRef)}
-      {Wait 100}
+      {Delay 100}
    end
+   {Delay 1000}
    {LoopNetwork MasterOfPuppets}
    {Application.exit 0}
 end
