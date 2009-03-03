@@ -99,19 +99,42 @@ define
 
       %% --- Utils ---
       ComLayer    % Network component
+      Forward     % Routing component
       Listener    % Component where the deliver messages will be triggered
       Logger      % Component to log every sent and received message
       Timer       % Component to rigger some events after the requested time
 
-      proc {Zend Target Msg}
-         {@ComLayer sendTo(Target Msg log:rlxring)}
+      proc {BasicForward Event _ RoutingTable}
+         if RoutingTable.succ \= nil then
+            {Zend RoutingTable.succ Event}
+         end
       end
 
-      %TODO: Forward following the routing strategy
-      proc {Forward _ _ } skip end
+      proc {Route Event Target}
+         if {HasFeature Event last} andthen Event.last then
+            %% I am supposed to be the responsible, but I have a branch
+            %TODO: check also a possible forward to PredList
+            {Zend @Pred Event}
+            %{Blabla @(Self.id)#" forwards join of "#Sender.id#" to pred "
+            %         #@(Self.pred).id}
+         elseif {BelongsTo Event.src.id @SelfRef.id @Succ.id} then
+            %% I think my successor is the responsible => set last = true
+            {Zend @Succ {Record.adjoinAt Event last true}}
+            %{Blabla @SelfRef.id#" forwards join of "#Sender.id#" to "
+            %         #@(Self.succ).id}
+         else
+            %% Forward the message using the routing table
+            {@Forward Event Event.src.id RoutTable}
+            %{Blabla @SelfRef.id#" forwards join of "#Src.id}
+         end
+      end
 
       %TODO: Decide whether I need a coroner or not
       proc {Watcher _} skip end
+
+      proc {Zend Target Msg}
+         {@ComLayer sendTo(Target Msg log:rlxring)}
+      end
 
       %%--- Events ---
 
@@ -153,6 +176,7 @@ define
                         pred:    Pred
                         'self':  SelfRef
                         succ:    Succ)
+         Forward = {NewCell BasicForward}
          skip
       end
 
@@ -177,19 +201,9 @@ define
                      {Zend OldP hint(succ:Src)}
                   end
                   PredList := OldPred|@PredList
-                  %% 'join' not for me. Forward it.
-               elseif {HasFeature Event last} andthen Event.last then
-                  %TODO: check also a possible forward to PredList
-                  {Zend @Pred Event}
-                  %{Blabla @(Self.id)#" forwards join of "#Sender.id#" to pred "
-                  %         #@(Self.pred).id}
-               elseif {BelongsTo Src.id @SelfRef.id @Succ.id} then
-                  {Zend @Succ join(src:Src ring:SrcRing last:true)}
-                  %{Blabla @SelfRef.id#" forwards join of "#Sender.id#" to "
-                  %         #@(Self.succ).id}
+                  %% 'join' not for me. Route it!
                else
-                  {Forward Event Src.id}
-                  %{Blabla @SelfRef.id#" forwards join of "#Src.id}
+                  {Route Event Src.id}
                end
             else
                %{Blabla "sending try to join later"}
