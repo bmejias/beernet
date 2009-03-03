@@ -90,6 +90,7 @@ define
       Pred        % Reference to the predecessor
       PredList    % To remember peers that haven't acked joins of new preds
       Ring        % Ring Reference ring(name:<atom> id:<name>)
+      RoutTable   % Routing table 
       Self        % Full Component
       SelfRef     % Pbeer reference pbeer(id:<Id> port:<Port>)
       Succ        % Reference to the successor
@@ -148,6 +149,10 @@ define
       proc {Init Event}
          %% TODO: Get id
          %% TODO: Get a wished ring reference
+         RoutTable = rt(fingers: {NewCell nil}
+                        pred:    Pred
+                        'self':  SelfRef
+                        succ:    Succ)
          skip
       end
 
