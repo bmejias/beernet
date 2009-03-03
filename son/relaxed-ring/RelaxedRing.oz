@@ -171,7 +171,7 @@ define
 
       proc {Init Event}
          %% TODO: Get id
-         %% TODO: Get a wished ring reference
+         %% TODO: Get a ring reference
          RoutTable = rt(fingers: {NewCell nil}
                         pred:    Pred
                         'self':  SelfRef
@@ -192,7 +192,9 @@ define
                if {BelongsTo Src.id @Pred.id @SelfRef.id} then
                   OldPred = @Pred
                in
-                  {Zend Src joinOk(pred:OldPred succ:@SelfRef succList:@SuccList)}
+                  {Zend Src joinOk(pred:OldPred
+                                   succ:@SelfRef
+                                   succList:@SuccList)}
                   Pred := Src
                   %% set a failure detector on the predecessor 
                   {Watcher register(watcher:@SelfRef target:Src)} 
@@ -223,7 +225,7 @@ define
       proc {JoinLater Event}
          joinLater(NewSucc) = Event
       in
-         {Timer JOIN_WAIT Self startJoin(succ:NewSucc)}
+         {Timer JOIN_WAIT Self startJoin(succ:NewSucc ring:@WishedRing)}
       end
 
       proc {JoinOk Event}
@@ -264,9 +266,10 @@ define
       end
 
       proc {StartJoin Event}
-         startJoin(NewSucc) = Event
+         startJoin(succ:NewSucc ring:RingRef) = Event
       in
-         {Zend NewSucc join(src:@SelfRef ring:@WishedRing)}
+         @WishedRing := RingRef
+         {Zend NewSucc join(src:@SelfRef ring:RingRef)}
       end
 
       proc {UpdSuccList Event}
