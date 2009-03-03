@@ -89,10 +89,12 @@ define
    fun {Make}
       Pred        % Reference to the predecessor
       PredList    % To remember peers that haven't acked joins of new preds
+      Ring        % Ring Reference ring(name:<atom> id:<name>)
       Self        % Full Component
       SelfRef     % Pbeer reference pbeer(id:<Id> port:<Port>)
       Succ        % Reference to the successor
       SuccList    % Successor List. Used for failure recovery
+      WishedRing  % Used while trying to join a ring
 
       %% --- Utils ---
       ComLayer    % Network component
@@ -112,6 +114,30 @@ define
 
       %%--- Events ---
 
+      proc {BadRingRef Event}
+         badRingRef = Event
+      in
+         skip %% TODO: trigger some error message
+      end
+
+      proc {GetPred Event}
+         getSucc(Peer) = Event
+      in
+         Peer = @Pred
+      end
+
+      proc {GetRingRef Event}
+         getRingRef(RingRef) = Event
+      in
+         RingRef = @Ring
+      end
+
+      proc {GetSucc Event}
+         getSucc(Peer) = Event
+      in
+         Peer = @Succ
+      end
+
       proc {Hint Event}
          hint(succ:NewSucc) = Event
       in
@@ -119,43 +145,53 @@ define
          skip
       end
 
+      proc {Init Event}
+         %% TODO: Get id
+         %% TODO: Get a wished ring reference
+         skip
+      end
+
       proc {Join Event}
-         join(src:Src ...) = Event
+         join(src:Src ring:SrcRing ...) = Event
          %% Event join might come with flag last = true guessing to reach the
          %% responsible. If I am not the responsible, message has to be 
          %% backwarded to the branch. 
       in
-         if @Succ == nil then
-            %{Blabla "sending try to join later"}
-            {Zend Src joinLater}
-         else
-            %TODO: I should use Better predecessor here
-            if {BelongsTo Src.id @Pred.id @SelfRef.id} then
-               OldPred = @Pred
-            in
-               {Zend Src joinOk(pred:OldPred succ:@SelfRef succList:@SuccList)}
-               Pred := Src
-               %% set a failure detector on the predecessor 
-               {Watcher register(watcher:@SelfRef target:Src)} 
-               %{Blabla @(Self.id)#" accepts new pred "#Sender.id}
-               for OldP in @PredList do
-                  {Zend OldP hint(succ:Src)}
+         if @Ring == SrcRing then
+            if @Succ \= nil then
+               %TODO: I should use Better predecessor here
+               if {BelongsTo Src.id @Pred.id @SelfRef.id} then
+                  OldPred = @Pred
+               in
+                  {Zend Src joinOk(pred:OldPred succ:@SelfRef succList:@SuccList)}
+                  Pred := Src
+                  %% set a failure detector on the predecessor 
+                  {Watcher register(watcher:@SelfRef target:Src)} 
+                  %{Blabla @(Self.id)#" accepts new pred "#Sender.id}
+                  for OldP in @PredList do
+                     {Zend OldP hint(succ:Src)}
+                  end
+                  PredList := OldPred|@PredList
+                  %% 'join' not for me. Forward it.
+               elseif {HasFeature Event last} andthen Event.last then
+                  %TODO: check also a possible forward to PredList
+                  {Zend @Pred Event}
+                  %{Blabla @(Self.id)#" forwards join of "#Sender.id#" to pred "
+                  %         #@(Self.pred).id}
+               elseif {BelongsTo Src.id @SelfRef.id @Succ.id} then
+                  {Zend @Succ join(src:Src ring:SrcRing last:true)}
+                  %{Blabla @SelfRef.id#" forwards join of "#Sender.id#" to "
+                  %         #@(Self.succ).id}
+               else
+                  {Forward Event Src.id}
+                  %{Blabla @SelfRef.id#" forwards join of "#Src.id}
                end
-               PredList := OldPred|@PredList
-            %% 'join' not for me. Forward it.
-            elseif {HasFeature Event last} andthen Event.last then
-               %TODO: check also a possible forward to PredList
-               {Zend @Pred Event}
-               %{Blabla @(Self.id)#" forwards join of "#Sender.id#" to pred "
-               %         #@(Self.pred).id}
-            elseif {BelongsTo Src.id @SelfRef.id @Succ.id} then
-               {Zend @Succ join(src:Src last:true)}
-               %{Blabla @SelfRef.id#" forwards join of "#Sender.id#" to "
-               %         #@(Self.succ).id}
             else
-               {Forward Event Src.id}
-               %{Blabla @SelfRef.id#" forwards join of "#Src.id}
+               %{Blabla "sending try to join later"}
+               {Zend Src joinLater}
             end
+         else
+            {Zend Src badRingRef}
          end
       end
 
@@ -211,7 +247,7 @@ define
       proc {StartJoin Event}
          startJoin(NewSucc) = Event
       in
-         {Zend NewSucc join(src:@SelfRef)}
+         {Zend NewSucc join(src:@SelfRef ring:@WishedRing)}
       end
 
       proc {UpdSuccList Event}
@@ -228,7 +264,12 @@ define
       end
 
       Events = events(
+                  badRingRef:    BadRingRef
+                  getPred:       GetPred
+                  getRingRef:    GetRingRef
+                  getSucc:       GetSucc
                   hint:          Hint
+                  init:          Init
                   join:          Join
                   joinAck:       JoinAck
                   joinLater:     JoinLater
