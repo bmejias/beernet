@@ -16,8 +16,12 @@ src_%:
 sub_%:
 	$(MAKE) -C $(subst sub_,,$@) all
 
+tester: Tester.oz
+	ozc -x Tester.oz -o tester
+
 clean: cleanlibs
 	rm -rf *ozf
+	rm -rf tester
 
 subclean_%:
 	$(MAKE) -C $(subst subclean_,,$@) clean

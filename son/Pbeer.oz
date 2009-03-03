@@ -80,6 +80,12 @@ define
          skip
       end
       
+      proc {GetRange Event}
+         getRange(Res) = Event
+      in
+         skip
+      end
+      
       proc {GetRingRef Event}
          getRingRef(Res) = Event
       in
@@ -125,6 +131,7 @@ define
       Events = events(
                   broadcast:        Broadcast
                   getId:            GetId
+                  getRange:         GetRange
                   getRingRef:       GetRingRef
                   getSuccRef:       GetSuccRef
                   injectPermFail:   InjectPermFail
