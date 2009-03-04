@@ -71,7 +71,7 @@ define
    end
 in
    MasterOfPuppets = {PbeerMaker.make args}
-   Log = {Logger.make}
+   Log = {Logger.make 'lucifer.log'}
    {MasterOfPuppets setLogger(Log.logger)}
    Pbeers = {List.make SIZE}
    RingRef = {MasterOfPuppets getRingRef($)}

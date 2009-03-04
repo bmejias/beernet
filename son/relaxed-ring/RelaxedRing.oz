@@ -39,6 +39,7 @@
 functor
 
 import
+   System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at 'KeyRanges.ozf'   
    Network     at '../../network/Network.ozf'
@@ -135,6 +136,7 @@ define
       proc {Watcher _} skip end
 
       proc {Zend Target Msg}
+         {System.show @SelfRef.id#'sending a darn message'#Msg#to#Target.id}
          {@ComLayer sendTo(Target Msg log:rlxring)}
       end
 
@@ -219,6 +221,7 @@ define
                   PredList := OldPred|@PredList
                   %% 'join' not for me. Route it!
                else
+                  {System.show 'NOT FOR ME - going to route'}
                   {Route Event Src.id}
                end
             else
@@ -279,10 +282,15 @@ define
          end
       end
 
+      proc {SetLogger Event}
+         {@ComLayer Event}
+      end
+
       proc {StartJoin Event}
          startJoin(succ:NewSucc ring:RingRef) = Event
       in
-         @WishedRing := RingRef
+         {System.show @SelfRef.id#'starting to join'}
+         @WishedRing = RingRef
          {Zend NewSucc join(src:@SelfRef ring:RingRef)}
       end
 
@@ -313,6 +321,7 @@ define
                   joinLater:     JoinLater
                   joinOk:        JoinOk
                   newSucc:       NewSucc
+                  setLogger:     SetLogger
                   startJoin:     StartJoin
                   updSuccList:   UpdSuccList
                   )
@@ -343,11 +352,12 @@ define
       end
       SelfRef := {Record.adjoinAt @SelfRef port {@ComLayer getPort($)}}
 
-      Pred     = {NewCell nil}    
+      Pred     = {NewCell @SelfRef}
       PredList = {NewCell nil}
-      Succ     = {NewCell nil}
+      Succ     = {NewCell @SelfRef}
       SuccList = {NewCell nil} 
       Ring     = {NewCell ring(name:lucifer id:{NewName})}
+      WishedRing = {NewCell _}
 
       RoutTable = rt(fingers: {NewCell nil}
                      pred:    Pred

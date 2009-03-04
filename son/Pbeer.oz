@@ -120,6 +120,7 @@ define
                   leave:            Leave
                   rSendTo:          RSendTo
                   sendTo:           SendTo
+                  setLogger:        ForwardToNode
                   %% DHT events
                   get:              DHTGet
                   put:              DHTPut
