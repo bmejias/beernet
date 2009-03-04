@@ -42,7 +42,9 @@ in
    in
       SiteA       = {Player.makeNetworkPingPongPlayer}
       SiteB       = {Player.makeNetworkPingPongPlayer}
-      ThisLogger#ThisCloser#ThisSetListener = {Logger.make 'none.log'}
+      log(logger:ThisLogger
+          close:ThisCloser
+          setListener:ThisSetListener) = {Logger.make 'none.log'}
       {System.show 'after creating this logger'}
       LogListener = {NewLogListener}
       {System.show 'after creating log listener'}

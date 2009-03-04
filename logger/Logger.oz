@@ -108,7 +108,7 @@ define
          end
       end
       {System.show 'loop launched'}
-      Logger#Closer#SetListener
+      log(logger:Logger close:Closer setListener:SetListener)
    end
 end
 

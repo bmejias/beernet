@@ -6,6 +6,7 @@ functor
 import
    Application
    System
+   Logger         at '../logger/Logger.ozf'
    Network        at '../network/Network.ozf'
    PbeerMaker     at 'Pbeer.ozf'
 
@@ -13,6 +14,7 @@ define
    SIZE  = 7
 
    ComLayer
+   Log
    MasterOfPuppets
    Pbeers
    RingRef
@@ -69,10 +71,13 @@ define
    end
 in
    MasterOfPuppets = {PbeerMaker.make args}
+   Log = {Logger.make}
+   {MasterOfPuppets setLogger(Log.logger)}
    Pbeers = {List.make SIZE}
    RingRef = {MasterOfPuppets getRingRef($)}
    for Pbeer in Pbeers do
       Pbeer = {PbeerMaker.make args}
+      {Pbeer setLogger(Log.logger)}
       {Pbeer join(RingRef)}
       {Delay 100}
    end
