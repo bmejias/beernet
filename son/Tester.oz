@@ -52,7 +52,7 @@ define
       First
       Result
    in
-      ComLayer = {Network.make}
+      ComLayer = {Network.new}
       First = {Pbeer getRingRef($)}
       {System.showInfo "Network "#First.ring.name}
       {System.printInfo First.pbeer.id#"->"}
@@ -70,13 +70,13 @@ define
       end
    end
 in
-   MasterOfPuppets = {PbeerMaker.make args}
-   Log = {Logger.make 'lucifer.log'}
+   MasterOfPuppets = {PbeerMaker.new args}
+   Log = {Logger.new 'lucifer.log'}
    {MasterOfPuppets setLogger(Log.logger)}
    Pbeers = {List.make SIZE}
    RingRef = {MasterOfPuppets getRingRef($)}
    for Pbeer in Pbeers do
-      Pbeer = {PbeerMaker.make args}
+      Pbeer = {PbeerMaker.new args}
       {Pbeer setLogger(Log.logger)}
       {Pbeer join(RingRef)}
       {Delay 100}

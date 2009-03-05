@@ -45,11 +45,11 @@ import
    RelaxedRing at 'relaxed-ring/RelaxedRing.ozf'
 
 export
-   Make
+   New
 
 define
    
-   fun {Make Args}
+   fun {New Args}
       Listener % Component's listener
       Node     % Node implementing the behaviour
       Self     % This component
@@ -131,11 +131,11 @@ define
       local
          FullComponent
       in
-         FullComponent  = {Component.makeFull Events}
+         FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
          Listener = FullComponent.listener
       end
-      Node = {NewCell {RelaxedRing.make args}}
+      Node = {NewCell {RelaxedRing.new args}}
 
       Self
    end

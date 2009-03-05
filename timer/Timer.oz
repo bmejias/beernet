@@ -48,11 +48,11 @@ import
    Component   at '../corecomp/Component.ozf'
 
 export
-   Make
+   New
 
 define   
 
-   fun {Make}
+   fun {New}
 
       %% --- Utils ---
       proc {Timer Time Component Event}
@@ -80,7 +80,7 @@ define
                   startTrigger:  StartTrigger
                   )
    in
-      {Component.make Events}
+      {Component.newTrigger Events}
    end
 
 end

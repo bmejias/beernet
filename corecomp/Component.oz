@@ -37,16 +37,16 @@ import
    System
 
 export
-   Make
-   MakeFull
+   New
+   NewTrigger
    Dummy
 
 define
 
-   %% MakeFull returns a record with the procedure to trigger events on it,
+   %% NewFull returns a record with the procedure to trigger events on it,
    %% which is equivalent to a regular component. But it also include a field
    %% with the default listener
-   fun {MakeFull Events}
+   fun {New Events}
       CompPort       % Receive events from other components
       CompListener   % Default component to trigger messages
 
@@ -98,10 +98,10 @@ define
 
    %% This is the function to use if you do not want to use the default
    %% Listener of the full component.
-   fun {Make Events}
+   fun {NewTrigger Events}
       FullComponent
    in
-      FullComponent = {MakeFull Events}
+      FullComponent = {New Events}
       FullComponent.trigger
    end
 

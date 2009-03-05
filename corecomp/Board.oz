@@ -36,11 +36,11 @@
 functor
 
 export
-   Make
+   New 
 
 define
 
-   fun {Make}
+   fun {New}
       Key
       Subscribers
       BoardPort

@@ -49,11 +49,11 @@ import
    Pp2p        at 'Pp2p.ozf'
 
 export
-   Make
+   New
 
 define
 
-   fun {Make}
+   fun {New}
       ComLayer    % Low level communication layer
       Listener    % Component where the deliver messages will be triggered
       Logger      % Component to log every sent and received message
@@ -129,10 +129,10 @@ define
                   setLogger:     SetLogger
                   )
    in
-      ComLayer    = {NewCell {Pp2p.make}}
+      ComLayer    = {NewCell {Pp2p.new}}
       MsgCounter  = {NewCell 0}
       Logger      = {NewCell Component.dummy}
-      Self        = {Component.makeFull Events}
+      Self        = {Component.new Events}
       SelfPort    = {@ComLayer getPort($)}
       SelfId      = {NewCell none}
       Listener    = Self.listener

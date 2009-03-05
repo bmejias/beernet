@@ -20,7 +20,7 @@ define
       end
       Events = events(say: Say)
    in
-      FullComponent = {Component.makeFull Events}
+      FullComponent = {Component.new Events}
       Listener = FullComponent.listener
       FullComponent.trigger
    end
@@ -33,7 +33,7 @@ define
       end
       Events = events(listen: Listen)
    in
-      {Component.make Events}
+      {Component.newTrigger Events}
    end
 
    Speaker
@@ -50,8 +50,8 @@ in
    Client1 = {MakeListener 1}
    Client2 = {MakeListener 2}
    Client3 = {MakeListener 3}
-   [BoardA SubscriberA] = {Board.make}
-   [BoardB SubscriberB] = {Board.make}
+   [BoardA SubscriberA] = {Board.new}
+   [BoardB SubscriberB] = {Board.new}
    %% Triggering some events and composing components
    {System.showInfo "Saying foo    to no subscribers"}
    {Speaker say(foo)}

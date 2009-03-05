@@ -41,11 +41,11 @@ import
    Component   at '../corecomp/Component.ozf'
 
 export
-   Make
+   New
 
 define
 
-   fun {Make}
+   fun {New}
       SitePort       % Port to receive messages
       Listener       % Upper layer component
       FullComponent  % This component
@@ -86,7 +86,7 @@ define
             {HandleMessages Stream}
          end
       end
-      FullComponent = {Component.makeFull Events}
+      FullComponent = {Component.new Events}
       Listener = FullComponent.listener
       FullComponent.trigger
    end

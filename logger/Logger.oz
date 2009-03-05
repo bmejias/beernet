@@ -49,11 +49,11 @@ import
    TextFile    at '../utils/TextFile.ozf'
 
 export
-   Make
+   New 
 
 define
 
-   fun {Make FileName}
+   fun {New FileName}
       KeyCloser
       KeyListener
       LogFile

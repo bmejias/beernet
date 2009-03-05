@@ -46,7 +46,7 @@ import
    TimerMaker  at '../../timer/Timer.ozf'
 
 export
-   Make
+   New
 
 define
    JOIN_WAIT      = 5000 % Milliseconds to wait to retry a join 
@@ -83,7 +83,7 @@ define
       end
    end
 
-   fun {Make Args}
+   fun {New Args}
       MaxKey      % Maximum value for a key
       Pred        % Reference to the predecessor
       PredList    % To remember peers that haven't acked joins of new preds
@@ -104,7 +104,7 @@ define
 
       proc {BasicForward Event _ RoutingTable}
          if RoutingTable.succ \= nil then
-            {Zend RoutingTable.succ Event}
+            {Zend @(RoutingTable.succ) Event}
          end
       end
 
@@ -251,7 +251,7 @@ define
          Succ := NewSucc
          SuccList := NewSucc|NewSuccList %TODO: get a good size for this
          %% set a failure detector on the successor
-         {Watcher register(watcher:@(Self.ref) target:Succ)} 
+         {Watcher register(watcher:@SelfRef target:Succ)} 
          if @Pred == nil orelse {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
             {Zend NewPred newSucc(newSucc:@SelfRef
                                  oldSucc:@Succ
@@ -331,12 +331,13 @@ define
       local
          FullComponent
       in
-         FullComponent  = {Component.makeFull Events}
+         FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
          Listener = FullComponent.listener
       end
-      Timer = {TimerMaker.make}
-      ComLayer = {NewCell {Network.make}}
+      Timer = {TimerMaker.new}
+      ComLayer = {NewCell {Network.new}}
+      {@ComLayer setListener(Self)}
 
       if {HasFeature Args maxKey} then
          MaxKey = Args.maxKey

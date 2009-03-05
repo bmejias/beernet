@@ -42,8 +42,8 @@ define
                   zZz:           ZZZ
                   )
    in
-      Ref      = {Component.make Events}
-      MyTimer  = {Timer.make}
+      Ref      = {Component.newTrigger Events}
+      MyTimer  = {Timer.new}
       Ref
    end
 
