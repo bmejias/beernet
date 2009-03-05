@@ -591,9 +591,9 @@ in
 end
 
 declare
-O={InteractiveLogViewer {ReadLog 'test1.log'}}
+O={InteractiveLogViewer {ReadLog 'lucifer.log'}}
 Logger = proc{$ _} skip end
-{O display(network:true)}
+{O display(network:true rlxring:true)}
 {O onParse(proc{$ E}
               {Browse [going to test E]}
               case E

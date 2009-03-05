@@ -11,11 +11,12 @@ import
    PbeerMaker     at 'Pbeer.ozf'
 
 define
-   SIZE  = 7
+   SIZE  = 42
 
    ComLayer
    Log
    MasterOfPuppets
+   MaxKey
    Pbeers
    RingRef
 
@@ -41,11 +42,11 @@ define
          in
             Succ = {ComLayer sendTo(Current getSucc($))}
             {System.printInfo Current.id#"->"}
-            if Succ.id > Current.id then
-               {Loop Succ Current First Counter+1 OK Error}
-            else
+            if Succ.id < Current.id andthen Current.id \= @MaxKey then
                {Loop Succ Current First Counter+1
                      false Error#Current.id#"->"#Succ.id#" "}
+            else
+               {Loop Succ Current First Counter+1 OK Error}
             end
          end
       end
@@ -71,12 +72,21 @@ define
    end
 in
    MasterOfPuppets = {PbeerMaker.new args}
+   MaxKey = {NewCell {MasterOfPuppets getId($)}}
    Log = {Logger.new 'lucifer.log'}
    {MasterOfPuppets setLogger(Log.logger)}
-   Pbeers = {List.make SIZE}
+   Pbeers = {List.make SIZE-1}
    RingRef = {MasterOfPuppets getRingRef($)}
    for Pbeer in Pbeers do
       Pbeer = {PbeerMaker.new args}
+      local
+         TmpId
+      in
+         {Pbeer getId(TmpId)}
+         if TmpId > @MaxKey then
+            MaxKey := TmpId
+         end
+      end
       {Pbeer setLogger(Log.logger)}
       {Pbeer join(RingRef)}
       {Delay 100}

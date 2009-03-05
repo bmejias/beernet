@@ -250,6 +250,8 @@ define
       in
          Succ := NewSucc
          SuccList := NewSucc|NewSuccList %TODO: get a good size for this
+         Ring := @WishedRing
+         WishedRing := _
          %% set a failure detector on the successor
          {Watcher register(watcher:@SelfRef target:Succ)} 
          if @Pred == nil orelse {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
@@ -326,7 +328,7 @@ define
                   updSuccList:   UpdSuccList
                   )
 
-   in %% --- Make starts ---
+   in %% --- New starts ---
       %% Creating the component and collaborators
       local
          FullComponent
@@ -352,6 +354,7 @@ define
          SelfRef = {NewCell pbeer(id:{KeyRanges.getRandomKey MaxKey})}
       end
       SelfRef := {Record.adjoinAt @SelfRef port {@ComLayer getPort($)}}
+      {@ComLayer setId(@SelfRef.id)}
 
       Pred     = {NewCell @SelfRef}
       PredList = {NewCell nil}
