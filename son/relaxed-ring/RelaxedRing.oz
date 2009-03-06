@@ -83,6 +83,15 @@ define
       end
    end
 
+   %% TheList should have no more than Size elements
+   fun {UpdateList Elem TheList Size}
+      if {Member Elem TheList} then
+         TheList
+      else
+         {Keep Size-1 Elem|TheList}
+      end
+   end
+
    fun {New Args}
       MaxKey      % Maximum value for a key
       Pred        % Reference to the predecessor
@@ -249,7 +258,7 @@ define
          joinOk(pred:NewPred succ:NewSucc succList:NewSuccList) = Event
       in
          Succ := NewSucc
-         SuccList := NewSucc|NewSuccList %TODO: get a good size for this
+         SuccList := {UpdateList NewSucc NewSuccList SUCC_LIST_SIZE}
          Ring := @WishedRing
          WishedRing := _
          %% set a failure detector on the successor
@@ -274,7 +283,7 @@ define
          %{BlablaNonl NewSucc.id#" wannabe my new succ of "#@(Self.id)} 
          if @Succ.id == OldSucc.id then
             %{Blabla " and she is"}
-            SuccList := NewSucc|NewSuccList
+            SuccList := {UpdateList NewSucc NewSuccList SUCC_LIST_SIZE}
             {Zend OldSucc joinAck(@SelfRef)}
             {Zend @Pred updSuccList(src:@SelfRef
                                     succList:@SuccList
@@ -300,7 +309,7 @@ define
          updSuccList(src:Src succList:NewSuccList counter:Counter) = Event
       in
          if @Succ.id == Src.id then
-            SuccList := Src|{Keep SUCC_LIST_SIZE - 1 @SuccList}
+            SuccList := {UpdateList Src @SuccList SUCC_LIST_SIZE}
             if Counter > 0 then
                {Zend @Pred updSuccList(src:@SelfRef
                                        succList:@SuccList

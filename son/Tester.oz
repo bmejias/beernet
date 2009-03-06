@@ -89,7 +89,7 @@ in
       end
       {Pbeer setLogger(Log.logger)}
       {Pbeer join(RingRef)}
-      {Delay 100}
+      %{Delay 100}
    end
    {Delay 1000}
    {LoopNetwork MasterOfPuppets}
