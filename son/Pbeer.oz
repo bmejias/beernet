@@ -50,27 +50,27 @@ export
 define
    
    fun {New Args}
-      Listener % Component's listener
+      %Listener % Component's listener
       Node     % Node implementing the behaviour
       Self     % This component
 
       %%--- Events ---
 
       proc {Broadcast Event}
-         broadcast(Range Msg) = Event
-      in
+%         broadcast(Range Msg) = Event
+%      in
          skip
       end
       
       proc {DHTGet Event}
-         get(Key Value) = Event
-      in
+%         get(Key Value) = Event
+%      in
          skip
       end
       
       proc {DHTPut Event}
-         put(Key Value) = Event
-      in
+%         put(Key Value) = Event
+%      in
          skip
       end
       
@@ -97,14 +97,14 @@ define
       end
       
       proc {RSendTo Event}
-         rSendTo(Id Msg delivered:Flag) = Event
-      in
+         %rSendTo(Id Msg delivered:Flag) = Event
+      %in
          skip
       end
       
       proc {SendTo Event}
-         sendTo(Id Msg ...) = Event
-      in
+         %sendTo(Id Msg ...) = Event
+      %in
          skip
       end
       
@@ -133,7 +133,7 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
-         Listener = FullComponent.listener
+         %Listener = FullComponent.listener
       end
       Node = {NewCell {RelaxedRing.new args}}
 

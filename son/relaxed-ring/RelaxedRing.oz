@@ -107,8 +107,8 @@ define
       %% --- Utils ---
       ComLayer    % Network component
       Forward     % Routing component
-      Listener    % Component where the deliver messages will be triggered
-      Logger      % Component to log every sent and received message
+      %Listener    % Component where the deliver messages will be triggered
+      %Logger      % Component to log every sent and received message
       Timer       % Component to rigger some events after the requested time
 
       proc {BasicForward Event _ RoutingTable}
@@ -117,10 +117,10 @@ define
          end
       end
 
-      fun {GetNewPBeerRef}
-         pbeer(id:{KeyRanges.getRandomKey MaxKey}
-               port:{@ComLayer getPort($)})
-      end
+%      fun {GetNewPBeerRef}
+%         pbeer(id:{KeyRanges.getRandomKey MaxKey}
+%               port:{@ComLayer getPort($)})
+%      end
 
       proc {Route Event Target}
          if {HasFeature Event last} andthen Event.last then
@@ -189,7 +189,7 @@ define
       end
 
       proc {Hint Event}
-         hint(succ:NewSucc) = Event
+         hint(succ:_/*NewSucc*/) = Event
       in
          %TODO. First I need to guarantee that this is a safe message
          skip
@@ -306,7 +306,7 @@ define
       end
 
       proc {UpdSuccList Event}
-         updSuccList(src:Src succList:NewSuccList counter:Counter) = Event
+         updSuccList(src:Src succList:_/*NewSuccList*/ counter:Counter) = Event
       in
          if @Succ.id == Src.id then
             SuccList := {UpdateList Src @SuccList SUCC_LIST_SIZE}
@@ -344,7 +344,7 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
-         Listener = FullComponent.listener
+         %Listener = FullComponent.listener
       end
       Timer = {TimerMaker.new}
       ComLayer = {NewCell {Network.new}}
