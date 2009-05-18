@@ -22,10 +22,8 @@
  */
 
 functor
-
 import
-   OS
-
+   Random   at '../../utils/Random.ozf'
 export
    BelongsTo
    GetRandomKey
@@ -34,7 +32,6 @@ export
    InsertPeerWithOmega
    ChordIdFingers
    Log
-
 define
 
    %% Check if a Key is in between From and To considering circular ranges
@@ -47,17 +44,8 @@ define
    end
    
    %% Random Key generator
-   local
-      RMin
-      RMax
-      {OS.randLimits RMin RMax}
-   in
-      fun {GetRandomKey NetworkSize}
-         {Float.toInt
-          {Int.toFloat {OS.rand} - RMin} /
-          {Int.toFloat RMax - RMin} *
-          {Int.toFloat NetworkSize - 1}}
-      end
+   fun {GetRandomKey NetworkSize}
+      {Random.urandInt 0 NetworkSize}
    end
 
    %% Make sure that the randomly generated key is not already taken

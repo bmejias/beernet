@@ -37,17 +37,16 @@
  */
 
 functor
-
 import
    System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at 'KeyRanges.ozf'   
    Network     at '../../network/Network.ozf'
+   PbeerList   at '../../utils/PbeerList.ozf'
+   RingList    at '../../utils/RingList.ozf'
    TimerMaker  at '../../timer/Timer.ozf'
-
 export
    New
-
 define
    JOIN_WAIT      = 5000 % Milliseconds to wait to retry a join 
    MAX_KEY        = 100000
@@ -55,44 +54,17 @@ define
 
    BelongsTo      = KeyRanges.belongsTo
 
-   %% Like Take
-   fun {Keep N L}
-      case L
-      of H|T then
-         if N > 0 then
-            H|{Keep N - 1 T}
-         else
-            nil
-         end
-      [] nil then
-         nil
-      end
-   end
-
-   %% Remove a Peer from a List
-   fun {Remove Peer L}
-      case L
-      of H|T then
-         if H.id == Peer.id then
-            T
-         else
-            H|{Remove Peer T}
-         end
-      [] nil then
-      nil
-      end
-   end
-
    %% TheList should have no more than Size elements
    fun {UpdateList Elem TheList Size}
       if {Member Elem TheList} then
          TheList
       else
-         {Keep Size-1 Elem|TheList}
+         {PbeerList.keep Size-1 Elem|TheList}
       end
    end
 
    fun {New Args}
+      Crashed     % List of crashed peers
       MaxKey      % Maximum value for a key
       Pred        % Reference to the predecessor
       PredList    % To remember peers that haven't acked joins of new preds
@@ -111,9 +83,24 @@ define
       %Logger      % Component to log every sent and received message
       Timer       % Component to rigger some events after the requested time
 
+      fun {AddToList Peer L}
+         {RingList.add Peer L @SelfRef.id MaxKey}
+      end
+
       proc {BasicForward Event _ RoutingTable}
          if RoutingTable.succ \= nil then
             {Zend @(RoutingTable.succ) Event}
+         end
+      end
+
+      proc {Backward Event Target}
+         ThePred = {RingList.getAfter Target @PredList @SelfRef.id MaxKey}
+      in
+         if ThePred \= nil then
+            {Zend ThePred Event}
+         else
+            {System.showInfo "Something went wrong, I cannot backward msg"}
+            skip
          end
       end
 
@@ -125,10 +112,8 @@ define
       proc {Route Event Target}
          if {HasFeature Event last} andthen Event.last then
             %% I am supposed to be the responsible, but I have a branch
-            %TODO: check also a possible forward to PredList
-            {Zend @Pred Event}
-            %{Blabla @(Self.id)#" forwards join of "#Sender.id#" to pred "
-            %         #@(Self.pred).id}
+            %% or somebody was missed (non-transitive connections)
+            {Backward Event Target}
          elseif {BelongsTo Event.src.id @SelfRef.id @Succ.id} then
             %% I think my successor is the responsible => set last = true
             {Zend @Succ {Record.adjoinAt Event last true}}
@@ -212,8 +197,7 @@ define
          %% backwarded to the branch. 
       in
          if @Ring == SrcRing then
-            if @Succ \= nil then
-               %TODO: I should use Better predecessor here
+            if {Not {PbeerList.isIn @Succ @Crashed}} then
                if {BelongsTo Src.id @Pred.id @SelfRef.id} then
                   OldPred = @Pred
                in
@@ -224,17 +208,16 @@ define
                   %% set a failure detector on the predecessor 
                   {Watcher register(watcher:@SelfRef target:Src)} 
                   %{Blabla @(Self.id)#" accepts new pred "#Sender.id}
-                  for OldP in @PredList do
-                     {Zend OldP hint(succ:Src)}
-                  end
-                  PredList := OldPred|@PredList
-                  %% 'join' not for me. Route it!
+                  {RingList.forAll  {RingList.remove OldPred @PredList}
+                                    proc {$ OP}
+                                       {Zend OP hint(succ:Src)}
+                                    end}
+                  PredList := {AddToList @Pred @PredList}
                else
                   {System.show 'NOT FOR ME - going to route'}
                   {Route Event Src.id}
                end
             else
-               %{Blabla "sending try to join later"}
                {Zend Src joinLater}
             end
          else
@@ -245,7 +228,7 @@ define
       proc {JoinAck Event}
          joinAck(OldPred) = Event
       in
-         PredList := {Remove OldPred @PredList}
+         PredList := {PbeerList.remove OldPred @PredList}
       end
 
       proc {JoinLater Event}
@@ -365,14 +348,15 @@ define
       SelfRef := {Record.adjoinAt @SelfRef port {@ComLayer getPort($)}}
       {@ComLayer setId(@SelfRef.id)}
 
+      Crashed  = {NewCell {PbeerList.new}}
       Pred     = {NewCell @SelfRef}
-      PredList = {NewCell nil}
+      PredList = {NewCell {RingList.new}}
       Succ     = {NewCell @SelfRef}
-      SuccList = {NewCell nil} 
+      SuccList = {NewCell {RingList.new}} 
       Ring     = {NewCell ring(name:lucifer id:{NewName})}
       WishedRing = {NewCell _}
 
-      RoutTable = rt(fingers: {NewCell nil}
+      RoutTable = rt(fingers: {NewCell {RingList.new}}
                      pred:    Pred
                      'self':  SelfRef
                      succ:    Succ)

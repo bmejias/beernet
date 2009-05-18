@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=TextFile
+SRCS=PbeerList Random RingList TextFile
 
 all: $(foreach source, $(SRCS), src_$(source))
 
