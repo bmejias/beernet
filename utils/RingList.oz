@@ -23,6 +23,8 @@
  */
 
 functor
+import
+   PbeerList   at 'PbeerList.ozf'
 export
    Add
    Different
@@ -31,11 +33,17 @@ export
    GetBefore
    GetFirst
    GetLast
+   Keep
    IsIn
+   Merge
    Minus
    New
+   NewPivot
    Remove
+   RemoveLast
 define
+   Keep        = PbeerList.keep
+   RemoveLast  = PbeerList.removeLast
 
    fun {Distance Id Pivot MaxKey}
       (MaxKey + Id - Pivot) mod MaxKey
@@ -167,22 +175,23 @@ define
    %% Like Take
    %% Keep function is exatly as in CiList
    
-   %% Remove a Peer from a List
-   fun {Remove Peer L}
-      case L
-      of (Dist#HeadPeer)|Tail then
-         if HeadPeer == Peer then
-            Tail
+   %% Return the unification of two list respecting the order
+   fun {Merge L1 L2}
+      case L1#L2
+      of ((Dist1#Peer1)|T1)#((Dist2#Peer2)|T2) then
+         if Peer1 == Peer2 then
+            (Dist2#Peer2)|{Merge T1 T2}
+         elseif Dist1 > Dist2 then
+            (Dist2#Peer2)|{Merge L1 T2}
          else
-            (Dist#HeadPeer)|{Remove Peer Tail}
+            (Dist1#Peer1)|{Merge T1 L2}
          end
-      [] nil then
-         nil
+      [] nil#_ then
+         L2
+      [] _#nil then
+         L1
       end
    end
-
-   %% Remove the last element of a list
-   %% RemoveLast is jut like CiList
 
    %% Return a list with elements of L1 that are not present in L2
    fun {Minus L1 L2}
@@ -202,4 +211,50 @@ define
    fun {New}
       nil
    end
+
+   %% Changes the distance of the list members according to the new pivot.
+   %% It sorted the peers if necessary.
+   fun {NewPivot L Pivot MaxKey}
+      proc {Loop L LastDist FilteredEnd Rest}
+         case L
+         of (_#Peer)|Tail then
+            NewDist = {Distance Peer.id Pivot MaxKey}
+         in
+            if NewDist > LastDist  then
+               NewEnd
+            in
+               FilteredEnd = (NewDist#Peer)|NewEnd 
+               {Loop Tail NewDist NewEnd Rest}
+            else
+               FilteredEnd = nil
+               Rest = L
+            end
+         [] nil then
+            FilteredEnd = nil
+            Rest = nil
+         end
+      end
+      Filtered
+      NewHead
+      NewFilteredHead
+   in
+      {Loop L 0 Filtered NewHead}
+      {Loop NewHead 0 NewFilteredHead nil}
+      {Append NewFilteredHead Filtered}
+   end
+
+   %% Remove a Peer from a List
+   fun {Remove Peer L}
+      case L
+      of (Dist#HeadPeer)|Tail then
+         if HeadPeer == Peer then
+            Tail
+         else
+            (Dist#HeadPeer)|{Remove Peer Tail}
+         end
+      [] nil then
+         nil
+      end
+   end
+
 end   

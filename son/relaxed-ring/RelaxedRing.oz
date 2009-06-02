@@ -54,17 +54,18 @@ define
 
    BelongsTo      = KeyRanges.belongsTo
 
-   %% TheList should have no more than Size elements
-   fun {UpdateList Elem TheList Size}
-      if {Member Elem TheList} then
-         TheList
-      else
-         {PbeerList.keep Size-1 Elem|TheList}
+   fun {Vacuum L Dust}
+      case Dust
+      of DeadPeer|MoreDust then
+         {Vacuum {RingList.remove DeadPeer L} MoreDust}
+      [] nil then
+         L
       end
    end
 
    fun {New Args}
       Crashed     % List of crashed peers
+      LogMaxKey   % Frequently used value
       MaxKey      % Maximum value for a key
       Pred        % Reference to the predecessor
       PredList    % To remember peers that haven't acked joins of new preds
@@ -87,6 +88,17 @@ define
          {RingList.add Peer L @SelfRef.id MaxKey}
       end
 
+      %% TheList should have no more than Size elements
+      fun {UpdateList NewElem MyList OtherList}
+         NewOtherList
+         MergedList
+      in
+         NewOtherList = {RingList.newPivot OtherList @SelfRef.id MaxKey}
+         MergedList = {RingList.merge {AddToList NewElem MyList} NewOtherList}
+         @SuccList = {RingList.keep LogMaxKey {Vacuum MergedList @Crashed}}
+         {WatchPeers @SuccList}
+      end
+
       proc {BasicForward Event _ RoutingTable}
          if RoutingTable.succ \= nil then
             {Zend @(RoutingTable.succ) Event}
@@ -99,6 +111,7 @@ define
          if ThePred \= nil then
             {Zend ThePred Event}
          else
+            %%TODO: acknowledge somehow that the message is lost
             {System.showInfo "Something went wrong, I cannot backward msg"}
             skip
          end
@@ -129,6 +142,13 @@ define
       %TODO: Decide whether I need a coroner or not
       proc {Watcher _} skip end
 
+      proc {WatchPeers Peers Self}
+         {RingList.forAll Peers
+            proc {$ Peer}
+               {Watcher register(watcher:@SelfRef target:Peer)}
+            end}
+      end
+
       proc {Zend Target Msg}
          {System.show @SelfRef.id#'sending a darn message'#Msg#to#Target.id}
          {@ComLayer sendTo(Target Msg log:rlxring)}
@@ -139,6 +159,7 @@ define
       proc {BadRingRef Event}
          badRingRef = Event
       in
+         {System.show 'BAD ring reference. I cannot join'}
          skip %% TODO: trigger some error message
       end
 
@@ -176,8 +197,19 @@ define
       proc {Hint Event}
          hint(succ:_/*NewSucc*/) = Event
       in
-         %TODO. First I need to guarantee that this is a safe message
+         %%TODO. First I need to guarantee that this is a safe message
          skip
+      end
+
+      proc {IdInUse Event}
+         idInUse(Id) = Event
+      in
+         %%TODO. Get a new id and try to join again
+         if @SelfRef.id == Id then
+            {System.show 'I cannot join because my Id is already in use'}
+         else
+            {System.showInfo "My id "#@SelfRef.id#" is considered to be in use as "#Id}
+         end
       end
 
       proc {Init Event}
@@ -196,32 +228,32 @@ define
          %% responsible. If I am not the responsible, message has to be 
          %% backwarded to the branch. 
       in
-         if @Ring == SrcRing then
-            if {Not {PbeerList.isIn @Succ @Crashed}} then
-               if {BelongsTo Src.id @Pred.id @SelfRef.id} then
-                  OldPred = @Pred
-               in
-                  {Zend Src joinOk(pred:OldPred
-                                   succ:@SelfRef
-                                   succList:@SuccList)}
-                  Pred := Src
-                  %% set a failure detector on the predecessor 
-                  {Watcher register(watcher:@SelfRef target:Src)} 
-                  %{Blabla @(Self.id)#" accepts new pred "#Sender.id}
-                  {RingList.forAll  {RingList.remove OldPred @PredList}
-                                    proc {$ OP}
-                                       {Zend OP hint(succ:Src)}
-                                    end}
-                  PredList := {AddToList @Pred @PredList}
-               else
-                  {System.show 'NOT FOR ME - going to route'}
-                  {Route Event Src.id}
-               end
+         if @Ring \= SrcRing then
+            {Zend Src badRingRef}
+         elseif @SelfRef.id == Src.id then
+            {Zend Src idInUse(Src.id)}
+         elseif {Not {PbeerList.isIn @Succ @Crashed}} then
+            if {BelongsTo Src.id @Pred.id @SelfRef.id} then
+               OldPred = @Pred
+            in
+               {Zend Src joinOk(pred:OldPred
+                                succ:@SelfRef
+                                succList:@SuccList)}
+               Pred := Src
+               %% set a failure detector on the predecessor 
+               {Watcher register(watcher:@SelfRef target:Src)} 
+               %{Blabla @(Self.id)#" accepts new pred "#Sender.id}
+               {RingList.forAll  {RingList.remove OldPred @PredList}
+                                 proc {$ OP}
+                                    {Zend OP hint(succ:Src)}
+                                 end}
+               PredList := {AddToList @Pred @PredList}
             else
-               {Zend Src joinLater}
+               %NOT FOR ME - going to route
+               {Route Event Src.id}
             end
          else
-            {Zend Src badRingRef}
+            {Zend Src joinLater}
          end
       end
 
@@ -240,12 +272,14 @@ define
       proc {JoinOk Event}
          joinOk(pred:NewPred succ:NewSucc succList:NewSuccList) = Event
       in
-         Succ := NewSucc
-         SuccList := {UpdateList NewSucc NewSuccList SUCC_LIST_SIZE}
-         Ring := @WishedRing
-         WishedRing := _
-         %% set a failure detector on the successor
-         {Watcher register(watcher:@SelfRef target:Succ)} 
+         if {BelongsTo NewSucc.id @SelfRef.id @Succ.id} then
+            Succ := NewSucc
+            SuccList := {UpdateList NewSucc NewSuccList SUCC_LIST_SIZE}
+            Ring := @WishedRing
+            WishedRing := _
+            %% set a failure detector on the successor
+            {Watcher register(watcher:@SelfRef target:Succ)} 
+         end
          if @Pred == nil orelse {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
             {Zend NewPred newSucc(newSucc:@SelfRef
                                  oldSucc:@Succ
@@ -309,6 +343,7 @@ define
                   getRingRef:    GetRingRef
                   getSucc:       GetSucc
                   hint:          Hint
+                  idInUse:       IdInUse
                   init:          Init
                   join:          Join
                   joinAck:       JoinAck
