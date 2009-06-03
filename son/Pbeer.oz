@@ -110,9 +110,11 @@ define
       
       Events = events(
                   broadcast:        Broadcast
+                  getFullRef:       ForwardToNode
                   getId:            ForwardToNode
                   getPred:          ForwardToNode
                   getRange:         ForwardToNode
+                  getRef:           ForwardToNode
                   getRingRef:       ForwardToNode
                   getSucc:          ForwardToNode
                   injectPermFail:   InjectPermFail

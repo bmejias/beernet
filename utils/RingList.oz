@@ -225,6 +225,11 @@ define
             in
                FilteredEnd = (NewDist#Peer)|NewEnd 
                {Loop Tail NewDist NewEnd Rest}
+            elseif NewDist == 0 then
+               NewEnd
+            in
+               FilteredEnd = (NewDist#Peer)|NewEnd
+               {Loop Tail MaxKey NewEnd Rest}
             else
                FilteredEnd = nil
                Rest = L

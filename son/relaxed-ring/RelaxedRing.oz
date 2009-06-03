@@ -50,7 +50,6 @@ export
 define
    JOIN_WAIT      = 5000 % Milliseconds to wait to retry a join 
    MAX_KEY        = 100000
-   SUCC_LIST_SIZE = 7
 
    BelongsTo      = KeyRanges.belongsTo
 
@@ -89,14 +88,17 @@ define
       end
 
       %% TheList should have no more than Size elements
-      fun {UpdateList NewElem MyList OtherList}
-         NewOtherList
-         MergedList
+      fun {UpdateList MyList NewElem OtherList}
+         FinalList
       in
-         NewOtherList = {RingList.newPivot OtherList @SelfRef.id MaxKey}
-         MergedList = {RingList.merge {AddToList NewElem MyList} NewOtherList}
-         @SuccList = {RingList.keep LogMaxKey {Vacuum MergedList @Crashed}}
-         {WatchPeers @SuccList}
+         FinalList = {NewCell MyList}
+         {RingList.forAll {Vacuum OtherList @Crashed}
+                           proc {$ Pbeer}
+                              FinalList := {AddToList Pbeer @FinalList}
+                           end}
+         FinalList := {RingList.keep LogMaxKey @FinalList}
+         {WatchPeers @FinalList}
+         @FinalList
       end
 
       proc {BasicForward Event _ RoutingTable}
@@ -142,7 +144,7 @@ define
       %TODO: Decide whether I need a coroner or not
       proc {Watcher _} skip end
 
-      proc {WatchPeers Peers Self}
+      proc {WatchPeers Peers}
          {RingList.forAll Peers
             proc {$ Peer}
                {Watcher register(watcher:@SelfRef target:Peer)}
@@ -163,6 +165,12 @@ define
          skip %% TODO: trigger some error message
       end
 
+      proc {GetFullRef Event}
+         getFullRef(FullRef) = Event
+      in
+         FullRef = ref(pbeer:@SelfRef ring:@Ring)
+      end
+
       proc {GetId Event}
          getId(Res) = Event
       in
@@ -181,11 +189,16 @@ define
       	Res = (@Pred.id+1 mod MaxKey)#@SelfRef.id
       end
 
+      proc {GetRef Event}
+         getRef(Res) = Event
+      in
+      	Res = @SelfRef
+      end
+
       proc {GetRingRef Event}
          getRingRef(RingRef) = Event
       in
-         {Wait @Ring}
-         RingRef = ref(pbeer:@SelfRef ring:@Ring)
+         RingRef = @Ring
       end
 
       proc {GetSucc Event}
@@ -257,10 +270,10 @@ define
          end
       end
 
-      proc {JoinAck Event}
-         joinAck(OldPred) = Event
+      proc {PredNoMore Event}
+         predNoMore(OldPred) = Event
       in
-         PredList := {PbeerList.remove OldPred @PredList}
+         PredList := {RingList.remove OldPred @PredList}
       end
 
       proc {JoinLater Event}
@@ -274,17 +287,18 @@ define
       in
          if {BelongsTo NewSucc.id @SelfRef.id @Succ.id} then
             Succ := NewSucc
-            SuccList := {UpdateList NewSucc NewSuccList SUCC_LIST_SIZE}
+            SuccList := {UpdateList @SuccList NewSucc NewSuccList}
             Ring := @WishedRing
-            WishedRing := _
+            WishedRing := none
             %% set a failure detector on the successor
             {Watcher register(watcher:@SelfRef target:Succ)} 
+            %% TODO: FindAndConnectToFingers
          end
-         if @Pred == nil orelse {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
-            {Zend NewPred newSucc(newSucc:@SelfRef
-                                 oldSucc:@Succ
-                                 succList:@SuccList)}
+         %if @Pred == nil orelse {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
+         if {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
+            {Zend NewPred newSucc(newSucc:@SelfRef succList:@SuccList)}
             Pred := NewPred
+            PredList := {AddToList NewPred @PredList}
             %% set a failure detector on the predecessor
             {Watcher register(watcher:@SelfRef target:NewPred)} 
          end
@@ -295,16 +309,15 @@ define
       end
 
       proc {NewSucc Event}
-         newSucc(newSucc:NewSucc oldSucc:OldSucc succList:NewSuccList) = Event
+         newSucc(newSucc:NewSucc succList:NewSuccList) = Event
       in
          %{BlablaNonl NewSucc.id#" wannabe my new succ of "#@(Self.id)} 
-         if @Succ.id == OldSucc.id then
-            %{Blabla " and she is"}
-            SuccList := {UpdateList NewSucc NewSuccList SUCC_LIST_SIZE}
-            {Zend OldSucc joinAck(@SelfRef)}
+         if {BelongsTo NewSucc.id @SelfRef.id @Succ.id} then
+            SuccList := {UpdateList @SuccList NewSucc NewSuccList}
+            {Zend @Succ predNoMore(@SelfRef)}
             {Zend @Pred updSuccList(src:@SelfRef
                                     succList:@SuccList
-                                    counter:SUCC_LIST_SIZE)}
+                                    counter:LogMaxKey)}
             Succ := NewSucc
             {Watcher register(watcher:@SelfRef target:NewSucc)}
          end
@@ -318,15 +331,15 @@ define
          startJoin(succ:NewSucc ring:RingRef) = Event
       in
          {System.show @SelfRef.id#'starting to join'}
-         @WishedRing = RingRef
+         WishedRing := RingRef
          {Zend NewSucc join(src:@SelfRef ring:RingRef)}
       end
 
       proc {UpdSuccList Event}
-         updSuccList(src:Src succList:_/*NewSuccList*/ counter:Counter) = Event
+         updSuccList(src:Src succList:NewSuccList counter:Counter) = Event
       in
          if @Succ.id == Src.id then
-            SuccList := {UpdateList Src @SuccList SUCC_LIST_SIZE}
+            SuccList := {UpdateList @SuccList Src NewSuccList}
             if Counter > 0 then
                {Zend @Pred updSuccList(src:@SelfRef
                                        succList:@SuccList
@@ -337,16 +350,18 @@ define
 
       Events = events(
                   badRingRef:    BadRingRef
+                  getFullRef:    GetFullRef
                   getId:         GetId
                   getPred:       GetPred
                   getRange:      GetRange
+                  getRef:        GetRef
                   getRingRef:    GetRingRef
                   getSucc:       GetSucc
                   hint:          Hint
                   idInUse:       IdInUse
                   init:          Init
                   join:          Join
-                  joinAck:       JoinAck
+                  predNoMore:    PredNoMore
                   joinLater:     JoinLater
                   joinOk:        JoinOk
                   newSucc:       NewSucc
@@ -373,6 +388,7 @@ define
       else
          MaxKey = MAX_KEY
       end
+      LogMaxKey = {Float.toInt {Float.log {Int.toFloat MaxKey+1}}}
 
       %% Peer State
       if {HasFeature Args id} then
@@ -389,7 +405,7 @@ define
       Succ     = {NewCell @SelfRef}
       SuccList = {NewCell {RingList.new}} 
       Ring     = {NewCell ring(name:lucifer id:{NewName})}
-      WishedRing = {NewCell _}
+      WishedRing = {NewCell none}
 
       RoutTable = rt(fingers: {NewCell {RingList.new}}
                      pred:    Pred

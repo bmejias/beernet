@@ -18,7 +18,7 @@ define
    MasterOfPuppets
    MaxKey
    Pbeers
-   RingRef
+   NetRef
 
    proc {LoopNetwork Pbeer}
       fun {Loop Current Pred First Counter OK Error}
@@ -54,7 +54,7 @@ define
       Result
    in
       ComLayer = {Network.new}
-      First = {Pbeer getRingRef($)}
+      First = {Pbeer getFullRef($)}
       {System.showInfo "Network "#First.ring.name}
       {System.printInfo First.pbeer.id#"->"}
       Result = {Loop {Pbeer getSucc($)} 
@@ -76,7 +76,7 @@ in
    Log = {Logger.new 'lucifer.log'}
    {MasterOfPuppets setLogger(Log.logger)}
    Pbeers = {List.make SIZE-1}
-   RingRef = {MasterOfPuppets getRingRef($)}
+   NetRef = {MasterOfPuppets getFullRef($)}
    for Pbeer in Pbeers do
       Pbeer = {PbeerMaker.new args}
       local
@@ -88,7 +88,7 @@ in
          end
       end
       {Pbeer setLogger(Log.logger)}
-      {Pbeer join(RingRef)}
+      {Pbeer join(NetRef)}
       %{Delay 100}
    end
    {Delay 1000}
