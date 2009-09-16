@@ -79,8 +79,8 @@ define
                   setFlag:       SetFlag
                   )
    in
-      ComLayer = {Pp2p.make}
-      Self = {Component.make Events}
+      ComLayer = {Pp2p.new}
+      Self = {Component.newTrigger Events}
       {ComLayer setListener(Self)}
       Self
    end
@@ -171,8 +171,8 @@ define
                   setOtherPlayer:   SetOtherPlayer
                   )
    in
-      ComLayer = {Network.make}
-      Self = {Component.make Events}
+      ComLayer = {Network.new}
+      Self = {Component.newTrigger Events}
       {ComLayer setListener(Self)}
       Self
    end

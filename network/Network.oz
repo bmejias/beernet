@@ -86,6 +86,12 @@ define
          P = SelfPort
       end
 
+      proc {GetRef Event}
+         getRef(R) = Event
+      in
+         R = node(port:SelfPort id:@SelfId)
+      end
+
       proc {SendTo Event}
          sendTo(Dest Msg ...) = Event
          MsgId
@@ -122,6 +128,7 @@ define
 
       Events = events(
                   getPort:       GetPort
+                  getRef:        GetRef
                   pp2pDeliver:   Deliver
                   sendTo:        SendTo
                   setComLayer:   SetComLayer
