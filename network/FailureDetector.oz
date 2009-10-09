@@ -40,7 +40,6 @@
 functor
 import
    Component   at '../corecomp/Component.ozf'
-   Network     at 'Network.ozf'
    PbeerList   at '../utils/PbeerList.ozf'
    Timer       at '../timer/Timer.ozf'
 export
@@ -103,15 +102,18 @@ define
       end
 
       proc {Ping Event}
-         case Event
-         of ping(Pbeer tag:fd) then
-            skip
-         end
+         ping(Pbeer tag:fd) = Event
+      in
+         {ComLayer sendTo(Pbeer pong(SelfPbeer tag:fd) log:faildet)}
       end
 
       proc {Pong Event}
-         %% TODO
-         skip
+         pong(Pbeer tag:fd) = Event
+      in
+         Alive := {PbeerList.add Pbeer}
+         if {PbeerList.isIn Pbeer @Notified} then
+            {Listener alive(Pbeer)}
+         end
       end
 
       proc {SetPbeer Event}
