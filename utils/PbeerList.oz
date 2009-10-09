@@ -3,7 +3,7 @@
  * PbeerList.oz
  *
  *    This files contains general functions asociated with list, but actually,
- *    they work some times as if they were sets.
+ *    they work some times as if they were sets. Lists are sorted
  *
  * LICENSE
  *
@@ -33,6 +33,7 @@ export
    New
    Remove
    RemoveLast  
+   Union
 define
 
    %% Add a Peer in a sorted list.
@@ -73,13 +74,16 @@ define
    end
 
    %% Return true if Peer is found in list L
+   %% Precondition: L is sorted
    fun {IsIn Peer L}
       case L
       of H|T then
-         if H.id == Peer.id then
+         if H == Peer then
             true
-         else
+         elseif H.id > Peer.id then
             {IsIn Peer T}
+         else
+            false
          end
       [] nil then
          false
@@ -90,7 +94,7 @@ define
    fun {Intersection L1 L2}
       case L1#L2
       of (H1|T1)#(H2|T2) then
-         if H1.id == H2.id then
+         if H1 == H2 then
             H1|{Intersection T1 T2}
          elseif H1.id < H2.id then
             {Intersection T1 L2}
@@ -143,16 +147,21 @@ define
    end
 
    %% Return a list with elements of L1 that are not present in L2
+   %% Precondition: L1 and L2 are sorted
    fun {Minus L1 L2}
-      case L1
-      of H|T then
-         if {IsIn H L2} then
-            {Minus T L2}
+      case L1#L2
+      of (H1|T1)#(H2|T2) then
+         if H1 == H2 then
+            {Minus T1 T2}
+         elseif H1.id < H2.id then
+            H1|{Minus T1 L2}
          else
-            H|{Minus T L2}
+            {Minus L1 T2}
          end
-      [] nil then
+      [] nil#_ then
          nil
+      [] _#nil then
+         L1
       end
    end
 
@@ -160,4 +169,26 @@ define
    fun {New}
       nil
    end
+
+   %% Return a list with all elements from L1 and L2. 
+   %% Do not duplicate elements
+   %% Precondition: L1 and L2 are sorted
+   fun {Union L1 L2}
+      case L1#L2
+      of (H1|T1)#(H2|T2) then
+         if H1 == H2 then
+            H1|{Union T1 T2}
+         elseif H1.id < H2.id then
+            H1|{Union T1 L2}
+         else
+            H2|{Union L1 T2}
+         end
+      [] nil#_ then
+         L2
+      [] _#nil then
+         L1
+      end
+   end
+
+
 end   
