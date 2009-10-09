@@ -43,14 +43,11 @@
  */
 
 functor
-
 import
    Component   at '../corecomp/Component.ozf'
    Pp2p        at 'Pp2p.ozf'
-
 export
    New
-
 define
 
    fun {New}
