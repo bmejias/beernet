@@ -2,8 +2,7 @@
  *
  * FailureDetector.oz
  *
- *    Sends keep alive messages to other nodes, and triggers crash event upon
- *    timeout without answer. Event alive is trigger to fix a false suspicion.
+ *    Eventually perfect failure detector
  *
  * LICENSE
  *
@@ -21,7 +20,8 @@
  *
  * NOTES
  *      
- *    Here it comes a better explanation about what the code does.
+ *    Sends keep alive messages to other nodes, and triggers crash event upon
+ *    timeout without answer. Event alive is trigger to fix a false suspicion.
  *
  * EVENTS
  *
