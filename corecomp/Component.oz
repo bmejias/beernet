@@ -43,7 +43,7 @@ export
 
 define
 
-   %% NewFull returns a record with the procedure to trigger events on it,
+   %% New returns a record with the procedure to trigger events on it,
    %% which is equivalent to a regular component. But it also include a field
    %% with the default listener
    fun {New Events}
@@ -62,8 +62,9 @@ define
          case EventStream
          of Event|NewStream then
             EventName = {Label Event}
+            Implemented = {Arity Events}
          in
-            if {Member EventName {Arity Events}} then
+            if {Member EventName Implemented} then
                {Events.EventName Event} % Handle the event
                {UponEvent NewStream} % Loop for new events
             else
@@ -73,7 +74,12 @@ define
                   CompListener := NewListener
                   {UponEvent NewStream} % Loop for new events
                else
-                  {System.show 'Unknown event'#Event}
+                  if {Member 'else' Implemented} then
+                     {Events.'else' Event}
+                  else
+                     {System.show 'Unknown event'#Event}
+                  end
+                  {UponEvent NewStream} % Loop for new events
                end
             end
          [] nil then %% Component close
