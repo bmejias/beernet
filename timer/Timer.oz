@@ -54,8 +54,10 @@ define
 
    fun {New}
 
+      Self
+
       %% --- Utils ---
-      proc {Timer Time Component Event}
+      proc {Timer Time Event Component}
          thread
             {Delay Time}
             {Component Event}
@@ -64,15 +66,21 @@ define
          
       %%--- Events ---
       proc {StartTimer Event}
-         startTimer(Time Component) = Event
-      in
-         {Timer Time Component timeout}
+         case Event
+         of startTimer(Time Component) then
+            {Timer Time timeout Component}
+         [] startTimer(Time) then
+            {Timer Time timeout @(Self.listener)}
+         end
       end
    
       proc {StartTrigger Event}
-         startTrigger(Time Component TheEvent) = Event
-      in
-         {Timer Time Component TheEvent}
+         case Event
+         of startTrigger(Time TheEvent Component) then
+            {Timer Time TheEvent Component}
+         [] startTrigger(Time TheEvent) then
+            {Timer Time TheEvent @(Self.listener)}
+         end
       end
 
       Events = events(
@@ -80,7 +88,8 @@ define
                   startTrigger:  StartTrigger
                   )
    in
-      {Component.newTrigger Events}
+      Self = {Component.new Events}
+      Self.trigger
    end
 
 end
