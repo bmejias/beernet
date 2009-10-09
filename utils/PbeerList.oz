@@ -26,6 +26,7 @@ functor
 export
    Add
    Different
+   Intersection
    IsIn
    Keep
    Minus
@@ -82,6 +83,22 @@ define
          end
       [] nil then
          false
+      end
+   end
+
+   %% Return a list with the intersection between the two lists
+   fun {Intersection L1 L2}
+      case L1#L2
+      of (H1|T1)#(H2|T2) then
+         if H1.id == H2.id then
+            H1|{Intersection T1 T2}
+         elseif H1.id < H2.id then
+            {Intersection T1 L2}
+         else
+            {Intersection L1 T2}
+         end
+      [] nil#_ then nil
+      [] _#nil then nil
       end
    end
 
