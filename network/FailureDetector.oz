@@ -40,8 +40,8 @@
 functor
 import
    Component   at '../corecomp/Component.ozf'
+   Network     at 'Network.ozf'
    PbeerList   at '../utils/PbeerList.ozf'
-   Pp2p        at 'Pp2p.ozf'
    Timer       at '../timer/Timer.ozf'
 export
    New
@@ -55,13 +55,25 @@ define
       ComLayer    % Low level communication layer
       Listener    % Component where the deliver messages will be triggered
       Self        % Reference to this component
+      SelfPbeer   % Pbeer reference assinged by a external component
 
       Alive       % Pbeers known to be alive
       Suspected   % List of suspected peers
+      Notified    % Pbeers already notified as crashed
       Pbeers      % Pbeers to be monitored
       NewPbeers   % Pbeers register during a ping round
       Period      % Period of time to time out
       TheTimer    % Component that triggers timeout
+
+      %% Sends a ping message to all monitored pbeers and launch the timer
+      proc {NewRound Event}
+         start = Event
+      in
+         for Pbeer in @Pbeers do
+            {ComLayer sendTo(Pbeer ping(@SelfPbeer tag:fd) log:faildet)}
+         end
+         {TheTimer startTimer(@Period)}
+      end
 
       proc {Monitor Event}
          monitor(Pbeer) = Event
@@ -74,29 +86,68 @@ define
       in
          if {PbeerList.intersection @Alive @Suspected} \= nil 
             andthen @Period + DELTA < MAX_TIMEOUT then
-            Period := @Period + DELTA  
+            Period := @Period + DELTA
          end
-         
+         @Suspected := {PbeerList.minus @Pbeers @Alive}
+         %% Only notify about new suspicions
+         for Pbeer in {PbeerList.minus @Suspected @Notified} do
+            {@Listener crash(Pbeer)}
+         end
+         %% Clear up and get ready for new ping round
+         Notified    := {PbeerList.union @Notified @Suspected}
+         Alive       := {PbeerList.new}
+         Suspected   := {PbeerList.new}
+         Pbeers      := {PbeerList.union @Pbeers @NewPbeers}
+         NewPbeers   := {PbeerList.new}
+         {NewRound start}
+      end
+
+      proc {Ping Event}
+         case Event
+         of ping(Pbeer tag:fd) then
+            skip
+         end
+      end
+
+      proc {Pong Event}
+         %% TODO
+         skip
+      end
+
+      proc {SetPbeer Event}
+         setPbeer(NewPbeer) = Event
+      in
+         SelfPbeer := NewPbeer
+      end
+
+      proc {SetComLayer Event}
+         setComLayer(TheComLayer) = Event
+      in
+         ComLayer = TheComLayer
       end
 
       Events = events(
-                  monitor: Monitor  
-                  timeout: Timeout
+                  monitor:       Monitor
+                  ping:          Ping
+                  pong:          Pong
+                  setPbeer:      SetPbeer
+                  setComLayer:   SetComLayer
+                  start:         NewRound
+                  timeout:       Timeout
                   )
    in
-      ComLayer    = {NewCell {Pp2p.new}}
       Pbeers      = {NewCell {PbeerList.new}}
       NewPbeers   = {NewCell {PbeerList.new}}
       Alive       = {NewCell {PbeerList.new}} 
       Suspected   = {NewCell {PbeerList.new}} 
+      Notified    = {NewCell {PbeerList.new}}
       Period      = {NewCell TIMEOUT}
+      SelfPbeer   = {NewCell pbeer(id:~1 port:_)}
       TheTimer    = {Timer.new}
 
       Self        = {Component.new Events}
       Listener    = Self.listener
-      {@ComLayer setListener Self.trigger}
       {TheTimer setListener(Self.trigger)}
-      {TheTimer startTimer(@Period)}
       Self.trigger 
    end
 end
