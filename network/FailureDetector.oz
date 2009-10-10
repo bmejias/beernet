@@ -87,7 +87,7 @@ define
             andthen @Period + DELTA < MAX_TIMEOUT then
             Period := @Period + DELTA
          end
-         @Suspected := {PbeerList.minus @Pbeers @Alive}
+         Suspected := {PbeerList.minus @Pbeers @Alive}
          %% Only notify about new suspicions
          for Pbeer in {PbeerList.minus @Suspected @Notified} do
             {@Listener crash(Pbeer)}
@@ -104,13 +104,13 @@ define
       proc {Ping Event}
          ping(Pbeer tag:fd) = Event
       in
-         {ComLayer sendTo(Pbeer pong(SelfPbeer tag:fd) log:faildet)}
+         {ComLayer sendTo(Pbeer pong(@SelfPbeer tag:fd) log:faildet)}
       end
 
       proc {Pong Event}
          pong(Pbeer tag:fd) = Event
       in
-         Alive := {PbeerList.add Pbeer}
+         Alive := {PbeerList.add Pbeer @Alive}
          if {PbeerList.isIn Pbeer @Notified} then
             {Listener alive(Pbeer)}
          end
@@ -126,6 +126,7 @@ define
          setComLayer(TheComLayer) = Event
       in
          ComLayer = TheComLayer
+         SelfPbeer := {ComLayer getRef($)} 
       end
 
       Events = events(
@@ -150,6 +151,7 @@ define
       Self        = {Component.new Events}
       Listener    = Self.listener
       {TheTimer setListener(Self.trigger)}
+      {NewRound start}
       Self.trigger 
    end
 end

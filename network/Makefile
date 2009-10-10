@@ -14,6 +14,10 @@ testerdist: tester TesterDistNode.oz TesterDist.oz
 	ozc -x TesterDistNode.oz -o testerDistNode
 	ozc -x TesterDist.oz -o testerDist
 
+testerfaildetector: TestFailDetNode.oz TestFailDet.oz
+	ozc -x TestFailDetNode.oz -o testFailDetNode
+	ozc -x TestFailDet.oz -o testFailDet
+
 clean:
 	rm -rf *ozf
 	rm -rf tester
