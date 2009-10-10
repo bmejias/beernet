@@ -74,8 +74,8 @@ define
                   CompListener := NewListener
                   {UponEvent NewStream} % Loop for new events
                else
-                  if {Member 'else' Implemented} then
-                     {Events.'else' Event}
+                  if {Member any Implemented} then
+                     {Events.any Event}
                   else
                      {System.show 'Unknown event'#Event}
                   end
