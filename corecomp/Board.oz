@@ -42,18 +42,18 @@ define
 
    fun {New}
       Key
-      Subscribers
+      Subscribers %% Dictionary of lists. Dictionary keys are tags
       BoardPort
       BoardStream
       
       %% Local proceduresto modify the state. Note that the component structure
       %% provides exclusive access to the state. There is no risk of race 
       %% conditions
-      proc {AddSubscriber Client}
-         New Old
+      proc {AddSubscriber Client Tag}
+         OldList
       in
-         Old = Subscribers := New
-         New = Client|Old
+         OldList = {Dictionary.condGet Subscribers Tag nil}
+         Subscribers.Tag := Client|OldList
       end
 
       %% This is how other components will publish messages on the board
@@ -61,19 +61,33 @@ define
          {Port.send BoardPort Msg}
       end
 
-      proc {Subscriber Client}
-         {Port.send BoardPort subscribe(Key Client)}
+      proc {Subscriber Subscription}
+         case Subscription
+         of tagged(Client Tag) then
+            {Port.send BoardPort subscribe(Key Client Tag)}
+         [] Client then
+            {Port.send BoardPort subscribe(Key Client notag)}
+         end
       end
 
       %% Handle events for subscription and forward any other event to the
       %% subscribers
       proc {UponEvent BoardStream}
          case BoardStream
-         of subscribe(!Key Client)|NewStream then
-            {AddSubscriber Client}
+         of subscribe(!Key Client Tag)|NewStream then
+            {AddSubscriber Client Tag}
             {UponEvent NewStream}
          [] AnyEvent|NewStream then
-            for Client in @Subscribers do
+            TargetSubscribers
+         in
+            if {Member tag {Arity AnyEvent}} then
+               TargetSubscribers = {Dictionary.condGet Subscribers
+                                                       AnyEvent.tag
+                                                       nil}
+            else
+               TargetSubscribers = Subscribers.notag
+            end
+            for Client in TargetSubscribers do
                {Client AnyEvent}
             end
             {UponEvent NewStream}
@@ -83,7 +97,8 @@ define
       end
    in
       Key         = {NewName}
-      Subscribers = {Cell.new nil}
+      Subscribers = {Dictionary.new}
+      Subscribers.notag := nil
       BoardPort   = {Port.new BoardStream}
       thread
          {UponEvent BoardStream}
