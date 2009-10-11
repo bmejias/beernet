@@ -14,14 +14,13 @@ define
 
       Self
       SelfRef
-      FailDetector
       ComLayer
 
       proc {ConnectTo Event}
          connectTo(Pbeer) = Event
       in
-         {FailDetector monitor(Pbeer)}
-         {ComLayer sendTo(Pbeer ping(SelfRef))}
+         {ComLayer monitor(Pbeer)}
+         {ComLayer sendTo(Pbeer ping(@SelfRef))}
          {System.show 'Trying to connect to '#Pbeer}
       end
 
@@ -35,8 +34,8 @@ define
          ping(Pbeer) = Event
       in
          {System.showInfo "Pbeer "#Pbeer.id#" is trying to contact me"}
-         {FailDetector monitor(Pbeer)}
-         {ComLayer sendTo(Pbeer pong(SelfRef))}
+         {ComLayer monitor(Pbeer)}
+         {ComLayer sendTo(Pbeer pong(@SelfRef))}
       end
 
       proc {Pong Event}
@@ -45,10 +44,16 @@ define
          {System.showInfo "I got contact with "#Pbeer.id}
       end
 
+      proc {SetRef Event}
+         setRef(Ref) = Event
+      in
+         SelfRef := Ref
+      end
+
       proc {ToTicket Event}
          toTicket(FileName) = Event
       in
-         {Pickle.save {Connection.offerUnlimited SelfRef} FileName}
+         {Pickle.save {Connection.offerUnlimited @SelfRef} FileName}
       end
 
       Events = events(
@@ -56,24 +61,15 @@ define
                   crash:      Crash
                   ping:       Ping
                   pong:       Pong
+                  setRef:     setRef
                   toTicket:   ToTicket
                   )
    in
       Self     = {Component.newTrigger Events}
       ComLayer = {Network.new}
       {ComLayer setId(Id)}
-      FailDetector = {FailureDetector.new}
-      {FailDetector setComLayer(ComLayer)}
-      local
-         ThisBoard Subscriber
-      in
-         [ThisBoard Subscriber] = {Board.new}
-         {Subscriber Self}
-         {Subscriber tagged(FailDetector fd)}
-         {ComLayer setListener(ThisBoard)}
-      end
-      {ComLayer getRef(SelfRef)}
-      {FailDetector setListener(Self)}
+      {ComLayer setListener(Self)}
+      SelfRef = {Cell.new {ComLayer getRef($)}}
       Self
    end
 

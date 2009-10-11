@@ -2,7 +2,7 @@
  *
  * Network.oz
  *
- *    Comunication layer. Higher level than point-to-point
+ *    Comunication layer. Uses Pbeer-point-to-point and a failure detector
  *
  * LICENSE
  *
@@ -21,11 +21,9 @@
  * NOTES
  *      
  *    Implementation of the component that provides high level events to
- *    comunicate with other nodes on the network. It uses the perfect
- *    point-to-point link (pp2p) to send and deliver messages. It assigns an
- *    incremented number to every message that is sent, logging all the
- *    information to a setable logger. Nodes are supposed to be identified by
- *    an Id, and reachable via an Oz port.
+ *    comunicate with other nodes on the network. It uses the Pbeer
+ *    point-to-point link (Pbeerp2p) to send and deliver messages. It uses a
+ *    failure detector to monitor the pbeers registered with 'monitor'.
  *
  * EVENTS
  *
@@ -36,111 +34,72 @@
  *    Accepts: getPort(P) - Binds P to the port of this site. It is a way of
  *    building a self reference to give to others.
  *
+ *    Accepts: monitor(P) - Register P on the failure detector to be constantly
+ *    monitored.
+ *
  *    Indication: It triggers whatever message is delivered by pp2p link as an
  *    event on the listener.
+ *
+ *    Indication: crash(P) and alive(P) - Events coming from the failure
+ *    detector.
  *    
  *-------------------------------------------------------------------------
  */
 
 functor
 import
-   Component   at '../corecomp/Component.ozf'
-   Pp2p        at 'Pp2p.ozf'
+   Board             at '../corecomp/Board.ozf'
+   Component         at '../corecomp/Component.ozf'
+   Pbeerp2p          at 'Pbeerp2p.ozf'
+   FailureDetector   at 'FailureDetector.ozf'
 export
    New
 define
 
    fun {New}
-      ComLayer    % Low level communication layer
-      Listener    % Component where the deliver messages will be triggered
-      Logger      % Component to log every sent and received message
-      MsgCounter  % Identifier for every node
-      Self        % Full Component
-      SelfId      % Id that can be assinged by a external component
-      SelfPort    % Reference to the port of the low level communication layer
-      
-      %% --- Utils ---
-
-      proc {NewMsgId ?New}
-         Old
-      in
-         Old = MsgCounter := New
-         New = Old + 1
-      end
+      ComLayer       % Pbeer level communication layer
+      FailDetector   % Failure Detector
+      Listener       % Component where the deliver messages will be triggered
+      Self           % Full Component
 
       %%--- Events ---
 
-      proc {Deliver Event}
-         pp2pDeliver(_ '#'(SrcId MsgId Msg)) = Event
-      in
-         {@Logger 'in'(src:SrcId n:MsgId dest:@SelfId msg:Msg)}
-         {@Listener Msg}
-      end
-
-      proc {GetPort Event}
-         getPort(P) = Event
-      in
-         P = SelfPort
-      end
-
-      proc {GetRef Event}
-         getRef(R) = Event
-      in
-         R = node(port:SelfPort id:@SelfId)
-      end
-
-      proc {SendTo Event}
-         sendTo(Dest Msg ...) = Event
-         MsgId
-         LogTag
-      in
-         MsgId = {NewMsgId}
-         if {HasFeature Event log} then
-            LogTag = Event.log
-         else
-            LogTag = network
-         end
-         {@Logger out(src:@SelfId n:MsgId dest:Dest.id msg:Msg tag:LogTag)}
-         {@ComLayer pp2pSend(Dest.port '#'(@SelfId MsgId Msg))}
-      end
-
-      proc {SetComLayer Event}
-         setComLayer(NewComLayer) = Event
-      in
-         ComLayer := NewComLayer
-         {@ComLayer setListener(Self.trigger)}
+      proc {Any Event}
+         {@Listener Event}
       end
 
       proc {SetId Event}
          setId(NewId) = Event
-      in
-         SelfId := NewId
-      end
-
-      proc {SetLogger Event}
-         setLogger(NewLogger) = Event
-      in
-         Logger := NewLogger
+      in 
+         {ComLayer setId(NewId)}
+         {FailDetector setPbeer({ComLayer getRef($)})}
       end
 
       Events = events(
-                  getPort:       GetPort
-                  getRef:        GetRef
-                  pp2pDeliver:   Deliver
-                  sendTo:        SendTo
-                  setComLayer:   SetComLayer
+                  any:           Any
+                  getPort:       ComLayer
+                  getRef:        ComLayer
+                  monitor:       FailDetector
+                  pp2pDeliver:   ComLayer
+                  sendTo:        ComLayer
                   setId:         SetId
-                  setLogger:     SetLogger
+                  setLogger:     ComLayer
                   )
    in
-      ComLayer    = {NewCell {Pp2p.new}}
-      MsgCounter  = {NewCell 0}
-      Logger      = {NewCell Component.dummy}
-      Self        = {Component.new Events}
-      SelfPort    = {@ComLayer getPort($)}
-      SelfId      = {NewCell none}
-      Listener    = Self.listener
-      {@ComLayer setListener(Self.trigger)}
+      ComLayer       = {Pbeerp2p.new}
+      FailDetector   = {FailureDetector.new}
+      Self           = {Component.new Events}
+      Listener       = Self.listener
+      {FailDetector setComLayer(ComLayer)}
+      local
+         ThisBoard Subscriber
+      in
+         [ThisBoard Subscriber] = {Board.new}
+         {Subscriber Self.trigger}
+         {Subscriber tagged(FailDetector fd)}
+         {ComLayer setListener(ThisBoard)}
+      end
+      {FailDetector setListener(Self.trigger)}
       Self.trigger
    end
 end

@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=Network Pp2p FailureDetector
+SRCS=FailureDetector Network Pbeerp2p Pp2p 
 
 all: $(foreach source, $(SRCS), src_$(source))
 

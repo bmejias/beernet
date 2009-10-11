@@ -39,6 +39,7 @@
 
 functor
 import
+%   System
    Component   at '../corecomp/Component.ozf'
    PbeerList   at '../utils/PbeerList.ozf'
    Timer       at '../timer/Timer.ozf'
@@ -69,6 +70,7 @@ define
          start = Event
       in
          for Pbeer in @Pbeers do
+            %{System.show 'sending ping to'#Pbeer}
             {ComLayer sendTo(Pbeer ping(@SelfPbeer tag:fd) log:faildet)}
          end
          {TheTimer startTimer(@Period)}
@@ -104,12 +106,14 @@ define
       proc {Ping Event}
          ping(Pbeer tag:fd) = Event
       in
+         %{System.show 'got ping from'#Pbeer}
          {ComLayer sendTo(Pbeer pong(@SelfPbeer tag:fd) log:faildet)}
       end
 
       proc {Pong Event}
          pong(Pbeer tag:fd) = Event
       in
+         %{System.show '       got pong from'#Pbeer}
          Alive := {PbeerList.add Pbeer @Alive}
          if {PbeerList.isIn Pbeer @Notified} then
             {Listener alive(Pbeer)}
