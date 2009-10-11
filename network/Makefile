@@ -19,10 +19,12 @@ testerfaildetector: TestFailDetNode.oz TestFailDet.oz
 	ozc -x TestFailDet.oz -o testFailDet
 
 clean:
-	rm -rf *ozf
-	rm -rf tester
-	rm -rf testerDist
-	rm -rf testerDistNode
-	rm -rf coordinator.tket
+	rm -f *ozf
+	rm -f tester
+	rm -f testerDist
+	rm -f testerDistNode
+	rm -f testFailDet
+	rm -f testFailDetNode
+	rm -f coordinator.tket
 
 .PHONY: all clean
