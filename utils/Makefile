@@ -1,16 +1,16 @@
 MAKE=make
 SRCS=PbeerList Random RingList TextFile
 
-all: $(foreach source, $(SRCS), src_$(source))
+all: $(foreach source, $(SRCS), src_$(source)) nanoStore
 
 src_%:
 	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf
 
-tester: Tester.oz
-	ozc -x Tester.oz -o tester
+nanoStore: nanoStore.oz
+	ozc -x nanoStore.oz -o nanoStore
 
 clean:
-	rm -rf *ozf
-	rm -rf tester
+	rm -f *ozf
+	rm -f nano.tket
 
 .PHONY: all clean
