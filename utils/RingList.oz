@@ -34,6 +34,7 @@ export
    GetFirst
    GetLast
    Keep
+   KeepAndDrop
    IsIn
    Merge
    Minus
@@ -43,6 +44,7 @@ export
    RemoveLast
 define
    Keep        = PbeerList.keep
+   KeepAndDrop = PbeerList.keepAndDrop
    RemoveLast  = PbeerList.removeLast
 
    fun {Distance Id Pivot MaxKey}
