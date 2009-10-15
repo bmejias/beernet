@@ -29,6 +29,7 @@ export
    Intersection
    IsIn
    Keep
+   KeepAndDrop
    Minus
    New
    Remove
@@ -116,6 +117,22 @@ define
             nil
          end
       [] nil then
+         nil
+      end
+   end         
+  
+   %% Return the list of kept elements AND the list of dropped elements
+   fun {KeepAndDrop N L Drop}
+      case L
+      of H|T then
+         if N > 0 then
+            H|{Keep N - 1 T}
+         else
+            Drop = T
+            nil
+         end
+      [] nil then
+         Drop = nil
          nil
       end
    end         
