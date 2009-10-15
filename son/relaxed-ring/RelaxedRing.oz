@@ -53,6 +53,7 @@ define
 
    BelongsTo      = KeyRanges.belongsTo
 
+   %% --- Utils ---
    fun {Vacuum L Dust}
       case Dust
       of DeadPeer|MoreDust then
@@ -62,6 +63,7 @@ define
       end
    end
 
+   %% --- Exported ---
    fun {New Args}
       Crashed     % List of crashed peers
       LogMaxKey   % Frequently used value
@@ -69,7 +71,7 @@ define
       Pred        % Reference to the predecessor
       PredList    % To remember peers that haven't acked joins of new preds
       Ring        % Ring Reference ring(name:<atom> id:<name>)
-      RoutTable   % Routing table 
+      RoutingTable % Routing table 
       Self        % Full Component
       SelfRef     % Pbeer reference pbeer(id:<Id> port:<Port>)
       Succ        % Reference to the successor
@@ -89,14 +91,15 @@ define
 
       %% TheList should have no more than Size elements
       fun {UpdateList MyList NewElem OtherList}
-         FinalList
+         FinalList DropList
       in
          FinalList = {NewCell MyList}
          {RingList.forAll {Vacuum OtherList @Crashed}
                            proc {$ Pbeer}
                               FinalList := {AddToList Pbeer @FinalList}
                            end}
-         FinalList := {RingList.keep LogMaxKey @FinalList}
+         FinalList := {RingList.keepAndDrop LogMaxKey @FinalList DropList}
+         {UnregisterPeers DropList}
          {WatchPeers @FinalList}
          @FinalList
       end
@@ -124,6 +127,11 @@ define
 %               port:{@ComLayer getPort($)})
 %      end
 
+      %% Registering a Pbeer on the failure detector
+      proc {Monitor Pbeer}
+         {@ComLayer monitor(Pbeer)}
+      end
+
       proc {Route Event Target}
          if {HasFeature Event last} andthen Event.last then
             %% I am supposed to be the responsible, but I have a branch
@@ -136,9 +144,16 @@ define
             %         #@(Self.succ).id}
          else
             %% Forward the message using the routing table
-            {@Forward Event Event.src.id RoutTable}
+            {@Forward Event Event.src.id RoutingTable}
             %{Blabla @SelfRef.id#" forwards join of "#Src.id}
          end
+      end
+
+      proc {UnregisterPeers Peers}
+         {RingList.forAll Peers
+            proc {$ Peer}
+               {@ComLayer stopMonitor(Peer)}
+            end}
       end
 
       %TODO: Decide whether I need a coroner or not
@@ -147,7 +162,7 @@ define
       proc {WatchPeers Peers}
          {RingList.forAll Peers
             proc {$ Peer}
-               {Watcher register(watcher:@SelfRef target:Peer)}
+               {@ComLayer monitor(Peer)}
             end}
       end
 
@@ -227,10 +242,10 @@ define
 
       proc {Init Event}
          %% TODO: Get a ring reference
-         RoutTable = rt(fingers: {NewCell nil}
-                        pred:    Pred
-                        'self':  SelfRef
-                        succ:    Succ)
+         RoutingTable = rt(fingers: {NewCell nil}
+                           pred:    Pred
+                           'self':  SelfRef
+                           succ:    Succ)
          Forward = {NewCell BasicForward}
          skip
       end
@@ -253,13 +268,8 @@ define
                                 succ:@SelfRef
                                 succList:@SuccList)}
                Pred := Src
-               %% set a failure detector on the predecessor 
-               {Watcher register(watcher:@SelfRef target:Src)} 
+               {Monitor Src} 
                %{Blabla @(Self.id)#" accepts new pred "#Sender.id}
-               {RingList.forAll  {RingList.remove OldPred @PredList}
-                                 proc {$ OP}
-                                    {Zend OP hint(succ:Src)}
-                                 end}
                PredList := {AddToList @Pred @PredList}
             else
                %NOT FOR ME - going to route
@@ -290,22 +300,16 @@ define
             SuccList := {UpdateList @SuccList NewSucc NewSuccList}
             Ring := @WishedRing
             WishedRing := none
-            %% set a failure detector on the successor
-            {Watcher register(watcher:@SelfRef target:Succ)} 
-            %% TODO: FindAndConnectToFingers
+            {Monitor Succ} 
+            {RoutingTable getFingers(Succ)}
          end
-         %if @Pred == nil orelse {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
          if {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
             {Zend NewPred newSucc(newSucc:@SelfRef succList:@SuccList)}
             Pred := NewPred
             PredList := {AddToList NewPred @PredList}
             %% set a failure detector on the predecessor
-            {Watcher register(watcher:@SelfRef target:NewPred)} 
+            {Monitor NewPred} 
          end
-         %{Blabla @SelfRef.id#" joined as pred of "#@Succ.id}
-         %TODO: This should be triggered only the first I'm connected
-         %not on failure recovery
-         %{FindAndConnectToFingers}
       end
 
       proc {NewSucc Event}
@@ -407,10 +411,10 @@ define
       Ring     = {NewCell ring(name:lucifer id:{NewName})}
       WishedRing = {NewCell none}
 
-      RoutTable = rt(fingers: {NewCell {RingList.new}}
-                     pred:    Pred
-                     'self':  SelfRef
-                     succ:    Succ)
+      RoutingTable = rt(fingers: {NewCell {RingList.new}}
+                        pred:    Pred
+                        'self':  SelfRef
+                        succ:    Succ)
       Forward = {NewCell BasicForward}
 
       %% Return the component
