@@ -133,12 +133,19 @@ define
          SelfPbeer := {ComLayer getRef($)} 
       end
 
+      proc {StopMonitor Event}
+         stopMonitor(Pbeer) = Event
+      in
+         Pbeers := {PbeerList.remove Pbeer @Pbeers}
+      end
+
       Events = events(
                   monitor:       Monitor
                   ping:          Ping
                   pong:          Pong
                   setPbeer:      SetPbeer
                   setComLayer:   SetComLayer
+                  stopMonitor:   StopMonitor
                   start:         NewRound
                   timeout:       Timeout
                   )

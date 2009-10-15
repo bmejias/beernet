@@ -84,6 +84,7 @@ define
                   sendTo:        ComLayer
                   setId:         SetId
                   setLogger:     ComLayer
+                  stopMonitor:   FailDetector
                   )
    in
       ComLayer       = {Pbeerp2p.new}
