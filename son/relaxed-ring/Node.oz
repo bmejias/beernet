@@ -14,9 +14,9 @@
  *
  *    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
  *
- *    Last change: $Revision$ $Author$
+ *    Last change: $Revision: 85 $ $Author: boriss $
  *
- *    $Date$
+ *    $Date: 2009-10-15 21:33:35 +0200 (Thu, 15 Oct 2009) $
  *
  * NOTES
  *      

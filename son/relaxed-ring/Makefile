@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=RelaxedRing 
+SRCS=Node 
 
 all: $(foreach source, $(SRCS), src_$(source))
 

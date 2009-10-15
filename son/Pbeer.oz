@@ -42,7 +42,7 @@ functor
 
 import
    Component   at '../corecomp/Component.ozf'
-   RelaxedRing at 'relaxed-ring/RelaxedRing.ozf'
+   RelaxedRing at 'relaxed-ring/Node.ozf'
 
 export
    New
