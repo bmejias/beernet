@@ -40,7 +40,7 @@ functor
 import
    System
    Component   at '../../corecomp/Component.ozf'
-   KeyRanges   at 'KeyRanges.ozf'   
+   KeyRanges   at '../../utils/KeyRanges.ozf'   
    Network     at '../../network/Network.ozf'
    PbeerList   at '../../utils/PbeerList.ozf'
    RingList    at '../../utils/RingList.ozf'
@@ -71,7 +71,7 @@ define
       Pred        % Reference to the predecessor
       PredList    % To remember peers that haven't acked joins of new preds
       Ring        % Ring Reference ring(name:<atom> id:<name>)
-      RoutingTable % Routing table 
+      FingerTable % Routing table 
       Self        % Full Component
       SelfRef     % Pbeer reference pbeer(id:<Id> port:<Port>)
       Succ        % Reference to the successor
@@ -104,9 +104,9 @@ define
          @FinalList
       end
 
-      proc {BasicForward Event _ RoutingTable}
-         if RoutingTable.succ \= nil then
-            {Zend @(RoutingTable.succ) Event}
+      proc {BasicForward Event _ FingerTable}
+         if FingerTable.succ \= nil then
+            {Zend @(FingerTable.succ) Event}
          end
       end
 
@@ -144,7 +144,7 @@ define
             %         #@(Self.succ).id}
          else
             %% Forward the message using the routing table
-            {@Forward Event Event.src.id RoutingTable}
+            {@Forward Event Event.src.id FingerTable}
             %{Blabla @SelfRef.id#" forwards join of "#Src.id}
          end
       end
@@ -242,7 +242,7 @@ define
 
       proc {Init Event}
          %% TODO: Get a ring reference
-         RoutingTable = rt(fingers: {NewCell nil}
+         FingerTable = rt(fingers: {NewCell nil}
                            pred:    Pred
                            'self':  SelfRef
                            succ:    Succ)
@@ -301,7 +301,7 @@ define
             Ring := @WishedRing
             WishedRing := none
             {Monitor Succ} 
-            {RoutingTable getFingers(Succ)}
+            {FingerTable getFingers(Succ)}
          end
          if {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
             {Zend NewPred newSucc(newSucc:@SelfRef succList:@SuccList)}
@@ -411,7 +411,7 @@ define
       Ring     = {NewCell ring(name:lucifer id:{NewName})}
       WishedRing = {NewCell none}
 
-      RoutingTable = rt(fingers: {NewCell {RingList.new}}
+      FingerTable = rt(fingers: {NewCell {RingList.new}}
                         pred:    Pred
                         'self':  SelfRef
                         succ:    Succ)

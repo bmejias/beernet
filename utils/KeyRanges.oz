@@ -23,7 +23,7 @@
 
 functor
 import
-   Random   at '../../utils/Random.ozf'
+   Random   at 'Random.ozf'
 export
    BelongsTo
    GetRandomKey
@@ -31,6 +31,7 @@ export
    InsertPeer
    InsertPeerWithOmega
    ChordIdFingers
+   KaryIdFingers
    Log
 define
 
@@ -97,17 +98,29 @@ define
 
    %% According to Id and N, it returns a list of ids for fingers
    fun {ChordIdFingers Id N}
-      fun {Loop Id N I Acc}
+      {KaryIdFingers Id 2 N}
+   end
+
+   %% According to Id, K and N, it returns a list of K-ary ids for fingers
+   fun {KaryIdFingers Id K N}
+      fun {KLoop D I Acc}
+         if I == 0 then
+            Acc
+         else
+            {KLoop D I-1 ((Id + D * I) mod N)|Acc}
+         end
+      end
+      fun {Loop I Acc}
          D = N div I
       in
          if D > 1 then
-            {Loop Id N I*2 ((Id + D) mod N)|Acc}
+            {Loop I*K {KLoop D K-1 Acc}}
          else
             Acc
          end
       end    
    in
-      {Loop Id N 2 nil}
+      {Loop K nil}
    end
 
    %% Integer version of logarithmic function (approximated)
