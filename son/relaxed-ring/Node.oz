@@ -41,6 +41,7 @@ import
    System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'   
+   KaryFTable  at 'FingerTable.ozf'
    Network     at '../../network/Network.ozf'
    PbeerList   at '../../utils/PbeerList.ozf'
    RingList    at '../../utils/RingList.ozf'

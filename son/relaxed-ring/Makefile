@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=Node 
+SRCS=Node FingerTable 
 
 all: $(foreach source, $(SRCS), src_$(source))
 
