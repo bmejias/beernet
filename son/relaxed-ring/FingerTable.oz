@@ -46,7 +46,7 @@ define
          skip
       end
 
-      proc {getFingers Event}
+      proc {GetFingers Event}
          getFingers(TheFingers) = Event
       in
          TheFingers = nil
@@ -58,8 +58,14 @@ define
          skip
       end
 
-      proc {AddFinger Event}
-         addFinger(Pbeer) = Event
+      proc {Monitor Event}
+         monitor(Pbeer) = Event
+      in
+         skip
+      end
+
+      proc {RemoveFinger Event}
+         removeFinger(Finger) = Event
       in
          skip
       end
@@ -70,7 +76,7 @@ define
          skip
       end
 
-      proc {AddFinger Event}
+      proc {SetId Event}
          setId(NewId) = Event
       in
          Id := NewId
@@ -80,10 +86,12 @@ define
                   addFinger:     AddFinger
                   getFingers:    getFingers
                   init:          Init
+                  monitor:       Monitor
                   removeFinger:  RemoveFinger
                   route:         Route
                   setId:         setId
                   )
+   in
       fingerTable
    end
 

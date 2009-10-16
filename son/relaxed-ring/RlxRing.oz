@@ -14,9 +14,9 @@
  *
  *    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
  *
- *    Last change: $Revision: 85 $ $Author: boriss $
+ *    Last change: $Revision$ $Author$
  *
- *    $Date: 2009-10-15 21:33:35 +0200 (Thu, 15 Oct 2009) $
+ *    $Date$
  *
  * NOTES
  *      
@@ -41,7 +41,6 @@ import
    System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'   
-   KaryFTable  at 'FingerTable.ozf'
    Network     at '../../network/Network.ozf'
    PbeerList   at '../../utils/PbeerList.ozf'
    RingList    at '../../utils/RingList.ozf'
@@ -81,7 +80,6 @@ define
 
       %% --- Utils ---
       ComLayer    % Network component
-      Forward     % Routing component
       %Listener    % Component where the deliver messages will be triggered
       %Logger      % Component to log every sent and received message
       Timer       % Component to rigger some events after the requested time
@@ -105,9 +103,9 @@ define
          @FinalList
       end
 
-      proc {BasicForward Event _ FingerTable}
-         if FingerTable.succ \= nil then
-            {Zend @(FingerTable.succ) Event}
+      proc {BasicForward route(msg:Event srcId:_ target:_)}
+         if @Succ \= nil then
+            {Zend @Succ Event}
          end
       end
 
@@ -145,7 +143,7 @@ define
             %         #@(Self.succ).id}
          else
             %% Forward the message using the routing table
-            {@Forward Event Event.src.id FingerTable}
+            {@FingerTable route(msg:Event srcId:Event.src.id target:Target)}
             %{Blabla @SelfRef.id#" forwards join of "#Src.id}
          end
       end
@@ -242,12 +240,6 @@ define
       end
 
       proc {Init Event}
-         %% TODO: Get a ring reference
-         FingerTable = rt(fingers: {NewCell nil}
-                           pred:    Pred
-                           'self':  SelfRef
-                           succ:    Succ)
-         Forward = {NewCell BasicForward}
          skip
       end
 
@@ -328,6 +320,12 @@ define
          end
       end
 
+      proc {SetFingerTable Event}
+         setFingerTable(NewFingerTable) = Event
+      in
+         FingerTable := NewFingerTable
+      end
+
       proc {SetLogger Event}
          {@ComLayer Event}
       end
@@ -370,6 +368,7 @@ define
                   joinLater:     JoinLater
                   joinOk:        JoinOk
                   newSucc:       NewSucc
+                  setFingerTable:SetFingerTable
                   setLogger:     SetLogger
                   startJoin:     StartJoin
                   updSuccList:   UpdSuccList
@@ -404,19 +403,14 @@ define
       SelfRef := {Record.adjoinAt @SelfRef port {@ComLayer getPort($)}}
       {@ComLayer setId(@SelfRef.id)}
 
-      Crashed  = {NewCell {PbeerList.new}}
-      Pred     = {NewCell @SelfRef}
-      PredList = {NewCell {RingList.new}}
-      Succ     = {NewCell @SelfRef}
-      SuccList = {NewCell {RingList.new}} 
-      Ring     = {NewCell ring(name:lucifer id:{NewName})}
-      WishedRing = {NewCell none}
-
-      FingerTable = rt(fingers: {NewCell {RingList.new}}
-                        pred:    Pred
-                        'self':  SelfRef
-                        succ:    Succ)
-      Forward = {NewCell BasicForward}
+      Crashed     = {NewCell {PbeerList.new}}
+      Pred        = {NewCell @SelfRef}
+      PredList    = {NewCell {RingList.new}}
+      Succ        = {NewCell @SelfRef}
+      SuccList    = {NewCell {RingList.new}} 
+      Ring        = {NewCell ring(name:lucifer id:{NewName})}
+      WishedRing  = {NewCell none}
+      FingerTable = {NewCell BasicForward}
 
       %% Return the component
       Self
