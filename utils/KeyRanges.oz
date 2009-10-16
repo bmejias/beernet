@@ -113,7 +113,7 @@ define
       fun {Loop I Acc}
          D = N div I
       in
-         if D > 1 then
+         if D > 0 then
             {Loop I*K {KLoop D K-1 Acc}}
          else
             Acc
