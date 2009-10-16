@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=Node FingerTable 
+SRCS=FingerTable Node RlxRing
 
 all: $(foreach source, $(SRCS), src_$(source))
 
