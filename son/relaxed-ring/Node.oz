@@ -45,9 +45,7 @@ define
       RlxRingNode
       TheFTable
 
-      Events = events(
-                  any:  RlxRingNode
-                  )
+      Events = events(any:RlxRingNode)
    in
       local
          FullComponent
