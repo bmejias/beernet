@@ -50,6 +50,28 @@ define
 
       ComLayer    % Communication Layer, to send messages.
 
+      %--- utils ---
+      fun {CheckNewFinger Ids Fingers New}
+         case Ids#Fingers
+         of (H|T)#(P|Ps) then
+            if H =< P.id then
+               if H =< New.id then
+                  if New.id < P.id then
+                     New|{CheckNewFinger T Ps P}
+                  else
+                     P|{CheckNewFinger T Ps New}
+                  end
+               else
+                  Fingers
+               end
+            else
+               {CheckNewFinger Ids Ps New}
+            end
+         [] nil#_ then nil
+         [] _#nil then New|nil
+         end
+      end
+
       proc {AddFinger Event}
          addFinger(Pbeer) = Event
       in
