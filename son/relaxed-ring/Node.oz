@@ -32,13 +32,42 @@
 
 functor
 import
+   System
    Component   at '../../corecomp/Component.ozf'
+   RlxRing     at 'RlxRing.ozf'
+   FingerTable at 'FingerTable.ozf'
 export
    New
 define
    
-   fun {New}
-      node
+   fun {New Args}
+      Self
+      RlxRingNode
+      TheFTable
+
+      Events = events(
+                  any:  RlxRingNode
+                  )
+   in
+      local
+         FullComponent
+      in
+         FullComponent  = {Component.new Events}
+         Self     = FullComponent.trigger
+         %Listener = FullComponent.listener
+      end
+      RlxRingNode = {RlxRing.new Args}
+      local
+         Id MaxKey ComLayer
+      in
+         {RlxRingNode getMaxKey(MaxKey)}
+         {RlxRingNode getId(Id)}
+         {RlxRingNode getComLayer(ComLayer)}
+         TheFTable = {FingerTable.new args(maxKey:MaxKey id:Id)}
+         {TheFTable setComLayer(ComLayer)}
+      end
+      %{RlxRingNode setFingerTable(TheFTable)}
+      Self
    end
 
 end

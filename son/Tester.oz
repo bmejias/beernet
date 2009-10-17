@@ -71,7 +71,9 @@ define
       end
    end
 in
+   {System.show 'first line'}
    MasterOfPuppets = {PbeerMaker.new args}
+   {System.show 'second line'}
    MaxKey = {NewCell {MasterOfPuppets getId($)}}
    Log = {Logger.new 'lucifer.log'}
    {MasterOfPuppets setLogger(Log.logger)}

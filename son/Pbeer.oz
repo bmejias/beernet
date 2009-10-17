@@ -51,7 +51,7 @@ define
    
    fun {New Args}
       %Listener % Component's listener
-      Node     % Node implementing the behaviour
+      Node = {NewCell {RelaxedRing.new args}} % Node implementing the behaviour
       Self     % This component
 
       %%--- Events ---
@@ -74,10 +74,6 @@ define
          skip
       end
       
-      proc {ForwardToNode Event}
-         {@Node Event}
-      end
-
       proc {InjectPermFail Event}
          injectPermFail = Event
       in
@@ -110,19 +106,19 @@ define
       
       Events = events(
                   broadcast:        Broadcast
-                  getFullRef:       ForwardToNode
-                  getId:            ForwardToNode
-                  getPred:          ForwardToNode
-                  getRange:         ForwardToNode
-                  getRef:           ForwardToNode
-                  getRingRef:       ForwardToNode
-                  getSucc:          ForwardToNode
+                  getFullRef:       @Node
+                  getId:            @Node
+                  getPred:          @Node
+                  getRange:         @Node
+                  getRef:           @Node
+                  getRingRef:       @Node
+                  getSucc:          @Node
                   injectPermFail:   InjectPermFail
                   join:             Join
                   leave:            Leave
                   rSendTo:          RSendTo
                   sendTo:           SendTo
-                  setLogger:        ForwardToNode
+                  setLogger:        @Node
                   %% DHT events
                   get:              DHTGet
                   put:              DHTPut
@@ -137,7 +133,6 @@ define
          Self     = FullComponent.trigger
          %Listener = FullComponent.listener
       end
-      Node = {NewCell {RelaxedRing.new args}}
 
       Self
    end

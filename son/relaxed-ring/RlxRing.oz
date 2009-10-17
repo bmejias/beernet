@@ -49,7 +49,7 @@ export
    New
 define
    JOIN_WAIT      = 5000 % Milliseconds to wait to retry a join 
-   MAX_KEY        = 100000
+   MAX_KEY        = 1048576
 
    BelongsTo      = KeyRanges.belongsTo
 
@@ -103,9 +103,14 @@ define
          @FinalList
       end
 
-      proc {BasicForward route(msg:Event srcId:_ target:_)}
-         if @Succ \= nil then
-            {Zend @Succ Event}
+      proc {BasicForward Event}
+         case Event
+         of route(msg:Msg srcId:_ target:_) then
+            if @Succ \= nil then
+               {Zend @Succ Msg}
+            end
+         else
+            skip
          end
       end
 
@@ -179,6 +184,12 @@ define
          skip %% TODO: trigger some error message
       end
 
+      proc {GetComLayer Event}
+         getComLayer(Res) = Event
+      in
+         Res = @ComLayer
+      end
+
       proc {GetFullRef Event}
          getFullRef(FullRef) = Event
       in
@@ -189,6 +200,12 @@ define
          getId(Res) = Event
       in
          Res = @SelfRef.id
+      end
+
+      proc {GetMaxKey Event}
+         getMaxKey(Res) = Event
+      in
+         Res = MaxKey
       end
 
       proc {GetPred Event}
@@ -293,8 +310,8 @@ define
             SuccList := {UpdateList @SuccList NewSucc NewSuccList}
             Ring := @WishedRing
             WishedRing := none
-            {Monitor Succ} 
-            {FingerTable getFingers(Succ)}
+            {Monitor @Succ} 
+            {@FingerTable findFingers(Succ)}
          end
          if {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
             {Zend NewPred newSucc(newSucc:@SelfRef succList:@SuccList)}
@@ -353,8 +370,10 @@ define
 
       Events = events(
                   badRingRef:    BadRingRef
+                  getComLayer:   GetComLayer
                   getFullRef:    GetFullRef
                   getId:         GetId
+                  getMaxKey:     GetMaxKey
                   getPred:       GetPred
                   getRange:      GetRange
                   getRef:        GetRef
@@ -411,7 +430,6 @@ define
       Ring        = {NewCell ring(name:lucifer id:{NewName})}
       WishedRing  = {NewCell none}
       FingerTable = {NewCell BasicForward}
-
       %% Return the component
       Self
    end

@@ -25,23 +25,39 @@
  *     tcp/ip connections). The idea is that the address space of size N is
  *     divided in k, and then, the smallest fraction is divided again into k,
  *     until the granularity is small enough.
+ *
+ *     The Finger Table does not receives messages from the comunication
+ *     layer. It only sends messages through it. Messages are receive by the
+ *     Finger Table from within the node using the event route(...).
  *    
  *-------------------------------------------------------------------------
  */
 
 functor
 import
+   Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'
 export
    New
 define
 
    fun {New Args}
+      Self
       Id          % Id of the owner node. Pivot for relative ids
       Fingers     % RingList => sorted using Id first reference 
+      LogMaxKey   % Frequently used value
+      MaxKey      % Maximum value for a key
+
+      ComLayer    % Communication Layer, to send messages.
 
       proc {AddFinger Event}
          addFinger(Pbeer) = Event
+      in
+         skip
+      end
+
+      proc {FindFingers Event}
+         findFingers(Contact) = Event
       in
          skip
       end
@@ -50,12 +66,6 @@ define
          getFingers(TheFingers) = Event
       in
          TheFingers = nil
-      end
-
-      proc {Init Event}
-         init(id:TheId succ:Succ pred:Pred succList:SuccList) = Event
-      in
-         skip
       end
 
       proc {Monitor Event}
@@ -71,9 +81,15 @@ define
       end
 
       proc {Route Event}
-         route(msg:Msg srcId:SrcId targetId:Tgid) = Event
+         route(msg:Msg srcId:SrcId target:Target) = Event
       in
          skip
+      end
+
+      proc {SetComLayer Event}
+         setComLayer(NewComLayer) = Event
+      in
+         ComLayer := NewComLayer
       end
 
       proc {SetId Event}
@@ -84,15 +100,21 @@ define
 
       Events = events(
                   addFinger:     AddFinger
-                  getFingers:    getFingers
-                  init:          Init
+                  findFingers:   FindFingers
+                  getFingers:    GetFingers
                   monitor:       Monitor
                   removeFinger:  RemoveFinger
                   route:         Route
-                  setId:         setId
+                  setComLayer:   SetComLayer
+                  setId:         SetId
                   )
    in
-      fingerTable
+      Self        = {Component.newTrigger Events}
+      Id          = Args.id
+      MaxKey      = Args.maxKey
+      LogMaxKey   = {Float.toInt {Float.log {Int.toFloat MaxKey+1}}}
+      ComLayer    = {NewCell Component.dummy}
+      Self
    end
 
 end
