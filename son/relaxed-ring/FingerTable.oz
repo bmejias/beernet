@@ -41,16 +41,22 @@ export
    New
 define
 
+   %% Default values
+   K_DEF    = 4         % Factor k for k-ary fingers
+   MAX_KEY  = 1048576   % 2^20
+
    fun {New Args}
       Self
       Id          % Id of the owner node. Pivot for relative ids
-      Fingers     % RingList => sorted using Id first reference 
+      Fingers     % RingList => sorted using Id first reference
+      IdealIds    % Ideals ids to chose the fingers
+      K           % Factor k to divide the address space to choose fingers
       LogMaxKey   % Frequently used value
       MaxKey      % Maximum value for a key
 
       ComLayer    % Communication Layer, to send messages.
 
-      %--- utils ---
+      % --- Utils ---
       fun {CheckNewFinger Ids Fingers New}
          case Ids#Fingers
          of (H|T)#(P|Ps) then
@@ -72,6 +78,21 @@ define
          end
       end
 
+      proc {SetVars Args}
+         if {HasFeature Args id} then
+            Id := Args.id
+         end
+         if {HasFeature Args k} then
+            K := Args.k 
+         end
+         if {HasFeature Args maxKey} then
+            MaxKey := Args.maxKey
+         end
+         IdealIds := {KeyRanges.karyIdFingers @Id @K @MaxKey}
+      end
+
+
+      %% --- Events --- 
       proc {AddFinger Event}
          addFinger(Pbeer) = Event
       in
@@ -108,6 +129,12 @@ define
          skip
       end
 
+      proc {Reset Event}
+         reset(...) = Event
+      in
+         {SetVars Event}
+      end
+         
       proc {SetComLayer Event}
          setComLayer(NewComLayer) = Event
       in
@@ -118,6 +145,21 @@ define
          setId(NewId) = Event
       in
          Id := NewId
+         IdealIds := {KeyRanges.karyIdFingers @Id @K @MaxKey}
+      end
+
+      proc {SetK Event}
+         setK(NewK) = Event
+      in
+         K := NewK
+         IdealIds := {KeyRanges.karyIdFingers @Id @K @MaxKey}
+      end
+
+      proc {SetMaxKey Event}
+         setK(NewMaxKey) = Event
+      in
+         MaxKey := NewMaxKey
+         IdealIds := {KeyRanges.karyIdFingers @Id @K @MaxKey}
       end
 
       Events = events(
@@ -127,14 +169,20 @@ define
                   monitor:       Monitor
                   removeFinger:  RemoveFinger
                   route:         Route
+                  reset:         Reset
                   setComLayer:   SetComLayer
                   setId:         SetId
+                  setMaxKey:     SetMaxKey
+                  setK:          SetK
                   )
    in
       Self        = {Component.newTrigger Events}
-      Id          = Args.id
-      MaxKey      = Args.maxKey
-      LogMaxKey   = {Float.toInt {Float.log {Int.toFloat MaxKey+1}}}
+      Id          = {NewCell 0}
+      K           = {NewCell K_DEF}
+      MaxKey      = {NewCell MAX_KEY}
+      IdealIds    = {NewCell nil}
+      {SetVars Args} % SetVars initialize IdealIds 
+      LogMaxKey   = {Float.toInt {Float.log {Int.toFloat @MaxKey+1}}}
       ComLayer    = {NewCell Component.dummy}
       Self
    end

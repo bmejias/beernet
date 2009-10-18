@@ -48,8 +48,8 @@ import
 export
    New
 define
-   JOIN_WAIT      = 5000 % Milliseconds to wait to retry a join 
-   MAX_KEY        = 1048576
+   JOIN_WAIT   = 5000      % Milliseconds to wait to retry a join 
+   MAX_KEY     = 1048576   % 2^20
 
    BelongsTo      = KeyRanges.belongsTo
 
