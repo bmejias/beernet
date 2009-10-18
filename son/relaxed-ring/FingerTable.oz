@@ -37,6 +37,7 @@ functor
 import
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'
+   RingList    at '../../utils/RingList.ozf'
 export
    New
 define
@@ -96,7 +97,7 @@ define
       proc {AddFinger Event}
          addFinger(Pbeer) = Event
       in
-         skip
+         Fingers := {CheckNewFinger @IdealIds @Fingers Pbeer}
       end
 
       proc {FindFingers Event}
@@ -114,13 +115,13 @@ define
       proc {Monitor Event}
          monitor(Pbeer) = Event
       in
-         skip
+         Fingers := {CheckNewFinger @IdealIds @Fingers Pbeer}
       end
 
       proc {RemoveFinger Event}
          removeFinger(Finger) = Event
       in
-         skip
+         skip  
       end
 
       proc {Route Event}
@@ -182,6 +183,7 @@ define
       MaxKey      = {NewCell MAX_KEY}
       IdealIds    = {NewCell nil}
       {SetVars Args} % SetVars initialize IdealIds 
+      Fingers     = {NewCell {RingList.new}}
       LogMaxKey   = {Float.toInt {Float.log {Int.toFloat @MaxKey+1}}}
       ComLayer    = {NewCell Component.dummy}
       Self

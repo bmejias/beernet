@@ -32,7 +32,7 @@ define
             case L
             of Pbeer|MorePbeers then
                if {OS.rand} mod 7 < 1 then
-                  {Pbeer injectFailure}
+                  {Pbeer injectPermFail}
                   {RussianRoulette I+1 MorePbeers FinalCount}
                else
                   Pbeer|{RussianRoulette I MorePbeers FinalCount}
@@ -43,20 +43,21 @@ define
             end
          else
             FinalCount = I
+            L
          end
       end
-      fun {KillingLoop L I}
+      fun {KillingLoop I L}
          if I < N then
             NewI NewL
          in
             NewL = {RussianRoulette I L NewI}
-            {KillingLoop NewL NewI}
+            {KillingLoop NewI NewL}
          else
             L
          end
       end
    in
-      {KillingLoop L 0}
+      {KillingLoop 0 L}
    end
 
    fun {Churn N L}
@@ -67,13 +68,15 @@ define
                Luck = {OS.rand} mod 7 
             in
                if Luck < 1 andthen I < N then
-                  {Pbeer injectFailure}
+                  {Pbeer injectPermFail}
                   {ChurnRoulette I+1 J MorePbeers FinalI FinalJ}
                elseif Luck > 5 andthen J < N then
                   New
                in
                   New = {NewPbeer}
                   Pbeer|New|{ChurnRoulette I J+1 MorePbeers FinalI FinalJ}
+               else
+                  Pbeer|{ChurnRoulette I J MorePbeers FinalI FinalJ}
                end
             [] nil then
                FinalI = I
@@ -83,20 +86,21 @@ define
          else
             FinalI = I
             FinalJ = J
+            L
          end
       end
-      fun {ChurnLoop L I J}
+      fun {ChurnLoop I J L}
          if I < N orelse J < N then
             NewI NewJ NewL
          in
             NewL = {ChurnRoulette I J L NewI NewJ}
-            {ChurnLoop NewL NewI NewJ}
+            {ChurnLoop NewI NewJ NewL}
          else
             L
          end
       end
    in
-      {ChurnLoop L 0 0}
+      {ChurnLoop 0 0 L}
    end
 
    fun {BoolToString B}
@@ -137,7 +141,6 @@ define
       First
       Result
    in
-      ComLayer = {Network.new}
       First = {Pbeer getFullRef($)}
       {System.showInfo "Network "#First.ring.name}
       {System.printInfo First.pbeer.id#"->"}
@@ -180,13 +183,16 @@ in
       {Pbeer join(NetRef)}
       %{Delay 100}
    end
+   ComLayer = {Network.new}
    {Delay 1000}
    TestBuild = {LoopNetwork MasterOfPuppets SIZE}
    {System.showInfo "Killing 10 Pbeers"}
    PbeersAfterMassacre = {Kill 10 Pbeers}
+   {System.show PbeersAfterMassacre}
    {Delay 4000}
    TestMassacre = {LoopNetwork MasterOfPuppets {Length PbeersAfterMassacre}}
    PbeersAfterChurn = {Churn 10 PbeersAfterMassacre}
+   {System.show PbeersAfterChurn}
    {Delay 4000}
    TestChurn = {LoopNetwork MasterOfPuppets {Length PbeersAfterChurn}}
    {System.showInfo "*** Test Summary ***"}
