@@ -94,12 +94,13 @@ define
          FinalList DropList
       in
          FinalList = {NewCell MyList}
-         {RingList.forAll {Vacuum OtherList @Crashed}
+         {RingList.forAll {Vacuum {AddToList NewElem OtherList} @Crashed}
                            proc {$ Pbeer}
                               FinalList := {AddToList Pbeer @FinalList}
                            end}
          FinalList := {RingList.keepAndDrop LogMaxKey @FinalList DropList}
-         {UnregisterPeers DropList}
+         % TODO: verify this operation
+         %{UnregisterPeers DropList}
          {WatchPeers @FinalList}
          @FinalList
       end
@@ -197,7 +198,8 @@ define
          end
          if Pbeer == @Pred then
             if @PredList \= nil then
-               Pred := {RingList.getLast @PredList}
+               Pred := {RingList.getLast @PredList @Pred}
+               {Monitor @Pred}
             end
          end
       end
@@ -217,11 +219,14 @@ define
          if {PbeerList.isIn @Pred @Crashed} then
             Pred := Src %% Monitoring Src already and it's on predList
             {Zend Src fixOk(src:@SelfRef succList:@SuccList)}
+            {Monitor Src}
          elseif {BelongsTo Src.id @Pred.id @SelfRef.id-1} then
             Pred := Src %% Monitoring Src already and it's on predList
             {Zend Src fixOk(src:@SelfRef succList:@SuccList)}
             %{Zend Src predFound(pred:Src last:true) Self}
+            {Monitor Src}
          else
+            {System.show 'GGGGGGGGGGRRRRRRRRRRRAAAAAAAAAA'#@SelfRef.id}
             %% Just keep it in a branch
             %{Route predFound(pred:Src last:true) Src.id Self}
             skip
@@ -262,7 +267,7 @@ define
       end
 
       proc {GetPred Event}
-         getSucc(Peer) = Event
+         getPred(Peer) = Event
       in
          Peer = @Pred
       end
@@ -364,7 +369,7 @@ define
             SuccList := {UpdateList @SuccList NewSucc NewSuccList}
             Ring := @WishedRing
             WishedRing := none
-            {Monitor @Succ} 
+            {Monitor NewSucc} 
             {@FingerTable findFingers(Succ)}
          end
          if {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
@@ -439,7 +444,6 @@ define
                   hint:          Hint
                   idInUse:       IdInUse
                   init:          Init
-                  injectPermFail:InjectPermFail
                   join:          Join
                   predNoMore:    PredNoMore
                   joinLater:     JoinLater
@@ -480,11 +484,11 @@ define
       SelfRef := {Record.adjoinAt @SelfRef port {@ComLayer getPort($)}}
       {@ComLayer setId(@SelfRef.id)}
 
-      Crashed     = {NewCell {PbeerList.new}}
       Pred        = {NewCell @SelfRef}
-      PredList    = {NewCell {RingList.new}}
       Succ        = {NewCell @SelfRef}
+      PredList    = {NewCell {RingList.new}}
       SuccList    = {NewCell {RingList.new}} 
+      Crashed     = {NewCell {PbeerList.new}}
       Ring        = {NewCell ring(name:lucifer id:{NewName})}
       WishedRing  = {NewCell none}
       FingerTable = {NewCell BasicForward}

@@ -41,10 +41,23 @@ define
    
    fun {New Args}
       Self
+      ComLayer
       RlxRingNode
       TheFTable
 
-      Events = events(any:RlxRingNode)
+      proc {InjectPermFail Event}
+         injectPermFail = Event
+      in
+         {ComLayer signalDestroy}
+         {RlxRingNode signalDestroy}
+         {TheFTable signalDestroy}
+         {Wait _}
+      end
+         
+      Events = events(
+                  any:              RlxRingNode
+                  injectPermFail:   InjectPermFail
+                  )
    in
       local
          FullComponent
@@ -55,7 +68,7 @@ define
       end
       RlxRingNode = {RlxRing.new Args}
       local
-         Id MaxKey ComLayer
+         Id MaxKey
       in
          {RlxRingNode getMaxKey(MaxKey)}
          {RlxRingNode getId(Id)}
