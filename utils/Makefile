@@ -11,6 +11,7 @@ nanoStore: nanoStore.oz
 
 clean:
 	rm -f *ozf
+	rm -f nanoStore
 	rm -f nano.tket
 
 .PHONY: all clean
