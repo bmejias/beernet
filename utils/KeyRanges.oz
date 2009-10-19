@@ -26,6 +26,7 @@ import
    Random   at 'Random.ozf'
 export
    BelongsTo
+   CheckOrder
    GetRandomKey
    GetUniqueKey
    InsertPeer
@@ -43,7 +44,12 @@ define
          From < Key orelse Key =< To
       end
    end
-   
+
+   %% Boolean. Check the serie Id->P->Q clockwise
+   fun {CheckOrder Id P Q}
+      {BelongsTo P Id Q}
+   end
+
    %% Random Key generator
    fun {GetRandomKey NetworkSize}
       {Random.urandInt 0 NetworkSize}

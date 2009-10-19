@@ -71,10 +71,10 @@ define
       end
       TheDistance = {Distance NewPeer.id Pivot MaxKey}
    in
-      if TheDistance > 0 then
-         {Loop TheDistance L}
+      if TheDistance == 0 then
+         {Loop MaxKey L}
       else
-         L
+         {Loop TheDistance L}
       end
    end
 
@@ -164,7 +164,7 @@ define
    fun {IsIn Peer L}
       case L
       of (_/*Dist*/#H)|T then
-         if H == Peer then
+         if H.id == Peer.id then
             true
          else
             {IsIn Peer T}
@@ -181,7 +181,7 @@ define
    fun {Merge L1 L2}
       case L1#L2
       of ((Dist1#Peer1)|T1)#((Dist2#Peer2)|T2) then
-         if Peer1 == Peer2 then
+         if Peer1.id == Peer2.id then
             (Dist2#Peer2)|{Merge T1 T2}
          elseif Dist1 > Dist2 then
             (Dist2#Peer2)|{Merge L1 T2}
@@ -254,7 +254,7 @@ define
    fun {Remove Peer L}
       case L
       of (Dist#HeadPeer)|Tail then
-         if HeadPeer == Peer then
+         if HeadPeer.id == Peer.id then
             Tail
          else
             (Dist#HeadPeer)|{Remove Peer Tail}

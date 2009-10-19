@@ -79,7 +79,7 @@ define
    fun {IsIn Peer L}
       case L
       of H|T then
-         if H == Peer then
+         if H.id == Peer.id then
             true
          elseif H.id > Peer.id then
             {IsIn Peer T}
@@ -95,7 +95,7 @@ define
    fun {Intersection L1 L2}
       case L1#L2
       of (H1|T1)#(H2|T2) then
-         if H1 == H2 then
+         if H1.id == H2.id then
             H1|{Intersection T1 T2}
          elseif H1.id < H2.id then
             {Intersection T1 L2}
@@ -141,7 +141,7 @@ define
    fun {Remove Peer L}
       case L
       of H|T then
-         if H == Peer then
+         if H.id == Peer.id then
             T
          else
             H|{Remove Peer T}
@@ -168,7 +168,7 @@ define
    fun {Minus L1 L2}
       case L1#L2
       of (H1|T1)#(H2|T2) then
-         if H1 == H2 then
+         if H1.id == H2.id then
             {Minus T1 T2}
          elseif H1.id < H2.id then
             H1|{Minus T1 L2}
@@ -193,7 +193,7 @@ define
    fun {Union L1 L2}
       case L1#L2
       of (H1|T1)#(H2|T2) then
-         if H1 == H2 then
+         if H1.id == H2.id then
             H1|{Union T1 T2}
          elseif H1.id < H2.id then
             H1|{Union T1 L2}
@@ -208,4 +208,4 @@ define
    end
 
 
-end   
+end
