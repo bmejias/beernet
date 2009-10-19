@@ -112,7 +112,7 @@ define
       case L
       of H|T then
          if N > 0 then
-            H|{Keep N - 1 T}
+            H|{Keep N-1 T}
          else
             nil
          end
@@ -126,7 +126,7 @@ define
       case L
       of H|T then
          if N > 0 then
-            H|{Keep N - 1 T}
+            H|{KeepAndDrop N-1 T Drop}
          else
             Drop = T
             nil
