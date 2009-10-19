@@ -73,6 +73,8 @@ define
                of setListener(NewListener) then
                   CompListener := NewListener
                   {UponEvent NewStream} % Loop for new events
+               [] signalDestroy then
+                  skip % Stop looping
                else
                   if {Member any Implemented} then
                      {Events.any Event}
