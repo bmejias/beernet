@@ -75,6 +75,14 @@ define
          {FailDetector setPbeer({ComLayer getRef($)})}
       end
 
+      proc {SignalDestroy Event}
+         signalDestroy = Event
+      in
+         {ComLayer signalDestroy}
+         {FailDetector signalDestroy}
+         {Wait _}
+      end
+
       Events = events(
                   any:           Any
                   getPort:       ComLayer
@@ -84,6 +92,7 @@ define
                   sendTo:        ComLayer
                   setId:         SetId
                   setLogger:     ComLayer
+                  signalDestroy: SignalDestroy
                   stopMonitor:   FailDetector
                   )
    in

@@ -48,8 +48,8 @@ export
 define
 
    DELTA       = 500    % Granularity to tune the failure detector
-   TIMEOUT     = 2000   % Initial Timeout value
-   MAX_TIMEOUT = 5000   % Timeout must not go beyond this value
+   TIMEOUT     = 500   % Initial Timeout value
+   MAX_TIMEOUT = 2000   % Timeout must not go beyond this value
    
    fun {New}
       ComLayer    % Low level communication layer
