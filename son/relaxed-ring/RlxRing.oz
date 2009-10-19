@@ -1,4 +1,5 @@
 /*-------------------------------------------------------------------------
+            crash:         Crash
  *
  * RelaxedRing.oz
  *
@@ -160,9 +161,6 @@ define
             end}
       end
 
-      %TODO: Decide whether I need a coroner or not
-      proc {Watcher _} skip end
-
       proc {WatchPeers Peers}
          {RingList.forAll Peers
             proc {$ Peer}
@@ -182,6 +180,61 @@ define
       in
          {System.show 'BAD ring reference. I cannot join'}
          skip %% TODO: trigger some error message
+      end
+
+      proc {Crash Event}
+         crash(Pbeer) = Event
+      in
+         {System.showInfo "Peer "#Pbeer.id#" has crashed. Detected by "#@SelfRef.id}
+         Crashed  := {PbeerList.add Pbeer @Crashed}
+         SuccList := {RingList.remove Pbeer @SuccList}
+         PredList := {RingList.remove Pbeer @PredList}
+         {@FingerTable remove(Pbeer)}
+         if Pbeer == @Succ then
+            Succ := {RingList.getFirst @SuccList @SelfRef}
+            {Monitor @Succ}
+            {Zend @Succ fix(src:@SelfRef)}
+         end
+         if Pbeer == @Pred then
+            if @PredList \= nil then
+               Pred := {RingList.getLast @PredList}
+            end
+         end
+      end
+
+      %%% Midnattsol
+      %% Fix means 'Self is Src's new succ' and 'Src wants to be Self's pred'
+      %% Src is accepted as predecessor if:
+      %% 1 - the current predecessor is dead
+      %% 2 - Src is in (pred, self]
+      %% Otherwise is a better predecessor of pred.
+      proc {Fix Event}
+         fix(src:Src) = Event
+      in
+         %% Src thinks I'm its successor so I add it to the predList
+         PredList := {AddToList Src @PredList}
+         {Monitor Src}
+         if {PbeerList.isIn @Pred @Crashed} then
+            Pred := Src %% Monitoring Src already and it's on predList
+            {Zend Src fixOk(src:@SelfRef succList:@SuccList)}
+         elseif {BelongsTo Src.id @Pred.id @SelfRef.id-1} then
+            Pred := Src %% Monitoring Src already and it's on predList
+            {Zend Src fixOk(src:@SelfRef succList:@SuccList)}
+            %{Zend Src predFound(pred:Src last:true) Self}
+         else
+            %% Just keep it in a branch
+            %{Route predFound(pred:Src last:true) Src.id Self}
+            skip
+         end
+      end
+
+      proc {FixOk Event}
+         fixOk(src:Src succList:SrcSuccList) = Event
+      in
+         SuccList := {UpdateList @SuccList Src SrcSuccList}
+         {Zend @Pred updateSuccList(src:@SelfRef
+                                    succList:@SuccList
+                                    counter:LogMaxKey)}
       end
 
       proc {GetComLayer Event}
@@ -294,6 +347,7 @@ define
          predNoMore(OldPred) = Event
       in
          PredList := {RingList.remove OldPred @PredList}
+         %% TODO: Add treatment of hint message here
       end
 
       proc {JoinLater Event}
@@ -333,7 +387,7 @@ define
                                     succList:@SuccList
                                     counter:LogMaxKey)}
             Succ := NewSucc
-            {Watcher register(watcher:@SelfRef target:NewSucc)}
+            {Monitor NewSucc}
          end
       end
 
@@ -369,7 +423,10 @@ define
       end
 
       Events = events(
+                  crash:         Crash
                   badRingRef:    BadRingRef
+                  fix:           Fix
+                  fixOk:         FixOk
                   getComLayer:   GetComLayer
                   getFullRef:    GetFullRef
                   getId:         GetId
@@ -382,6 +439,7 @@ define
                   hint:          Hint
                   idInUse:       IdInUse
                   init:          Init
+                  injectPermFail:InjectPermFail
                   join:          Join
                   predNoMore:    PredNoMore
                   joinLater:     JoinLater

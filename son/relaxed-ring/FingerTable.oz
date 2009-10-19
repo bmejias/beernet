@@ -52,7 +52,7 @@ define
       Fingers     % RingList => sorted using Id first reference
       IdealIds    % Ideals ids to chose the fingers
       K           % Factor k to divide the address space to choose fingers
-      LogMaxKey   % Frequently used value
+      %LogMaxKey   % Frequently used value
       MaxKey      % Maximum value for a key
 
       ComLayer    % Communication Layer, to send messages.
@@ -61,9 +61,9 @@ define
       fun {CheckNewFinger Ids Fingers New}
          case Ids#Fingers
          of (H|T)#(P|Ps) then
-            if H =< P.id then
-               if H =< New.id then
-                  if New.id < P.id then
+            if {KeyRanges.checkOrder Id H P.id} then
+               if {KeyRanges.checkOrder Id H New.id} then
+                  if {KeyRanges.checkOrder Id New.id P.id} then
                      New|{CheckNewFinger T Ps P}
                   else
                      P|{CheckNewFinger T Ps New}
@@ -101,7 +101,7 @@ define
       end
 
       proc {FindFingers Event}
-         findFingers(Contact) = Event
+         findFingers(_/*Contact*/) = Event
       in
          skip
       end
@@ -121,7 +121,7 @@ define
       proc {RemoveFinger Event}
          removeFinger(Finger) = Event
       in
-         skip  
+         Fingers := {RingList.remove Finger @Fingers}
       end
 
       proc {Route Event}
@@ -184,7 +184,7 @@ define
       IdealIds    = {NewCell nil}
       {SetVars Args} % SetVars initialize IdealIds 
       Fingers     = {NewCell {RingList.new}}
-      LogMaxKey   = {Float.toInt {Float.log {Int.toFloat @MaxKey+1}}}
+      %LogMaxKey   = {Float.toInt {Float.log {Int.toFloat @MaxKey+1}}}
       ComLayer    = {NewCell Component.dummy}
       Self
    end

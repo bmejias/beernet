@@ -32,7 +32,6 @@
 
 functor
 import
-   System
    Component   at '../../corecomp/Component.ozf'
    RlxRing     at 'RlxRing.ozf'
    FingerTable at 'FingerTable.ozf'

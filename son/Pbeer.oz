@@ -77,7 +77,7 @@ define
       proc {InjectPermFail Event}
          injectPermFail = Event
       in
-         skip
+         {@Node injectPermFail}
       end
       
       proc {Join Event}
