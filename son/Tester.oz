@@ -13,6 +13,7 @@ import
 
 define
    SIZE  = 42
+   CHURN = 7
 
    ComLayer
    Log
@@ -22,8 +23,11 @@ define
    PbeersAfterMassacre
    PbeersAfterChurn
    TestBuild
+   TestBuildPred
    TestMassacre
+   TestMassacrePred
    TestChurn
+   TestChurnPred
    NetRef
 
    fun {Kill N L}
@@ -158,6 +162,58 @@ define
       end
       Result.passed
    end
+
+   fun {LoopNetworkPred Pbeer Size}
+      fun {Loop Current Succ First Counter OK Error}
+         if Current == nil then
+            result(passed:false
+                   error:Error#" - Wrong Size "#Counter#" != "#Size)
+         elseif Current.id == First.id then
+            {System.showInfo Current.id}
+            if Counter == Size then
+               if OK then
+                  result(passed:true)
+               else
+                  result(passed:OK error:Error)
+               end
+            else
+               result(passed:false
+                      error:Error#" - Wrong Size "#Counter#" != "#Size)
+            end
+         else
+            Pred
+         in
+            Pred = {ComLayer sendTo(Current getPred($))}
+            {System.printInfo Current.id#"->"}
+            if Pred.id > Current.id andthen Pred.id \= @MaxKey then
+               {Loop Pred Current First Counter+1
+                     false Error#Current.id#"->"#Pred.id#" "}
+            else
+               {Loop Pred Current First Counter+1 OK Error}
+            end
+         end
+      end
+      First
+      Result
+   in
+      First = {Pbeer getFullRef($)}
+      {System.showInfo "Network following PRED "#First.ring.name}
+      {System.printInfo First.pbeer.id#"->"}
+      Result = {Loop {Pbeer getPred($)} 
+                     First.pbeer 
+                     First.pbeer 
+                     1 
+                     true
+                     nil}
+      if Result.passed then
+         {System.showInfo "\n+++ PASSED +++"}
+      else
+         {System.showInfo "\n+++ FAILED +++"}
+         {System.showInfo "Error: "#Result.error}
+      end
+      Result.passed
+   end
+
    fun {NewPbeer}
       New TmpId
    in
@@ -185,19 +241,33 @@ in
    end
    ComLayer = {Network.new}
    {Delay 1000}
+   local
+      P I S
+   in
+      {MasterOfPuppets getPred(P)}
+      {MasterOfPuppets getId(I)}
+      {MasterOfPuppets getSucc(S)}
+      {System.showInfo "MASTER: "#P.id#"<-"#I#"->"#S.id}
+   end
    TestBuild = {LoopNetwork MasterOfPuppets SIZE}
-   {System.showInfo "Killing 10 Pbeers"}
-   PbeersAfterMassacre = {Kill 10 Pbeers}
+   TestBuildPred = {LoopNetworkPred MasterOfPuppets SIZE}
+   {System.showInfo "Killing "#CHURN#" Pbeers"}
+   PbeersAfterMassacre = {Kill CHURN Pbeers}
    {System.show PbeersAfterMassacre}
    {Delay 4000}
    TestMassacre = {LoopNetwork MasterOfPuppets {Length PbeersAfterMassacre}}
-   PbeersAfterChurn = {Churn 10 PbeersAfterMassacre}
+   %TestMassacrePred = {LoopNetworkPred MasterOfPuppets {Length PbeersAfterMassacre}}
+   PbeersAfterChurn = {Churn CHURN PbeersAfterMassacre}
    {System.show PbeersAfterChurn}
    {Delay 4000}
    TestChurn = {LoopNetwork MasterOfPuppets {Length PbeersAfterChurn}}
+   %TestChurnPred = {LoopNetworkPred MasterOfPuppets {Length PbeersAfterChurn}}
    {System.showInfo "*** Test Summary ***"}
    {System.showInfo "Build Test: "#{BoolToString TestBuild}}
+   {System.showInfo "Build Test Pred: "#{BoolToString TestBuildPred}}
    {System.showInfo "Failures Test: "#{BoolToString TestMassacre}}
+   {System.showInfo "Failures Test Pred: "#{BoolToString TestMassacrePred}}
    {System.showInfo "Churn Test: "#{BoolToString TestChurn}}
+   {System.showInfo "Churn Test Pred: "#{BoolToString TestChurnPred}}
    {Application.exit 0}
 end
