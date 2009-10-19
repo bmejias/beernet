@@ -106,14 +106,14 @@ define
       proc {Ping Event}
          ping(Pbeer tag:fd) = Event
       in
-         %{System.show 'got ping from'#Pbeer}
+%         {System.show 'pingpingpingping'#@SelfPbeer.id#' got ping from '#Pbeer.id}
          {ComLayer sendTo(Pbeer pong(@SelfPbeer tag:fd) log:faildet)}
       end
 
       proc {Pong Event}
          pong(Pbeer tag:fd) = Event
       in
-         %{System.show '       got pong from'#Pbeer}
+%         {System.show 'pongpongpong'#@SelfPbeer.id#'       got pong from'#Pbeer.id}
          Alive := {PbeerList.add Pbeer @Alive}
          if {PbeerList.isIn Pbeer @Notified} then
             {Listener alive(Pbeer)}
