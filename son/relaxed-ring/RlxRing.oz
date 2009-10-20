@@ -1,5 +1,4 @@
 /*-------------------------------------------------------------------------
-            crash:         Crash
  *
  * RelaxedRing.oz
  *
@@ -91,14 +90,14 @@ define
 
       %% TheList should have no more than Size elements
       fun {UpdateList MyList NewElem OtherList}
-         FinalList DropList
+         FinalList _/*DropList*/
       in
          FinalList = {NewCell MyList}
          {RingList.forAll {Vacuum {AddToList NewElem OtherList} @Crashed}
                            proc {$ Pbeer}
                               FinalList := {AddToList Pbeer @FinalList}
                            end}
-         FinalList := {RingList.keepAndDrop LogMaxKey @FinalList DropList}
+         FinalList := {RingList.keepAndDrop LogMaxKey @FinalList _/*DropList*/}
          % TODO: verify this operation
          %{UnregisterPeers DropList}
          {WatchPeers @FinalList}
@@ -107,7 +106,7 @@ define
 
       proc {BasicForward Event}
          case Event
-         of route(msg:Msg srcId:_ target:_) then
+         of route(msg:Msg src:_ target:_) then
             if @Succ \= nil then
                {Zend @Succ Msg}
             end
@@ -138,7 +137,7 @@ define
          {@ComLayer monitor(Pbeer)}
       end
 
-      proc {Route Event Target}
+      proc {RlxRoute Event Target}
          if {HasFeature Event last} andthen Event.last then
             %% I am supposed to be the responsible, but I have a branch
             %% or somebody was missed (non-transitive connections)
@@ -150,17 +149,19 @@ define
             %         #@(Self.succ).id}
          else
             %% Forward the message using the routing table
-            {@FingerTable route(msg:Event srcId:Event.src.id target:Target)}
+            {@FingerTable route(msg:Event src:Event.src target:Target)}
             %{Blabla @SelfRef.id#" forwards join of "#Src.id}
          end
       end
 
+/*
       proc {UnregisterPeers Peers}
          {RingList.forAll Peers
             proc {$ Peer}
                {@ComLayer stopMonitor(Peer)}
             end}
       end
+*/
 
       proc {WatchPeers Peers}
          {RingList.forAll Peers
@@ -190,7 +191,7 @@ define
          Crashed  := {PbeerList.add Pbeer @Crashed}
          SuccList := {RingList.remove Pbeer @SuccList}
          PredList := {RingList.remove Pbeer @PredList}
-         {@FingerTable remove(Pbeer)}
+         {@FingerTable removeFinger(Pbeer)}
          if Pbeer == @Succ then
             Succ := {RingList.getFirst @SuccList @SelfRef}
             {Monitor @Succ}
@@ -228,7 +229,7 @@ define
          else
             {System.show 'GGGGGGGGGGRRRRRRRRRRRAAAAAAAAAA'#@SelfRef.id}
             %% Just keep it in a branch
-            %{Route predFound(pred:Src last:true) Src.id Self}
+            %{RlxRoute predFound(pred:Src last:true) Src.id Self}
             skip
          end
       end
@@ -341,7 +342,7 @@ define
                PredList := {AddToList @Pred @PredList}
             else
                %NOT FOR ME - going to route
-               {Route Event Src.id}
+               {RlxRoute Event Src.id}
             end
          else
             {Zend Src joinLater}
@@ -370,7 +371,10 @@ define
             Ring := @WishedRing
             WishedRing := none
             {Monitor NewSucc} 
-            {@FingerTable findFingers(Succ)}
+            {@FingerTable monitor(NewSucc)}
+            {RingList.forAll @SuccList proc {$ Pbeer}
+                                          {@FingerTable monitor(Pbeer)}
+                                       end}
          end
          if {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
             {Zend NewPred newSucc(newSucc:@SelfRef succList:@SuccList)}
@@ -378,6 +382,7 @@ define
             PredList := {AddToList NewPred @PredList}
             %% set a failure detector on the predecessor
             {Monitor NewPred} 
+            {@FingerTable monitor(NewPred)}
          end
       end
 
@@ -393,6 +398,33 @@ define
                                     counter:LogMaxKey)}
             Succ := NewSucc
             {Monitor NewSucc}
+            {@FingerTable monitor(NewSucc)}
+            {RingList.forAll @SuccList proc {$ Pbeer}
+                                          {@FingerTable monitor(Pbeer)}
+                                       end}
+         end
+      end
+
+      proc {Route Event}
+         route(msg:Msg src:_ target:Target ...) = Event
+      in
+         if {BelongsTo Target @Pred.id @SelfRef.id} then
+            %% This message is for me
+            {Self Msg}
+         elseif {HasFeature Event last} andthen Event.last then
+            %% I am supposed to be the responsible, but I have a branch
+            %% or somebody was missed (non-transitive connections)
+            {Backward Event Target}
+         elseif {BelongsTo Event.src.id @SelfRef.id @Succ.id} then
+            %% I think my successor is the responsible => set last = true
+            {Zend @Succ {Record.adjoinAt Event last true}}
+            %{Blabla @SelfRef.id#" forwards join of "#Sender.id#" to "
+            %         #@(Self.succ).id}
+         else
+            %% Forward the message using the routing table
+            {System.show @SelfRef.id#'Forwarding '#Event}
+            {@FingerTable Event}
+            %{Blabla @SelfRef.id#" forwards join of "#Src.id}
          end
       end
 
@@ -424,6 +456,9 @@ define
                                        succList:@SuccList
                                        counter:Counter - 1)}
             end
+            {RingList.forAll @SuccList proc {$ Pbeer}
+                                          {@FingerTable monitor(Pbeer)}
+                                       end}
          end
       end
 
@@ -449,6 +484,7 @@ define
                   joinLater:     JoinLater
                   joinOk:        JoinOk
                   newSucc:       NewSucc
+                  route:         Route
                   setFingerTable:SetFingerTable
                   setLogger:     SetLogger
                   startJoin:     StartJoin

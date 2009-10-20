@@ -76,7 +76,7 @@ define
          TheFTable = {FingerTable.new args(maxKey:MaxKey id:Id)}
          {TheFTable setComLayer(ComLayer)}
       end
-      %{RlxRingNode setFingerTable(TheFTable)}
+      {RlxRingNode setFingerTable(TheFTable)}
       Self
    end
 

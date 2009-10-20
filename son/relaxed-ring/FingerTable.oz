@@ -35,6 +35,7 @@
 
 functor
 import
+   System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'
    RingList    at '../../utils/RingList.ozf'
@@ -58,25 +59,36 @@ define
       ComLayer    % Communication Layer, to send messages.
 
       % --- Utils ---
-      fun {CheckNewFinger Ids Fingers New}
-         case Ids#Fingers
-         of (H|T)#(P|Ps) then
-            if {KeyRanges.checkOrder Id H P.id} then
-               if {KeyRanges.checkOrder Id H New.id} then
-                  if {KeyRanges.checkOrder Id New.id P.id} then
-                     New|{CheckNewFinger T Ps P}
+      fun {CheckNewFinger Ids Fgs New}
+         case Ids
+         of H|T then
+            if {RingList.isEmpty Fgs} then
+               {RingList.add New Fgs @Id @MaxKey}
+            else
+               P  = {RingList.getFirst Fgs noFinger}
+               Ps = {RingList.tail Fgs}
+            in
+               if {KeyRanges.checkOrder @Id H P.id} then
+                  if {KeyRanges.checkOrder @Id H New.id} then
+                     if {KeyRanges.checkOrder @Id New.id P.id} then
+                        {RingList.add New {CheckNewFinger T Ps P} @Id @MaxKey}
+                     else
+                        {RingList.add P {CheckNewFinger T Ps New} @Id @MaxKey}
+                     end
                   else
-                     P|{CheckNewFinger T Ps New}
+                     Fgs
                   end
                else
-                  Fingers
+                  {CheckNewFinger Ids Ps New}
                end
-            else
-               {CheckNewFinger Ids Ps New}
             end
-         [] nil#_ then nil
-         [] _#nil then New|nil
+         [] nil then
+            {RingList.new}
          end
+      end
+
+      fun {ClosestPrecedingFinger Key}
+         {RingList.getBefore Key @Fingers @Id @MaxKey}
       end
 
       proc {SetVars Args}
@@ -91,7 +103,6 @@ define
          end
          IdealIds := {KeyRanges.karyIdFingers @Id @K @MaxKey}
       end
-
 
       %% --- Events --- 
       proc {AddFinger Event}
@@ -109,7 +120,7 @@ define
       proc {GetFingers Event}
          getFingers(TheFingers) = Event
       in
-         TheFingers = nil
+         TheFingers = @Fingers
       end
 
       proc {Monitor Event}
@@ -125,9 +136,13 @@ define
       end
 
       proc {Route Event}
-         route(msg:Msg srcId:SrcId target:Target) = Event
+         route(msg:Msg src:Src target:Target ...) = Event
       in
-         skip
+         {System.show going_to_route#Event}
+         if {Not {Record.label Msg} == join} then
+            {Monitor monitor(Src)}
+         end
+         {@ComLayer sendTo({ClosestPrecedingFinger Target} Event)}
       end
 
       proc {Reset Event}
@@ -176,7 +191,7 @@ define
                   setMaxKey:     SetMaxKey
                   setK:          SetK
                   )
-   in
+   in %% --- New starts ---
       Self        = {Component.newTrigger Events}
       Id          = {NewCell 0}
       K           = {NewCell K_DEF}
