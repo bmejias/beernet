@@ -27,6 +27,7 @@ import
    PbeerList   at 'PbeerList.ozf'
 export
    Add
+   Distance
    Different
    ForAll
    GetAfter
@@ -35,6 +36,7 @@ export
    GetLast
    Keep
    KeepAndDrop
+   IsEmpty
    IsIn
    Merge
    Minus
@@ -42,6 +44,7 @@ export
    NewPivot
    Remove
    RemoveLast
+   Tail
 define
    Keep        = PbeerList.keep
    KeepAndDrop = PbeerList.keepAndDrop
@@ -160,6 +163,10 @@ define
       end
    end
 
+   fun {IsEmpty L}
+      L == nil
+   end
+
    %% Return true if Peer is found in list L
    fun {IsIn Peer L}
       case L
@@ -264,4 +271,7 @@ define
       end
    end
 
+   fun {Tail L}
+      L.2
+   end
 end   
