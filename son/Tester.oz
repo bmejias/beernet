@@ -266,8 +266,8 @@ in
    {System.showInfo "Build Test: "#{BoolToString TestBuild}}
    {System.showInfo "Build Test Pred: "#{BoolToString TestBuildPred}}
    {System.showInfo "Failures Test: "#{BoolToString TestMassacre}}
-   {System.showInfo "Failures Test Pred: "#{BoolToString TestMassacrePred}}
+   %{System.showInfo "Failures Test Pred: "#{BoolToString TestMassacrePred}}
    {System.showInfo "Churn Test: "#{BoolToString TestChurn}}
-   {System.showInfo "Churn Test Pred: "#{BoolToString TestChurnPred}}
+   %{System.showInfo "Churn Test Pred: "#{BoolToString TestChurnPred}}
    {Application.exit 0}
 end
