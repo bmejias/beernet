@@ -6,6 +6,7 @@ functor
 import
    Application
    OS
+   Property
    System
    Logger         at '../logger/Logger.ozf'
    Network        at '../network/Network.ozf'
@@ -26,7 +27,7 @@ define
    TestBuildPred
    TestMassacre
    TestMassacrePred
-   TestChurn
+   TestAfterChurn
    TestChurnPred
    NetRef
 
@@ -224,50 +225,152 @@ define
       end
       New
    end
-in
-   {System.show 'first line'}
-   MasterOfPuppets = {PbeerMaker.new args}
-   {System.show 'second line'}
-   MaxKey = {NewCell {MasterOfPuppets getId($)}}
-   Log = {Logger.new 'lucifer.log'}
-   {MasterOfPuppets setLogger(Log.logger)}
-   Pbeers = {List.make SIZE-1}
-   NetRef = {MasterOfPuppets getFullRef($)}
-   for Pbeer in Pbeers do
-      Pbeer = {NewPbeer}
-      {Pbeer setLogger(Log.logger)}
-      {Pbeer join(NetRef)}
-      %{Delay 100}
+
+   %%--------------- The tests ------------------------------
+
+   %%--------------- Creating the network -------------------
+   proc {TestCreate}
+      {System.show 'first line'}
+      MasterOfPuppets = {PbeerMaker.new args}
+      {System.show 'second line'}
+      MaxKey = {NewCell {MasterOfPuppets getId($)}}
+      Log = {Logger.new 'lucifer.log'}
+      {MasterOfPuppets setLogger(Log.logger)}
+      Pbeers = {List.make SIZE-1}
+      NetRef = {MasterOfPuppets getFullRef($)}
+      for Pbeer in Pbeers do
+         Pbeer = {NewPbeer}
+         {Pbeer setLogger(Log.logger)}
+         {Pbeer join(NetRef)}
+         %{Delay 100}
+      end
+      ComLayer = {Network.new}
+      {Delay 1000}
+      local
+         P I S
+      in
+         {MasterOfPuppets getPred(P)}
+         {MasterOfPuppets getId(I)}
+         {MasterOfPuppets getSucc(S)}
+         {System.showInfo "MASTER: "#P.id#"<-"#I#"->"#S.id}
+      end
+      TestBuild = {LoopNetwork MasterOfPuppets SIZE}
+      TestBuildPred = {LoopNetworkPred MasterOfPuppets SIZE}
    end
-   ComLayer = {Network.new}
-   {Delay 1000}
-   local
-      P I S
+
+   %%--------------- Introducing Churn -----------------------
+   proc {TestChurn}
+      {System.showInfo "Killing "#CHURN#" Pbeers"}
+      PbeersAfterMassacre = {Kill CHURN Pbeers}
+      {System.show PbeersAfterMassacre}
+      {Delay 4000}
+      TestMassacre = {LoopNetwork MasterOfPuppets {Length PbeersAfterMassacre}}
+      %TestMassacrePred = {LoopNetworkPred MasterOfPuppets {Length PbeersAfterMassacre}}
+      PbeersAfterChurn = {Churn CHURN PbeersAfterMassacre}
+      {System.show PbeersAfterChurn}
+      {Delay 4000}
+      TestAfterChurn = {LoopNetwork MasterOfPuppets {Length PbeersAfterChurn}}
+      %TestChurnPred = {LoopNetworkPred MasterOfPuppets {Length PbeersAfterChurn}}
+   end
+
+   SumText = tests(
+                  build:      "Build Test: "
+                  buildPred:  "Build Test Pred: "
+                  massacre:   "Failure Test: "
+                  massaPred:  "Failure Test Pred: "
+                  churn:      "Churn Test: "
+                  churnPred:  "Churn Test Pred: "
+                  )
+
+   SumVariables = tests(
+                        build:      TestBuild
+                        buildPred:  TestBuildPred
+                        massacre:   TestMassacre
+                        massaPred:  TestMassacrePred
+                        churn:      TestAfterChurn
+                        churnPred:  TestChurnPred
+                        )
+
+   proc {TestSummary Tests}
+      proc {SummaryLoop Tests}
+         case Tests
+         of Test|MoreTests then
+            {Say SumText.Test#{BoolToString SumVariables.Test}}
+            {SummaryLoop MoreTests}
+         [] nil then
+            skip
+         end
+      end
    in
-      {MasterOfPuppets getPred(P)}
-      {MasterOfPuppets getId(I)}
-      {MasterOfPuppets getSucc(S)}
-      {System.showInfo "MASTER: "#P.id#"<-"#I#"->"#S.id}
+      {System.showInfo "*** Test Summary ***"}
+      if Tests == [all] then
+         {SummaryLoop [build buildPred massacre churn]}
+      else
+         {SummaryLoop Tests}
+      end
    end
-   TestBuild = {LoopNetwork MasterOfPuppets SIZE}
-   TestBuildPred = {LoopNetworkPred MasterOfPuppets SIZE}
-   {System.showInfo "Killing "#CHURN#" Pbeers"}
-   PbeersAfterMassacre = {Kill CHURN Pbeers}
-   {System.show PbeersAfterMassacre}
-   {Delay 4000}
-   TestMassacre = {LoopNetwork MasterOfPuppets {Length PbeersAfterMassacre}}
-   %TestMassacrePred = {LoopNetworkPred MasterOfPuppets {Length PbeersAfterMassacre}}
-   PbeersAfterChurn = {Churn CHURN PbeersAfterMassacre}
-   {System.show PbeersAfterChurn}
-   {Delay 4000}
-   TestChurn = {LoopNetwork MasterOfPuppets {Length PbeersAfterChurn}}
-   %TestChurnPred = {LoopNetworkPred MasterOfPuppets {Length PbeersAfterChurn}}
-   {System.showInfo "*** Test Summary ***"}
-   {System.showInfo "Build Test: "#{BoolToString TestBuild}}
-   {System.showInfo "Build Test Pred: "#{BoolToString TestBuildPred}}
-   {System.showInfo "Failures Test: "#{BoolToString TestMassacre}}
-   %{System.showInfo "Failures Test Pred: "#{BoolToString TestMassacrePred}}
-   {System.showInfo "Churn Test: "#{BoolToString TestChurn}}
-   %{System.showInfo "Churn Test Pred: "#{BoolToString TestChurnPred}}
+
+   %% For feedback
+   Show   = System.show
+   Say    = System.showInfo
+   Args
+   
+   {Property.put 'print.width' 1000}
+   {Property.put 'print.depth' 1000}
+
+   proc {HelpMessage}
+      {Say "Usage: "#{Property.get 'application.url'}#" <test> [option]"}
+      {Say ""}
+      {Say "Tests:"}
+      {Say "\tall\tRun all tests"}
+      {Say "\tcreate\tBootstrap a relaxed ring"}
+      {Say "\tchurn\tTest the relaxed-ring with some churn"}
+      {Say ""}
+      {Say "Options:"}
+      {Say "  -h, -?, --help\tThis help"}
+   end
+
+in
+   %% Defining input arguments
+   Args = try
+             {Application.getArgs
+              record(
+                     help(single char:[&? &h] default:false)
+                     )}
+
+          catch _ then
+             {Say 'Unrecognised arguments'}
+             optRec(help:true)
+          end
+
+   %% Help message
+   if Args.help then
+      {HelpMessage}
+      {Application.exit 0}
+   end
+   
+   case Args.1
+   of Command|nil then
+      case Command
+      of "all" then
+         {TestCreate}
+         {TestChurn}
+         {TestSummary [all]}
+      [] "create" then
+         {TestCreate}
+         {TestSummary [build buildPred]}
+      [] "churn" then
+         {TestCreate}
+         {TestChurn}
+         {TestSummary [massacre churn]}
+      else
+         {Say "ERROR: Invalid invocation\n"}
+         {HelpMessage}
+      end
+   else
+      {Say "ERROR: Invalid invocation\n"}
+      {HelpMessage}
+   end
+
    {Application.exit 0}
 end
