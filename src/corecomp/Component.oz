@@ -62,27 +62,31 @@ define
          case EventStream
          of Event|NewStream then
             EventName = {Label Event}
-            Implemented = {Arity Events}
          in
-            if {Member EventName Implemented} then
+            try
                {Events.EventName Event} % Handle the event
                {UponEvent NewStream} % Loop for new events
-            else
+            catch error(kernel('.' _ _) debug:_) then
                %% Use default events
-               case Event 
+               case Event
                of setListener(NewListener) then
                   CompListener := NewListener
                   {UponEvent NewStream} % Loop for new events
                [] signalDestroy then
                   skip % Stop looping
                else
-                  if {Member any Implemented} then
+                  %% Use the any event if it is implemented
+                  try
                      {Events.any Event}
-                  else
+                  catch error(kernel('.' _ _) debug:_) then
                      {System.show 'Unknown event'#Event}
+                  [] E then
+                     raise E end
                   end
                   {UponEvent NewStream} % Loop for new events
                end
+            [] E then
+               raise E end
             end
          [] nil then %% Component close
             skip
