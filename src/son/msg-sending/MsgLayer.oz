@@ -29,6 +29,7 @@
 functor
 import
    Component   at '../../corecomp/Component.ozf'
+   Timer       at '../../timmer/Timer.ozf'
 export
    New
 define
@@ -36,11 +37,13 @@ define
    fun {New Args}
       Self
       Listener
-      Node        
+      Node
+      TheTimer
 
-      LastMsgId   = {NewCell 0}
-      ClientMsgs  = {Dictionary.new}
-      Msgs        = {Dictionary.new}
+      LastMsgId
+      Msgs
+      Timeout
+      Tries
 
       fun {GetNewMsgId}
          OutId NewId
@@ -55,7 +58,8 @@ define
          %% Other args: responsible (resp), outcome (out)
          Resp
          Outcome
-         ClMsgId
+         FullMsg
+         MsgId
       in
          if {HasFeature Event resp} then
             Resp = Event.resp
@@ -65,20 +69,67 @@ define
          if {HasFeature Event out} then
             Outcome = Event.out
          end
-
-         ClMsgId = {GetNewMsgId}
-         ClientMsgs.ClMsgId := send(msg:Msg to:Target resp:Resp out:Outcome)
-
+         MsgId = {GetNewMsgId}
+         FullMsg = rsend(msg:Msg to:Target src:{@Node getRef($)}
+                         resp:Resp mid:MsgId)
+         Msgs.MsgId := data(msg:FullMsg outcome:Outcome c:@Tries)
+         {@Node route(msg:FullMsg to:Target src:_)} 
+         {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
       end
 
-      proc {SetNode Node}
-         skip
+      proc {RSend Event}
+         rsend(msg:Msg to:Target src:Src resp:Resp mid:MsgId) = Event
+      in
+         if Resp orelse Target == {@Node getId($)} then
+            {@Listener Msg}
+            {Port.send Src.port rsendAck(MsgId)}
+         end
       end
 
+      proc {RSendAck Event}
+         rsendAck(MsgId) = Event
+      in
+         local
+            Data = {Dictionary.condGet Msgs MsgId done}
+         in
+            if Data \= done then
+               Data.outcome = true
+               {Dictionary.remove Msgs MsgId}
+            end
+         end
+      end
+
+      proc {SetNode Event}
+         setNode(ANode) = Event
+      in
+         Node := ANode
+      end
+
+      proc {TimeoutEvent Event}
+         timeout(MsgId) = Event
+      in
+         local
+            Data = {Dictionary.condGet Msgs MsgId done} 
+         in
+            if Data \= done then
+               if Data.c > 1 then
+                  {@Node route(msg:Data.msg to:Data.msg.to src:_)} 
+                  {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
+                  Msgs.MsgId := {AdjoinAt Data c Data.c-1}
+               else
+                  Data.outcome = false
+                  {Dictionary.remove Msgs MsgId}
+               end
+            end
+         end
+      end
 
       Events = events(
-                     send:    Send
-                     setNode: SetNode
+                     rsend:      RSend
+                     rsendAck:   RSendAck
+                     send:       Send
+                     setNode:    SetNode
+                     timeout:    TimeoutEvent
                      )
    in
       local
@@ -88,6 +139,12 @@ define
          Self     = FullComponent.trigger
          Listener = FullComponent.listener
       end
+      Node        = {NewCell Component.dummy}
+      TheTimer    = {Timer.new}
+      Timeout     = {NewCell 1000}
+      Tries       = {NewCell 5}
+      LastMsgId   = {NewCell 0}
+      Msgs        = {Dictionary.new}
       Self
    end
 
