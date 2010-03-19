@@ -36,10 +36,45 @@ define
    fun {New Args}
       Self
       Listener
-      Node
+      Node        
+
+      LastMsgId   = {NewCell 0}
+      ClientMsgs  = {Dictionary.new}
+      Msgs        = {Dictionary.new}
+
+      fun {GetNewMsgId}
+         OutId NewId
+      in
+         OutId = LastMsgId := NewId
+         NewId = OutId + 1
+         OutId
+      end
 
       proc {Send Event}
          send(msg:Msg to:Target ...) = Event
+         %% Other args: responsible (resp), outcome (out)
+         Resp
+         Outcome
+         ClMsgId
+      in
+         if {HasFeature Event resp} then
+            Resp = Event.resp
+         else
+            Resp = true
+         end
+         if {HasFeature Event out} then
+            Outcome = Event.out
+         end
+
+         ClMsgId = {GetNewMsgId}
+         ClientMsgs.ClMsgId := send(msg:Msg to:Target resp:Resp out:Outcome)
+
+      end
+
+      proc {SetNode Node}
+         skip
+      end
+
 
       Events = events(
                      send:    Send
