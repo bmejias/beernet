@@ -106,7 +106,7 @@ define
 
       proc {BasicForward Event}
          case Event
-         of route(msg:Msg src:_ target:_) then
+         of route(msg:Msg src:_ to:_) then
             if @Succ \= nil then
                {Zend @Succ Msg}
             end
@@ -149,7 +149,7 @@ define
             %         #@(Self.succ).id}
          else
             %% Forward the message using the routing table
-            {@FingerTable route(msg:Event src:Event.src target:Target)}
+            {@FingerTable route(msg:Event src:Event.src to:Target)}
             %{Blabla @SelfRef.id#" forwards join of "#Src.id}
          end
       end
@@ -171,7 +171,7 @@ define
       end
 
       proc {Zend Target Msg}
-         {System.show @SelfRef.id#'sending a darn message'#Msg#to#Target.id}
+         %{System.show @SelfRef.id#'sending a darn message'#Msg#to#Target.id}
          {@ComLayer sendTo(Target Msg log:rlxring)}
       end
 
@@ -406,7 +406,7 @@ define
       end
 
       proc {Route Event}
-         route(msg:Msg src:_ target:Target ...) = Event
+         route(msg:Msg src:_ to:Target ...) = Event
       in
          if {BelongsTo Target @Pred.id @SelfRef.id} then
             %% This message is for me
@@ -422,7 +422,7 @@ define
             %         #@(Self.succ).id}
          else
             %% Forward the message using the routing table
-            {System.show @SelfRef.id#'Forwarding '#Event}
+            %{System.show @SelfRef.id#'Forwarding '#Event}
             {@FingerTable Event}
             %{Blabla @SelfRef.id#" forwards join of "#Src.id}
          end
@@ -441,7 +441,7 @@ define
       proc {StartJoin Event}
          startJoin(succ:NewSucc ring:RingRef) = Event
       in
-         {System.show @SelfRef.id#'starting to join'}
+         %{System.show @SelfRef.id#'starting to join'}
          WishedRing := RingRef
          {Zend NewSucc join(src:@SelfRef ring:RingRef)}
       end

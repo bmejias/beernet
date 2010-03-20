@@ -136,7 +136,7 @@ define
       end
 
       proc {Route Event}
-         route(msg:Msg src:Src target:Target ...) = Event
+         route(msg:Msg src:Src to:Target ...) = Event
       in
          {System.show going_to_route#Event}
          if {Not {Record.label Msg} == join} then

@@ -141,6 +141,7 @@ define
                   broadcast:        Broadcast
                   getFullRef:       ToNode
                   getId:            ToNode
+                  getMaxKey:        ToNode
                   getPred:          ToNode
                   getRange:         ToNode
                   getRef:           ToNode

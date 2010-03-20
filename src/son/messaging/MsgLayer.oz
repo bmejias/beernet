@@ -28,6 +28,7 @@
 
 functor
 import
+   System
    Component   at '../../corecomp/Component.ozf'
    Timer       at '../../timer/Timer.ozf'
    Utils       at '../../utils/Misc.ozf'
@@ -63,6 +64,7 @@ define
          FullMsg
          MsgId
       in
+         {System.show 'MsgLayer is going to send :'#Msg}
          if {HasFeature Event resp} then
             Resp = Event.resp
          else
@@ -83,6 +85,7 @@ define
          rsend(msg:Msg to:Target src:Src resp:Resp mid:MsgId) = Event
       in
          if Resp orelse Target == {@Node getId($)} then
+            {System.show 'got a message '#Msg}
             {@Listener Msg}
             {Port.send Src.port rsendAck(MsgId)}
          end
@@ -120,6 +123,7 @@ define
                   {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
                   Msgs.MsgId := {Record.adjoinAt Data c Data.c-1}
                else
+                  {System.show 'msg '#MsgId#' never arrived'}
                   Data.outcome = false
                   {Dictionary.remove Msgs MsgId}
                end
