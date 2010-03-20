@@ -1,6 +1,6 @@
 MAKE=make
 SRCS=Pbeer
-SUBDIRS=relaxed-ring
+SUBDIRS=relaxed-ring messaging
 
 all: sublibs srcs
 
