@@ -80,7 +80,7 @@ define
 
       %% --- Utils ---
       ComLayer    % Network component
-      %Listener    % Component where the deliver messages will be triggered
+      Listener    % Component where the deliver messages will be triggered
       %Logger      % Component to log every sent and received message
       Timer       % Component to rigger some events after the requested time
 
@@ -463,6 +463,7 @@ define
       end
 
       Events = events(
+                  any:           Listener
                   crash:         Crash
                   badRingRef:    BadRingRef
                   fix:           Fix
@@ -498,7 +499,7 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
-         %Listener = FullComponent.listener
+         Listener = FullComponent.listener
       end
       Timer = {TimerMaker.new}
       ComLayer = {NewCell {Network.new}}
