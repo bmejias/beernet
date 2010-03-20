@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=KeyRanges PbeerList Random RingList TextFile
+SRCS=KeyRanges PbeerList Random RingList TextFile Misc
 
 all: $(foreach source, $(SRCS), src_$(source)) nanoStore
 
