@@ -6,6 +6,8 @@ all: $(foreach source, $(SRCS), src_$(source))
 src_%:
 	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf
 
+alltests: tester testerdist testerfaildetector
+
 tester: Tester.oz TestPlayers.oz
 	ozc -c TestPlayers.oz -o TestPlayers.ozf
 	ozc -x Tester.oz -o tester
