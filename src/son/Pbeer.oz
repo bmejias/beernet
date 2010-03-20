@@ -56,6 +56,10 @@ define
       MsgLayer % Reliable messaging layer
       Self     % This component
 
+      %% Inbox for receiving messages
+      Inbox    % Port to receive messages
+      NewMsgs  % Dynamic head of new messages
+
       %%--- Make Delegators ---
       fun {DelegatesTo Comp}
          proc {$ Event}
@@ -64,6 +68,11 @@ define
       end
 
       %%--- Events ---
+
+      proc {Any Event}
+         %% Messages comming from the MsgLayer
+         {Port.send Inbox Event}
+      end
 
       proc {Broadcast Event}
 %         broadcast(Range Msg) = Event
@@ -102,19 +111,33 @@ define
       end
       
       proc {ReceiveTagged Event}
-         skip
+         receive(Msg) = Event
+      in
+         thread
+            OldHead NewHead
+         in
+            OldHead = @NewMsgs := NewHead
+            case OldHead
+            of NewMsg|MoreMsgs then
+               Msg = NewMsg
+               NewHead = MoreMsgs
+            [] nil then
+               skip
+            end
+         end
       end
 
       proc {SendTagged Event}
-         send(Msg to:Target ...) = Event
-      in
-         skip
+      %   send(Msg to:Target ...) = Event
+      %in
+         {@MsgLayer Event}
       end
      
       ToNode      = {DelegatesTo Node}
-      ToMsgLayer  = {DelegatesTo MsgLayer}
+      %ToMsgLayer  = {DelegatesTo MsgLayer}
 
       Events = events(
+                  any:              Any
                   broadcast:        Broadcast
                   getFullRef:       ToNode
                   getId:            ToNode
@@ -143,8 +166,17 @@ define
          Self     = FullComponent.trigger
          %Listener = FullComponent.listener
       end
-      Node = {NewCell {RelaxedRing.new args}} 
+      Node     = {NewCell {RelaxedRing.new args}} 
       MsgLayer = {NewCell {TheMsgLayer.new args}}
+      {@MsgLayer setNode(@Node)}
+      {@MsgLayer setListener(Self)}
+
+      %% Creating the Inbox abstraction
+      local Str in
+         Inbox = {Port.new Str}
+         NewMsgs = {NewCell Str}
+      end
+
       Self
    end
 

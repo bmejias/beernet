@@ -105,6 +105,7 @@ define
          setNode(ANode) = Event
       in
          Node := ANode
+         {@Node setListener(Self)}
       end
 
       proc {TimeoutEvent Event}
