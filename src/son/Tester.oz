@@ -276,19 +276,21 @@ define
    SumText = tests(
                   build:      "Build Test: "
                   buildPred:  "Build Test Pred: "
-                  massacre:   "Failure Test: "
-                  massaPred:  "Failure Test Pred: "
                   churn:      "Churn Test: "
                   churnPred:  "Churn Test Pred: "
+                  massacre:   "Failure Test: "
+                  massaPred:  "Failure Test Pred: "
+                  rsend:      "Reliable Send Test: "
                   )
 
    SumVariables = tests(
                         build:      TestBuild
                         buildPred:  TestBuildPred
-                        massacre:   TestMassacre
-                        massaPred:  TestMassacrePred
                         churn:      TestAfterChurn
                         churnPred:  TestChurnPred
+                        massacre:   TestMassacre
+                        massaPred:  TestMassacrePred
+                        %rsend:      TestRSend
                         )
 
    proc {TestSummary Tests}

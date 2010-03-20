@@ -43,6 +43,7 @@ functor
 import
    Component   at '../corecomp/Component.ozf'
    RelaxedRing at 'relaxed-ring/Node.ozf'
+   TheMsgLayer at 'messaging/MsgLayer.ozf'
 
 export
    New
@@ -51,7 +52,8 @@ define
    
    fun {New Args}
       %Listener % Component's listener
-      Node = {NewCell {RelaxedRing.new args}} % Node implementing the behaviour
+      Node     % Node implementing the behaviour
+      MsgLayer % Reliable messaging layer
       Self     % This component
 
       %%--- Events ---
@@ -92,15 +94,9 @@ define
          skip
       end
       
-      proc {RSendTo Event}
-         %rSendTo(Id Msg delivered:Flag) = Event
-      %in
-         skip
-      end
-      
       proc {SendTo Event}
-         %sendTo(Id Msg ...) = Event
-      %in
+         send(Msg to:Target ...) = Event
+      in
          skip
       end
       
@@ -116,8 +112,7 @@ define
                   injectPermFail:   InjectPermFail
                   join:             Join
                   leave:            Leave
-                  rSendTo:          RSendTo
-                  sendTo:           SendTo
+                  send:             @MsgLayer
                   setLogger:        @Node
                   %% DHT events
                   get:              DHTGet
@@ -133,7 +128,8 @@ define
          Self     = FullComponent.trigger
          %Listener = FullComponent.listener
       end
-
+      Node = {NewCell {RelaxedRing.new args}} 
+      MsgLayer = {NewCell {TheMsgLayer.new args}}
       Self
    end
 
