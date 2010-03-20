@@ -56,6 +56,13 @@ define
       MsgLayer % Reliable messaging layer
       Self     % This component
 
+      %%--- Make Delegators ---
+      fun {DelegatesTo Comp}
+         proc {$ Event}
+            {@Comp Event}
+         end
+      end
+
       %%--- Events ---
 
       proc {Broadcast Event}
@@ -94,26 +101,34 @@ define
          skip
       end
       
-      proc {SendTo Event}
+      proc {ReceiveTagged Event}
+         skip
+      end
+
+      proc {SendTagged Event}
          send(Msg to:Target ...) = Event
       in
          skip
       end
-      
+     
+      ToNode      = {DelegatesTo Node}
+      ToMsgLayer  = {DelegatesTo MsgLayer}
+
       Events = events(
                   broadcast:        Broadcast
-                  getFullRef:       @Node
-                  getId:            @Node
-                  getPred:          @Node
-                  getRange:         @Node
-                  getRef:           @Node
-                  getRingRef:       @Node
-                  getSucc:          @Node
+                  getFullRef:       ToNode
+                  getId:            ToNode
+                  getPred:          ToNode
+                  getRange:         ToNode
+                  getRef:           ToNode
+                  getRingRef:       ToNode
+                  getSucc:          ToNode
                   injectPermFail:   InjectPermFail
                   join:             Join
                   leave:            Leave
-                  send:             @MsgLayer
-                  setLogger:        @Node
+                  receive:          ReceiveTagged
+                  send:             SendTagged
+                  setLogger:        ToNode
                   %% DHT events
                   get:              DHTGet
                   put:              DHTPut

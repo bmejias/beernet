@@ -29,7 +29,7 @@
 functor
 import
    Component   at '../../corecomp/Component.ozf'
-   Timer       at '../../timmer/Timer.ozf'
+   Timer       at '../../timer/Timer.ozf'
    Utils       at '../../utils/Misc.ozf'
 export
    New
@@ -144,7 +144,7 @@ define
       end
       Node        = {NewCell Component.dummy}
       TheTimer    = {Timer.new}
-      Timeout     = {NewCell Args.tomeout}
+      Timeout     = {NewCell Args.timeout}
       Tries       = {NewCell Args.tries}
       LastMsgId   = {NewCell 0}
       Msgs        = {Dictionary.new}
