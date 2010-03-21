@@ -1,0 +1,13 @@
+Beernet-0.3
+	- Messaging layer working correctly
+	- New functionalitites added to Pbeer: send and receive
+
+Beernet-0.2
+	- Finger table for logarithmic routing added
+	- Several bug fixes to the previously released modules
+	- Test for creating a pbeer-to-pbeer network running
+
+Beernet-0.1
+	- Core component model
+	- Basic modules logger, network, timer, utils
+	- Basic functionality of the relaxed-ring for joining and failure recovery
