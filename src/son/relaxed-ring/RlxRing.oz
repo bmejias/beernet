@@ -177,6 +177,12 @@ define
 
       %%--- Events ---
 
+      proc {Any Event}
+         %{System.show '++++++++++triggering Event to Listener'#Event}
+         %{System.show 'Listener'#@Listener}
+         {@Listener Event}
+      end
+
       proc {BadRingRef Event}
          badRingRef = Event
       in
@@ -408,15 +414,19 @@ define
       proc {Route Event}
          route(msg:Msg src:_ to:Target ...) = Event
       in
+         %{System.show 'going to route '#Msg}
          if {BelongsTo Target @Pred.id @SelfRef.id} then
+            %{System.show @SelfRef.id#' it is mine '#Event}
             %% This message is for me
             {Self Msg}
          elseif {HasFeature Event last} andthen Event.last then
+            %{System.show @SelfRef.id#' gotta go backwards '#Event}
             %% I am supposed to be the responsible, but I have a branch
             %% or somebody was missed (non-transitive connections)
             {Backward Event Target}
-         elseif {BelongsTo Event.src.id @SelfRef.id @Succ.id} then
+         elseif {BelongsTo Target @SelfRef.id @Succ.id} then
             %% I think my successor is the responsible => set last = true
+            %{System.show @SelfRef.id#' I missed one week? '#Event}
             {Zend @Succ {Record.adjoinAt Event last true}}
             %{Blabla @SelfRef.id#" forwards join of "#Sender.id#" to "
             %         #@(Self.succ).id}
@@ -463,7 +473,7 @@ define
       end
 
       Events = events(
-                  any:           Listener
+                  any:           Any
                   crash:         Crash
                   badRingRef:    BadRingRef
                   fix:           Fix

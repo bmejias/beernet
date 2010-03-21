@@ -67,6 +67,8 @@ define
          of (Src#Msg)|NewStr then
             {@Listener pp2pDeliver(Src Msg)}
             {HandleMessages NewStr}
+         [] Msg|NewStr then
+            {@Listener pp2pDeliver(unknown Msg)}
          [] nil then % Port close
             skip
          end

@@ -116,7 +116,7 @@ define
          thread
             OldHead NewHead
          in
-            OldHead = @NewMsgs := NewHead
+            OldHead = NewMsgs := NewHead
             case OldHead
             of NewMsg|MoreMsgs then
                Msg = NewMsg

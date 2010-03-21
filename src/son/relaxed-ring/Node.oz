@@ -53,9 +53,10 @@ define
          {TheFTable signalDestroy}
          {Wait _}
       end
-         
+
       Events = events(
                   any:              RlxRingNode
+                  setListener:      RlxRingNode
                   injectPermFail:   InjectPermFail
                   )
    in

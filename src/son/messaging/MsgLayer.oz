@@ -64,7 +64,7 @@ define
          FullMsg
          MsgId
       in
-         {System.show 'MsgLayer is going to send :'#Msg}
+         %{System.show 'MsgLayer is going to send :'#Msg}
          if {HasFeature Event resp} then
             Resp = Event.resp
          else
@@ -77,15 +77,16 @@ define
          FullMsg = rsend(msg:Msg to:Target src:{@Node getRef($)}
                          resp:Resp mid:MsgId)
          Msgs.MsgId := data(msg:FullMsg outcome:Outcome c:@Tries)
-         {@Node route(msg:FullMsg to:Target src:_)} 
+         {@Node route(msg:FullMsg to:Target src:{@Node getRef($)})} 
          {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
       end
 
       proc {RSend Event}
          rsend(msg:Msg to:Target src:Src resp:Resp mid:MsgId) = Event
       in
+         %{System.show '+_+_MAYBE+_+_+_+_+_+_+_+_+_+got a message '#Msg}
          if Resp orelse Target == {@Node getId($)} then
-            {System.show 'got a message '#Msg}
+            %{System.show '+_+_+_+_+_+_+_+_+_+_+_+got a message '#Msg}
             {@Listener Msg}
             {Port.send Src.port rsendAck(MsgId)}
          end
@@ -119,7 +120,7 @@ define
          in
             if Data \= done then
                if Data.c > 1 then
-                  {@Node route(msg:Data.msg to:Data.msg.to src:_)} 
+                  {@Node route(msg:Data.msg to:Data.msg.to src:{@Node getRef($)})} 
                   {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
                   Msgs.MsgId := {Record.adjoinAt Data c Data.c-1}
                else
