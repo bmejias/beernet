@@ -88,7 +88,7 @@ define
          if Resp orelse Target == {@Node getId($)} then
             %{System.show '+_+_+_+_+_+_+_+_+_+_+_+got a message '#Msg}
             {@Listener Msg}
-            {Port.send Src.port rsendAck(MsgId)}
+            {@Node dsend(to:Src rsendAck(MsgId))}
          end
       end
 
@@ -100,6 +100,7 @@ define
          in
             if Data \= done then
                Data.outcome = true
+               %{System.show 'Msg'#MsgId#' was correctly received'}
                {Dictionary.remove Msgs MsgId}
             end
          end
@@ -120,7 +121,9 @@ define
          in
             if Data \= done then
                if Data.c > 1 then
-                  {@Node route(msg:Data.msg to:Data.msg.to src:{@Node getRef($)})} 
+                  {@Node route(msg:Data.msg 
+                               to:Data.msg.to 
+                               src:{@Node getRef($)})} 
                   {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
                   Msgs.MsgId := {Record.adjoinAt Data c Data.c-1}
                else
