@@ -263,9 +263,9 @@ define
          fixOk(src:Src succList:SrcSuccList) = Event
       in
          SuccList := {UpdateList @SuccList Src SrcSuccList}
-         {Zend @Pred updateSuccList(src:@SelfRef
-                                    succList:@SuccList
-                                    counter:LogMaxKey)}
+         {Zend @Pred updSuccList(src:@SelfRef
+                                 succList:@SuccList
+                                 counter:LogMaxKey)}
       end
 
       proc {GetComLayer Event}
