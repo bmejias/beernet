@@ -116,7 +116,7 @@ define
 %         {System.show 'pongpongpong'#@SelfPbeer.id#'       got pong from'#Pbeer.id}
          Alive := {PbeerList.add Pbeer @Alive}
          if {PbeerList.isIn Pbeer @Notified} then
-            {Listener alive(Pbeer)}
+            {@Listener alive(Pbeer)}
          end
       end
 
