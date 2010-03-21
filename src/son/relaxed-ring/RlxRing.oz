@@ -177,6 +177,13 @@ define
 
       %%--- Events ---
 
+      proc {Alive Event}
+      %% TODO
+      %   alive(Pbeer) = Event
+      %in
+         skip
+      end
+
       proc {Any Event}
          %{System.show '++++++++++triggering Event to Listener'#Event}
          %{System.show 'Listener'#@Listener}
@@ -485,6 +492,7 @@ define
       end
 
       Events = events(
+                  alive:         Alive
                   any:           Any
                   crash:         Crash
                   badRingRef:    BadRingRef
