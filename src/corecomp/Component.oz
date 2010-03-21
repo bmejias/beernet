@@ -66,7 +66,7 @@ define
             try
                {Events.EventName Event} % Handle the event
                {UponEvent NewStream} % Loop for new events
-            catch error(kernel('.' _ _) debug:_) then
+            catch error(kernel('.' events(...) _) debug:_) then
                %% Use default events
                case Event
                of setListener(NewListener) then
@@ -78,8 +78,9 @@ define
                   %% Use the any event if it is implemented
                   try
                      {Events.any Event}
-                  catch error(kernel('.' _ _) debug:_) then
-                     {System.show 'Unknown event'#Event}
+                  catch error(kernel('.' events(...) _) debug:_) then
+                     {System.show '#'('Unknown event' Event
+                                      'Possible events' {Arity Events})}
                   [] E then
                      raise E end
                   end
