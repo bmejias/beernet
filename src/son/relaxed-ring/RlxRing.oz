@@ -217,7 +217,7 @@ define
          dsend(Msg to:To ...) = Event
       in
          if {HasFeature Event log} then   
-            {@ComLayer sendTo(To Msg log:Event.lod)}
+            {@ComLayer sendTo(To Msg log:Event.log)}
          else
             {@ComLayer sendTo(To Msg)}
          end
