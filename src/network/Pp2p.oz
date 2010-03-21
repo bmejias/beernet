@@ -67,10 +67,12 @@ define
          of (Src#Msg)|NewStr then
             {@Listener pp2pDeliver(Src Msg)}
             {HandleMessages NewStr}
-         [] Msg|NewStr then
-            {@Listener pp2pDeliver(unknown Msg)}
          [] nil then % Port close
             skip
+         %% To avoid crashing when the format is not respected,
+         %% uncomment the else statement
+         %else
+         %   {HandleMessages Str.2}
          end
       end
 

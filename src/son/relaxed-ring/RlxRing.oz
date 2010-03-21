@@ -211,6 +211,18 @@ define
          end
       end
 
+      %% DSend
+      %% Send directly to a port with the correct format
+      proc {DSend Event}
+         dsend(Msg to:To ...) = Event
+      in
+         if {HasFeature Event log} then   
+            {@ComLayer sendTo(To Msg log:Event.lod)}
+         else
+            {@ComLayer sendTo(To Msg)}
+         end
+      end
+
       %%% Midnattsol
       %% Fix means 'Self is Src's new succ' and 'Src wants to be Self's pred'
       %% Src is accepted as predecessor if:
@@ -476,6 +488,7 @@ define
                   any:           Any
                   crash:         Crash
                   badRingRef:    BadRingRef
+                  dsend:         DSend
                   fix:           Fix
                   fixOk:         FixOk
                   getComLayer:   GetComLayer
