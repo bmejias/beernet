@@ -2,8 +2,8 @@
  *
  * MsgLayer.oz
  *
- *    Messaging layer that uses any ring-based node to perform reliable message
- *    sending routing through the overlay network.
+ *    Messaging layer that uses any ring-based node to perform reliable
+ *    message sending routing through the overlay network.
  *
  * LICENSE
  *
@@ -21,7 +21,9 @@
  *
  * NOTES
  *      
- *    No detailed information needed. The abstract is quite clear
+ *    The messaging layer needs a Node to route and receive messages. It also
+ *    needs to be registered as listener of the Node, in other case, messages
+ *    won't be delivered to the upper layer.
  *    
  *-------------------------------------------------------------------------
  */
@@ -110,7 +112,6 @@ define
          setNode(ANode) = Event
       in
          Node := ANode
-         {@Node setListener(Self)}
       end
 
       proc {TimeoutEvent Event}

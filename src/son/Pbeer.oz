@@ -170,6 +170,7 @@ define
       Node     = {NewCell {RelaxedRing.new args}} 
       MsgLayer = {NewCell {TheMsgLayer.new args}}
       {@MsgLayer setNode(@Node)}
+      {@Node setListener(@MsgLayer)}
       {@MsgLayer setListener(Self)}
 
       %% Creating the Inbox abstraction
