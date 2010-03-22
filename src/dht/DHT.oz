@@ -50,19 +50,29 @@ define
          skip
       end
 
-      proc {Get Event}
-         skip
+      proc {Get get(Key ?Value)}
+         HKey
+      in
+         HKey = {Utils.hash Key @MaxKey}
+         {@MsgLayer send(getItem(hash:HKey key:Key value:Value) to:HKey)}
+      end
+
+      proc {GetItem getItem(hash:HKey key:Key value:?Value)}
+         Item
+      in
+         {@DB get(HKey Key Item)}
+         Value = Item.value
       end
 
       proc {Put put(Key Value)}
          HKey  % HashKey for Key
       in
-         HKey = {Utils.hash Key}
+         HKey = {Utils.hash Key @MaxKey}
          {@MsgLayer send(putItem(hash:HKey key:Key value:Value) to:HKey)}
       end
 
       proc {PutItem putItem(hash:HKey key:Key value:Value)}
-         skip
+         {@DB put(HKey Key Value)}
       end
 
       proc {SetDB setDB(ADataBase)}
@@ -76,6 +86,7 @@ define
       Events = events(
                      delete:     Delete
                      get:        Get
+                     getItem:    GetItem
                      put:        Put
                      putItem:    PutItem
                      setDB:      SetDB
