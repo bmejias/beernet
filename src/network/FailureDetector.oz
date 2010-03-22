@@ -66,9 +66,7 @@ define
       TheTimer    % Component that triggers timeout
 
       %% Sends a ping message to all monitored pbeers and launch the timer
-      proc {NewRound Event}
-         start = Event
-      in
+      proc {NewRound start}
          for Pbeer in @Pbeers do
             %{System.show 'sending ping to'#Pbeer}
             {ComLayer sendTo(Pbeer ping(@SelfPbeer tag:fd) log:faildet)}
@@ -76,15 +74,11 @@ define
          {TheTimer startTimer(@Period)}
       end
 
-      proc {Monitor Event}
-         monitor(Pbeer) = Event
-      in
+      proc {Monitor monitor(Pbeer)}
          NewPbeers := {PbeerList.add Pbeer @NewPbeers}
       end
 
-      proc {Timeout Event}
-         timeout = Event
-      in
+      proc {Timeout timeout}
          if {PbeerList.intersection @Alive @Suspected} \= nil 
             andthen @Period + DELTA < MAX_TIMEOUT then
             Period := @Period + DELTA
@@ -103,16 +97,12 @@ define
          {NewRound start}
       end
 
-      proc {Ping Event}
-         ping(Pbeer tag:fd) = Event
-      in
+      proc {Ping ping(Pbeer tag:fd)}
 %         {System.show 'pingpingpingping'#@SelfPbeer.id#' got ping from '#Pbeer.id}
          {ComLayer sendTo(Pbeer pong(@SelfPbeer tag:fd) log:faildet)}
       end
 
-      proc {Pong Event}
-         pong(Pbeer tag:fd) = Event
-      in
+      proc {Pong pong(Pbeer tag:fd)}
 %         {System.show 'pongpongpong'#@SelfPbeer.id#'       got pong from'#Pbeer.id}
          Alive := {PbeerList.add Pbeer @Alive}
          if {PbeerList.isIn Pbeer @Notified} then
@@ -120,22 +110,16 @@ define
          end
       end
 
-      proc {SetPbeer Event}
-         setPbeer(NewPbeer) = Event
-      in
+      proc {SetPbeer setPbeer(NewPbeer)}
          SelfPbeer := NewPbeer
       end
 
-      proc {SetComLayer Event}
-         setComLayer(TheComLayer) = Event
-      in
+      proc {SetComLayer setComLayer(TheComLayer)}
          ComLayer = TheComLayer
          SelfPbeer := {ComLayer getRef($)} 
       end
 
-      proc {StopMonitor Event}
-         stopMonitor(Pbeer) = Event
-      in
+      proc {StopMonitor stopMonitor(Pbeer)}
          Pbeers := {PbeerList.remove Pbeer @Pbeers}
       end
 

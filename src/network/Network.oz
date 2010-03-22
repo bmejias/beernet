@@ -68,16 +68,12 @@ define
          {@Listener Event}
       end
 
-      proc {SetId Event}
-         setId(NewId) = Event
-      in 
+      proc {SetId setId(NewId)}
          {ComLayer setId(NewId)}
          {FailDetector setPbeer({ComLayer getRef($)})}
       end
 
-      proc {SignalDestroy Event}
-         signalDestroy = Event
-      in
+      proc {SignalDestroy signalDestroy}
          {ComLayer signalDestroy}
          {FailDetector signalDestroy}
          {Wait _}

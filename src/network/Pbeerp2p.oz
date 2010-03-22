@@ -71,22 +71,16 @@ define
 
       %%--- Events ---
 
-      proc {Deliver Event}
-         pp2pDeliver(_ '#'(SrcId MsgId Msg)) = Event
-      in
+      proc {Deliver pp2pDeliver(_ '#'(SrcId MsgId Msg))}
          {@Logger 'in'(src:SrcId n:MsgId dest:@SelfId msg:Msg)}
          {@Listener Msg}
       end
 
-      proc {GetPort Event}
-         getPort(P) = Event
-      in
+      proc {GetPort getPort(P)}
          P = SelfPort
       end
 
-      proc {GetRef Event}
-         getRef(R) = Event
-      in
+      proc {GetRef getRef(R)}
          R = node(port:SelfPort id:@SelfId)
       end
 
@@ -105,22 +99,16 @@ define
          {@ComLayer pp2pSend(Dest.port '#'(@SelfId MsgId Msg))}
       end
 
-      proc {SetComLayer Event}
-         setComLayer(NewComLayer) = Event
-      in
+      proc {SetComLayer setComLayer(NewComLayer)}
          ComLayer := NewComLayer
          {@ComLayer setListener(Self.trigger)}
       end
 
-      proc {SetId Event}
-         setId(NewId) = Event
-      in
+      proc {SetId setId(NewId)}
          SelfId := NewId
       end
 
-      proc {SetLogger Event}
-         setLogger(NewLogger) = Event
-      in
+      proc {SetLogger setLogger(NewLogger)}
          Logger := NewLogger
       end
 

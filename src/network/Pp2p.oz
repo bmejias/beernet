@@ -50,15 +50,11 @@ define
       Listener       % Upper layer component
       FullComponent  % This component
 
-      proc {GetPort Event}
-         getPort(P) = Event
-      in
+      proc {GetPort getPort(P)}
          P = SitePort
       end
 
-      proc {PP2PSend Event}
-         pp2pSend(Dest Msg) = Event
-      in
+      proc {PP2PSend pp2pSend(Dest Msg)}
          {Send Dest SitePort#Msg}
       end
 
