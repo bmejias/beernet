@@ -85,5 +85,5 @@ in
       {SendAMsg 'msg '#I}
    end
    {Delay 1000}
-   %{Application.exit 0}
+   {Application.exit 0}
 end
