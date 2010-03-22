@@ -1,12 +1,10 @@
 MAKE=make
-SRCS=Pbeer
-SUBDIRS=relaxed-ring messaging
 
-all: sublibs srcs
+SUBDIRS=relaxed-ring
+
+all: sublibs
 
 sublibs:$(foreach subdir, $(SUBDIRS), sub_$(subdir))
-
-srcs: $(foreach source, $(SRCS), src_$(source))
 
 cleanlibs:$(foreach subdir, $(SUBDIRS), subclean_$(subdir))
 
