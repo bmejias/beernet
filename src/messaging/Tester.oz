@@ -8,7 +8,6 @@ import
    OS
    Property
    System
-   Logger         at '../logger/Logger.ozf'
    Network        at '../network/Network.ozf'
    PbeerMaker     at '../pbeer/Pbeer.ozf'
 
@@ -16,7 +15,6 @@ define
    SIZE  = 42
 
    ComLayer
-   Log
    MasterOfPuppets
    MasterId
    MaxKey
@@ -28,13 +26,10 @@ define
       MasterOfPuppets = {PbeerMaker.new args}
       %{System.show 'second line'}
       MasterId = {MasterOfPuppets getId($)}
-      %Log = {Logger.new 'werken.log'}
-      %{MasterOfPuppets setLogger(Log.logger)}
       Pbeers = {List.make SIZE-1}
       NetRef = {MasterOfPuppets getFullRef($)}
       for Pbeer in Pbeers do
          Pbeer = {PbeerMaker.new args}
-         %{Pbeer setLogger(Log.logger)}
          {Pbeer join(NetRef)}
          thread
             Id
