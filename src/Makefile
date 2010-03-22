@@ -1,6 +1,6 @@
 MAKE = make
 
-SUBDIRS = corecomp logger network son timer utils
+SUBDIRS = corecomp dht logger messaging network pbeer son timer utils
 
 all: sublibs
 
