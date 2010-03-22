@@ -45,9 +45,7 @@ define
       RlxRingNode
       TheFTable
 
-      proc {InjectPermFail Event}
-         injectPermFail = Event
-      in
+      proc {InjectPermFail injectPermFail}
          {ComLayer signalDestroy}
          {RlxRingNode signalDestroy}
          {TheFTable signalDestroy}

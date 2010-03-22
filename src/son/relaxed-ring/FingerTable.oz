@@ -105,9 +105,7 @@ define
       end
 
       %% --- Events --- 
-      proc {AddFinger Event}
-         addFinger(Pbeer) = Event
-      in
+      proc {AddFinger addFinger(Pbeer)}
          Fingers := {CheckNewFinger @IdealIds @Fingers Pbeer}
       end
 
@@ -117,21 +115,15 @@ define
          skip
       end
 
-      proc {GetFingers Event}
-         getFingers(TheFingers) = Event
-      in
+      proc {GetFingers getFingers(TheFingers)}
          TheFingers = @Fingers
       end
 
-      proc {Monitor Event}
-         monitor(Pbeer) = Event
-      in
+      proc {Monitor monitor(Pbeer)}
          Fingers := {CheckNewFinger @IdealIds @Fingers Pbeer}
       end
 
-      proc {RemoveFinger Event}
-         removeFinger(Finger) = Event
-      in
+      proc {RemoveFinger removeFinger(Finger)}
          Fingers := {RingList.remove Finger @Fingers}
       end
 
@@ -151,29 +143,21 @@ define
          {SetVars Event}
       end
          
-      proc {SetComLayer Event}
-         setComLayer(NewComLayer) = Event
-      in
+      proc {SetComLayer setComLayer(NewComLayer)}
          ComLayer := NewComLayer
       end
 
-      proc {SetId Event}
-         setId(NewId) = Event
-      in
+      proc {SetId setId(NewId)}
          Id := NewId
          IdealIds := {KeyRanges.karyIdFingers @Id @K @MaxKey}
       end
 
-      proc {SetK Event}
-         setK(NewK) = Event
-      in
+      proc {SetK setK(NewK)}
          K := NewK
          IdealIds := {KeyRanges.karyIdFingers @Id @K @MaxKey}
       end
 
-      proc {SetMaxKey Event}
-         setK(NewMaxKey) = Event
-      in
+      proc {SetMaxKey setK(NewMaxKey)}
          MaxKey := NewMaxKey
          IdealIds := {KeyRanges.karyIdFingers @Id @K @MaxKey}
       end

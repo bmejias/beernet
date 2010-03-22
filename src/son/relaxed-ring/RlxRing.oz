@@ -197,10 +197,9 @@ define
          skip %% TODO: trigger some error message
       end
 
-      proc {Crash Event}
-         crash(Pbeer) = Event
-      in
-         {System.showInfo "Peer "#Pbeer.id#" has crashed. Detected by "#@SelfRef.id}
+      proc {Crash crash(Pbeer)}
+         {System.showInfo '#'("Peer " Pbeer.id " has crashed. Detected by "
+                              @SelfRef.id)}
          Crashed  := {PbeerList.add Pbeer @Crashed}
          SuccList := {RingList.remove Pbeer @SuccList}
          PredList := {RingList.remove Pbeer @PredList}
@@ -236,9 +235,7 @@ define
       %% 1 - the current predecessor is dead
       %% 2 - Src is in (pred, self]
       %% Otherwise is a better predecessor of pred.
-      proc {Fix Event}
-         fix(src:Src) = Event
-      in
+      proc {Fix fix(src:Src)}
          %% Src thinks I'm its successor so I add it to the predList
          PredList := {AddToList Src @PredList}
          {Monitor Src}
@@ -259,66 +256,46 @@ define
          end
       end
 
-      proc {FixOk Event}
-         fixOk(src:Src succList:SrcSuccList) = Event
-      in
+      proc {FixOk fixOk(src:Src succList:SrcSuccList)}
          SuccList := {UpdateList @SuccList Src SrcSuccList}
          {Zend @Pred updSuccList(src:@SelfRef
                                  succList:@SuccList
                                  counter:LogMaxKey)}
       end
 
-      proc {GetComLayer Event}
-         getComLayer(Res) = Event
-      in
+      proc {GetComLayer getComLayer(Res)}
          Res = @ComLayer
       end
 
-      proc {GetFullRef Event}
-         getFullRef(FullRef) = Event
-      in
+      proc {GetFullRef getFullRef(FullRef)}
          FullRef = ref(pbeer:@SelfRef ring:@Ring)
       end
 
-      proc {GetId Event}
-         getId(Res) = Event
-      in
+      proc {GetId getId(Res)}
          Res = @SelfRef.id
       end
 
-      proc {GetMaxKey Event}
-         getMaxKey(Res) = Event
-      in
+      proc {GetMaxKey getMaxKey(Res)}
          Res = MaxKey
       end
 
-      proc {GetPred Event}
-         getPred(Peer) = Event
-      in
+      proc {GetPred getPred(Peer)}
          Peer = @Pred
       end
 
-      proc {GetRange Event}
-         getRange(Res) = Event
-      in
+      proc {GetRange getRange(Res)}
       	Res = (@Pred.id+1 mod MaxKey)#@SelfRef.id
       end
 
-      proc {GetRef Event}
-         getRef(Res) = Event
-      in
+      proc {GetRef getRef(Res)}
       	Res = @SelfRef
       end
 
-      proc {GetRingRef Event}
-         getRingRef(RingRef) = Event
-      in
+      proc {GetRingRef getRingRef(RingRef)}
          RingRef = @Ring
       end
 
-      proc {GetSucc Event}
-         getSucc(Peer) = Event
-      in
+      proc {GetSucc getSucc(Peer)}
          Peer = @Succ
       end
 
@@ -329,14 +306,13 @@ define
          skip
       end
 
-      proc {IdInUse Event}
-         idInUse(Id) = Event
-      in
+      proc {IdInUse idInUse(Id)}
          %%TODO. Get a new id and try to join again
          if @SelfRef.id == Id then
             {System.show 'I cannot join because my Id is already in use'}
          else
-            {System.showInfo "My id "#@SelfRef.id#" is considered to be in use as "#Id}
+            {System.showInfo '#'("My id " @SelfRef.id
+                                 " is considered to be in use as " Id)}
          end
       end
 
@@ -374,22 +350,16 @@ define
          end
       end
 
-      proc {PredNoMore Event}
-         predNoMore(OldPred) = Event
-      in
+      proc {PredNoMore predNoMore(OldPred)}
          PredList := {RingList.remove OldPred @PredList}
          %% TODO: Add treatment of hint message here
       end
 
-      proc {JoinLater Event}
-         joinLater(NewSucc) = Event
-      in
+      proc {JoinLater joinLater(NewSucc)}
          {Timer JOIN_WAIT Self startJoin(succ:NewSucc ring:@WishedRing)}
       end
 
-      proc {JoinOk Event}
-         joinOk(pred:NewPred succ:NewSucc succList:NewSuccList) = Event
-      in
+      proc {JoinOk joinOk(pred:NewPred succ:NewSucc succList:NewSuccList)}
          if {BelongsTo NewSucc.id @SelfRef.id @Succ.id} then
             Succ := NewSucc
             SuccList := {UpdateList @SuccList NewSucc NewSuccList}
@@ -411,9 +381,7 @@ define
          end
       end
 
-      proc {NewSucc Event}
-         newSucc(newSucc:NewSucc succList:NewSuccList) = Event
-      in
+      proc {NewSucc newSucc(newSucc:NewSucc succList:NewSuccList)}
          %{BlablaNonl NewSucc.id#" wannabe my new succ of "#@(Self.id)} 
          if {BelongsTo NewSucc.id @SelfRef.id @Succ.id} then
             SuccList := {UpdateList @SuccList NewSucc NewSuccList}
@@ -457,9 +425,7 @@ define
          end
       end
 
-      proc {SetFingerTable Event}
-         setFingerTable(NewFingerTable) = Event
-      in
+      proc {SetFingerTable setFingerTable(NewFingerTable)}
          FingerTable := NewFingerTable
       end
 
@@ -467,9 +433,7 @@ define
          {@ComLayer Event}
       end
 
-      proc {StartJoin Event}
-         startJoin(succ:NewSucc ring:RingRef) = Event
-      in
+      proc {StartJoin startJoin(succ:NewSucc ring:RingRef)}
          %{System.show @SelfRef.id#'starting to join'}
          WishedRing := RingRef
          {Zend NewSucc join(src:@SelfRef ring:RingRef)}
