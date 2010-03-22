@@ -37,12 +37,7 @@ export
    New
 define
 
-   %% Basic item structure. 
-   %% NO_ITEM in particular gives a NOT_FOUND failed value
-   NO_ITEM = item(key:nil
-                  value:{Value.failed {Exception.error 'NOT_FOUND'}}
-                  version:~1
-                  'lock':false)
+   NO_VALUE = {Value.failed {Exception.error 'NOT_FOUND'}}
 
    fun {New}
       DB
@@ -62,9 +57,9 @@ define
       in
          KeyDict = {Dictionary.condGet DB Key1 unit}
          if KeyDict == unit then
-            Val = NO_ITEM
+            Val = NO_VALUE
          else
-            Val = {Dictionary.condGet KeyDict Key2 NO_ITEM}
+            Val = {Dictionary.condGet KeyDict Key2 NO_VALUE}
          end
       end
 

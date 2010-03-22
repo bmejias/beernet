@@ -25,6 +25,10 @@
  *    of replication.  For replicated storage use the transactional layer. The
  *    basic operations provided are: put(key, value) - get(key) - delete(key).
  *
+ *    It needs a messaging layer to be set. It uses SimpleDB as default
+ *    database, it uses a default maxkey but it basically needs one as
+ *    argument.
+ *
  *-------------------------------------------------------------------------
  */
 
@@ -46,37 +50,45 @@ define
       MaxKey
       DB
 
-      proc {Delete Event}
-         skip
+      proc {Delete delete(Key)}
+         HKey
+      in
+         HKey = {Utils.hash Key @MaxKey}
+         {@MsgLayer send(deleteItem(HKey Key tag:dht) to:HKey)}
+      end
+   
+      proc {DeleteItem deleteItem(HKey Key tag:dht)}
+         {@DB delete(HKey Key)}
       end
 
       proc {Get get(Key ?Value)}
          HKey
       in
          HKey = {Utils.hash Key @MaxKey}
-         {@MsgLayer send(getItem(hash:HKey key:Key value:Value) to:HKey)}
+         {@MsgLayer send(getItem(HKey Key Value tag:dht) to:HKey)}
       end
 
-      proc {GetItem getItem(hash:HKey key:Key value:?Value)}
-         Item
-      in
-         {@DB get(HKey Key Item)}
-         Value = Item.value
+      proc {GetItem getItem(HKey Key ?Value tag:dht)}
+         {@DB get(HKey Key Value)}
       end
 
       proc {Put put(Key Value)}
          HKey  % HashKey for Key
       in
          HKey = {Utils.hash Key @MaxKey}
-         {@MsgLayer send(putItem(hash:HKey key:Key value:Value) to:HKey)}
+         {@MsgLayer send(putItem(HKey Key Value tag:dht) to:HKey)}
       end
 
-      proc {PutItem putItem(hash:HKey key:Key value:Value)}
+      proc {PutItem putItem(HKey Key Value tag:dht)}
          {@DB put(HKey Key Value)}
       end
 
       proc {SetDB setDB(ADataBase)}
          @DB := ADataBase
+      end
+
+      proc {SetMaxKey setMaxKey(Int)}
+         MaxKey := Int
       end
 
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
@@ -85,11 +97,13 @@ define
 
       Events = events(
                      delete:     Delete
+                     deleteItem: DeleteItem
                      get:        Get
                      getItem:    GetItem
                      put:        Put
                      putItem:    PutItem
                      setDB:      SetDB
+                     setMaxKey:  SetMaxKey
                      setMsgLayer:SetMsgLayer
                      )
    in
