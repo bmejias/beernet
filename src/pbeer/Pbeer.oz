@@ -92,15 +92,11 @@ define
          skip
       end
       
-      proc {InjectPermFail Event}
-         injectPermFail = Event
-      in
+      proc {InjectPermFail injectPermFail}
          {@Node injectPermFail}
       end
       
-      proc {Join Event}
-         join(RingRef) = Event
-      in
+      proc {Join join(RingRef)}
          {@Node startJoin(succ:RingRef.pbeer ring:RingRef.ring)} 
       end
       
@@ -110,9 +106,7 @@ define
          skip
       end
       
-      proc {ReceiveTagged Event}
-         receive(Msg) = Event
-      in
+      proc {ReceiveTagged receive(Msg)}
          thread
             OldHead NewHead
          in
