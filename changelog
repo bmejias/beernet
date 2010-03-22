@@ -1,3 +1,9 @@
+Beernet-0.4
+	- DHT functionality: put/get/delete
+	- SimpleDB component used by the DHT layer
+	- Lookup functionality added to Relaxed-Ring Node. Accesible through Pbeer
+	- Refactoring of the directory organization. More modular now
+
 Beernet-0.3
 	- Messaging layer working correctly
 	- New functionalitites added to Pbeer: send and receive

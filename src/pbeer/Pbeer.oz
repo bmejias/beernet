@@ -39,20 +39,20 @@
  */
 
 functor
-
 import
+   Board       at '../corecomp/Board.ozf'
    Component   at '../corecomp/Component.ozf'
    RelaxedRing at '../son/relaxed-ring/Node.ozf'
+   TheDHT      at '../dht/DHT.ozf'
    TheMsgLayer at '../messaging/MsgLayer.ozf'
-
 export
    New
-
 define
    
    fun {New Args}
       %Listener % Component's listener
       Node     % Node implementing the behaviour
+      DHT      % DHT functionality
       MsgLayer % Reliable messaging layer
       Self     % This component
 
@@ -128,6 +128,7 @@ define
       end
      
       ToNode      = {DelegatesTo Node}
+      ToDHT       = {DelegatesTo DHT}
       %ToMsgLayer  = {DelegatesTo MsgLayer}
 
       Events = events(
@@ -144,12 +145,15 @@ define
                   injectPermFail:   InjectPermFail
                   join:             Join
                   leave:            Leave
+                  lookup:           ToNode
+                  lookupHash:       ToNode
                   receive:          ReceiveTagged
                   send:             SendTagged
                   setLogger:        ToNode
                   %% DHT events
-                  get:              DHTGet
-                  put:              DHTPut
+                  delete:           ToDHT
+                  get:              ToDHT
+                  put:              ToDHT
                   )
 
    in
@@ -163,9 +167,18 @@ define
       end
       Node     = {NewCell {RelaxedRing.new args}} 
       MsgLayer = {NewCell {TheMsgLayer.new args}}
+      DHT      = {NewCell {TheDHT.new args(maxKey:{@Node getMaxKey($)})}}
       {@MsgLayer setNode(@Node)}
       {@Node setListener(@MsgLayer)}
-      {@MsgLayer setListener(Self)}
+      local
+         DHTBoard DHTSubscriber
+      in
+         [DHTBoard DHTSubscriber] = {Board.new}
+         {DHTSubscriber Self}
+         {DHTSubscriber tagged(@DHT dht)}
+         {@MsgLayer setListener(DHTBoard)}
+      end
+      {@DHT setMsgLayer(@MsgLayer)}
 
       %% Creating the Inbox abstraction
       local Str in
