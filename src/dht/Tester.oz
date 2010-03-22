@@ -118,9 +118,10 @@ in
    end
    {Delay 1000}
    {Get foo}
+   {Delete nada}
+   {Delay 1000}
    {Delete foo}
    {Delay 500}
    {Get foo}
-   {Delete error}
    {Application.exit 0}
 end
