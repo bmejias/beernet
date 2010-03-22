@@ -34,7 +34,7 @@ functor
 import
    Component   at '../corecomp/Component.ozf'
 export
-   NewDB
+   New
 define
 
    %% Basic item structure. 
@@ -44,12 +44,11 @@ define
                   version:~1
                   'lock':false)
 
-   fun {NewDB}
+   fun {New}
       DB
       Self
 
-      proc {Delete Event}
-         delete(Key1 Key2) = Event
+      proc {Delete delete(Key1 Key2)}
          KeyDict
       in
          KeyDict = {Dictionary.condGet DB Key1 unit}
@@ -58,8 +57,7 @@ define
          end
       end
 
-      proc {Get Event}
-         get(Key1 Key2 Val) = Event
+      proc {Get get(Key1 Key2 Val)}
          KeyDict
       in
          KeyDict = {Dictionary.condGet DB Key1 unit}
@@ -70,8 +68,7 @@ define
          end
       end
 
-      proc {Put Event}
-         put(Key1 Key2 Val) = Event
+      proc {Put put(Key1 Key2 Val)}
          KeyDict
       in
          KeyDict = {Dictionary.condGet DB Key1 unit}

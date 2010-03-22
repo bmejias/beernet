@@ -32,6 +32,7 @@ functor
 import
    Component   at '../corecomp/Component.ozf'
    Utils       at '../utils/Misc.ozf'
+   SimpleDB    at 'SimpleDB.ozf'
 export
    New
 define
@@ -43,6 +44,7 @@ define
 
       Args
       MaxKey
+      DB
 
       proc {Delete Event}
          skip
@@ -52,23 +54,22 @@ define
          skip
       end
 
-      proc {Put Event}
-         put(Key Value) = Event
+      proc {Put put(Key Value)}
          HKey  % HashKey for Key
       in
          HKey = {Utils.hash Key}
          {@MsgLayer send(putItem(hash:HKey key:Key value:Value) to:HKey)}
       end
 
-      proc {PutItem Event}
-         putItem(hash:HKey key:Key value:Value) = Event
-      in
+      proc {PutItem putItem(hash:HKey key:Key value:Value)}
          skip
       end
 
-      proc {SetMsgLayer Event}
-         setMsgLayer(AMsgLayer) = Event
-      in
+      proc {SetDB setDB(ADataBase)}
+         @DB := ADataBase
+      end
+
+      proc {SetMsgLayer setMsgLayer(AMsgLayer)}
          MsgLayer := AMsgLayer
       end
 
@@ -77,10 +78,11 @@ define
                      get:        Get
                      put:        Put
                      putItem:    PutItem
+                     setDB:      SetDB
                      setMsgLayer:SetMsgLayer
                      )
    in
-      Args = {Utils.addDefaults CallArgs def(maxKey:666)}
+      Args = {Utils.addDefaults CallArgs def(maxKey:666 db:{SimpleDB.new})}
       local
          FullComponent
       in
@@ -89,6 +91,7 @@ define
          Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
+      DB       = {NewCell Args.db}
       MaxKey   = {NewCell Args.maxKey}
       Self
    end
