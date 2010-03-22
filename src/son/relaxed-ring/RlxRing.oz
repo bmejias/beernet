@@ -45,6 +45,7 @@ import
    PbeerList   at '../../utils/PbeerList.ozf'
    RingList    at '../../utils/RingList.ozf'
    TimerMaker  at '../../timer/Timer.ozf'
+   Utils       at '../../utils/Misc.ozf'
 export
    New
 define
@@ -381,6 +382,21 @@ define
          end
       end
 
+      proc {Lookup lookup(key:Key res:Res)}
+         HKey
+      in
+         HKey = {Utils.hash Key MaxKey}
+         {LookupHash lookupHash(hkey:HKey res:Res)}
+      end
+
+      proc {LookupHash lookupHash(hkey:HKey res:Res)}
+         {Route route(msg:lookupRequest(res:Res) src:@SelfRef to:HKey)}
+      end
+
+      proc {LookupRequest lookupRequest(res:Res)}
+         Res = @SelfRef
+      end
+
       proc {NewSucc newSucc(newSucc:NewSucc succList:NewSuccList)}
          %{BlablaNonl NewSucc.id#" wannabe my new succ of "#@(Self.id)} 
          if {BelongsTo NewSucc.id @SelfRef.id @Succ.id} then
@@ -476,10 +492,13 @@ define
                   idInUse:       IdInUse
                   init:          Init
                   join:          Join
-                  predNoMore:    PredNoMore
                   joinLater:     JoinLater
                   joinOk:        JoinOk
+                  lookup:        Lookup
+                  lookupHash:    LookupHash
+                  lookupRequest: LookupRequest
                   newSucc:       NewSucc
+                  predNoMore:    PredNoMore
                   route:         Route
                   setFingerTable:SetFingerTable
                   setLogger:     SetLogger
