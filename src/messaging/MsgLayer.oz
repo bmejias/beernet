@@ -23,7 +23,7 @@
  *      
  *    The messaging layer needs a Node to route and receive messages. It also
  *    needs to be registered as listener of the Node, in other case, messages
- *    won't be delivered to the upper layer.
+ *    will not be delivered to the upper layer.
  *    
  *-------------------------------------------------------------------------
  */
@@ -83,9 +83,7 @@ define
          {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
       end
 
-      proc {RSend Event}
-         rsend(msg:Msg to:Target src:Src resp:Resp mid:MsgId) = Event
-      in
+      proc {RSend rsend(msg:Msg to:Target src:Src resp:Resp mid:MsgId)}
          %{System.show '+_+_MAYBE+_+_+_+_+_+_+_+_+_+got a message '#Msg}
          if Resp orelse Target == {@Node getId($)} then
             %{System.show '+_+_+_+_+_+_+_+_+_+_+_+got a message '#Msg}
@@ -94,44 +92,34 @@ define
          end
       end
 
-      proc {RSendAck Event}
-         rsendAck(MsgId) = Event
+      proc {RSendAck rsendAck(MsgId)}
+         Data = {Dictionary.condGet Msgs MsgId done}
       in
-         local
-            Data = {Dictionary.condGet Msgs MsgId done}
-         in
-            if Data \= done then
-               Data.outcome = true
-               %{System.show 'Msg'#MsgId#' was correctly received'}
-               {Dictionary.remove Msgs MsgId}
-            end
+         if Data \= done then
+            Data.outcome = true
+            %{System.show 'Msg'#MsgId#' was correctly received'}
+            {Dictionary.remove Msgs MsgId}
          end
       end
 
-      proc {SetNode Event}
-         setNode(ANode) = Event
-      in
+      proc {SetNode setNode(ANode)}
          Node := ANode
       end
 
-      proc {TimeoutEvent Event}
-         timeout(MsgId) = Event
+      proc {TimeoutEvent timeout(MsgId)}
+         Data = {Dictionary.condGet Msgs MsgId done} 
       in
-         local
-            Data = {Dictionary.condGet Msgs MsgId done} 
-         in
-            if Data \= done then
-               if Data.c > 1 then
-                  {@Node route(msg:Data.msg 
-                               to:Data.msg.to 
-                               src:{@Node getRef($)})} 
-                  {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
-                  Msgs.MsgId := {Record.adjoinAt Data c Data.c-1}
-               else
-                  {System.show 'msg '#MsgId#' never arrived'}
-                  Data.outcome = false
-                  {Dictionary.remove Msgs MsgId}
-               end
+         if Data \= done then
+            if Data.c > 1 then
+               {@Node route(msg:Data.msg 
+                            to:Data.msg.to 
+                            src:{@Node getRef($)})} 
+               {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
+               Msgs.MsgId := {Record.adjoinAt Data c Data.c-1}
+            else
+               {System.show 'msg '#MsgId#' never arrived'}
+               Data.outcome = false
+               {Dictionary.remove Msgs MsgId}
             end
          end
       end
