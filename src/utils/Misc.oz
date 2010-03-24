@@ -27,7 +27,6 @@ import
 export
    AddDefaults
    Hash
-   GetSymReplicas
 define
 
    %% Add default fields to a record.
@@ -67,26 +66,6 @@ define
       end
    in
       {Loop 0 5381}
-   end
-
-   %% Returns a list of 'f' hash keys symmetrically replicated whithin the
-   %address space, from 0 to Max. 'f' is the replication Factor. The list
-   %starts with the input Key. 
-   fun {GetSymReplicas Key Max Factor}
-      Increment = Max div Factor
-      fun {GetLoop Iter Last}
-         if Iter > 0 then
-            New = ((Last + Increment) mod Max)
-         in
-            New|{GetLoop Iter - 1 New}
-         else
-            nil
-         end
-      end
-      HashKey
-   in
-      HashKey = {Hash Key Max}
-      HashKey|{GetLoop Factor - 1 HashKey}
    end
 
 end

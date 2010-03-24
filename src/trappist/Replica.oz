@@ -24,6 +24,8 @@
  *    This is basically the implementation of 'bulk' operations to multicast
  *    messages to a replica set on a ring.
  *
+ *    TODO: Implement an eager retrieving of data upon join or failure recovery
+ *
  *-------------------------------------------------------------------------
  */
 
@@ -35,6 +37,26 @@ export
    New
 define
    
+   %% Returns a list of 'f' hash keys symmetrically replicated whithin the
+   %address space, from 0 to Max. 'f' is the replication Factor. The list
+   %starts with the input Key. 
+   fun {GetSymReplicas Key Max Factor}
+      Increment = Max div Factor
+      fun {GetLoop Iter Last}
+         if Iter > 0 then
+            New = ((Last + Increment) mod Max)
+         in
+            New|{GetLoop Iter - 1 New}
+         else
+            nil
+         end
+      end
+      HashKey
+   in
+      HashKey = {Utils.hash Key Max}
+      HashKey|{GetLoop Factor - 1 HashKey}
+   end
+
    fun {New CallArgs}
       Self
       Listener
