@@ -7,8 +7,6 @@
  *
  * LICENSE
  *
- *    Copyright (c) 2010 Universite catholique de Louvain
- *
  *    Beernet is released under the Beerware License (see file LICENSE) 
  * 
  * IDENTIFICATION 
