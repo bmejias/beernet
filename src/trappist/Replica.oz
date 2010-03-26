@@ -9,7 +9,7 @@
  *
  *    Copyright (c) 2010 Universite catholique de Louvain
  *
- *    Beernet is released under the MIT License (see file LICENSE) 
+ *    Beernet is released under the Beerware License (see file LICENSE) 
  * 
  * IDENTIFICATION 
  *
@@ -21,22 +21,23 @@
  *
  * NOTES
  *      
- *    This is basically the implementation of 'bulk' operations to multicast
- *    messages to a replica set on a ring.
- *
- *    TODO: Implement an eager retrieving of data upon join or failure recovery
+ *    This might become a component in the future when eager retrieving of data
+ *    upon churn is implemented. Meanwhile it just provides the set of keys
+ *    corresponding to symmetric replication with plain function. 
  *
  *-------------------------------------------------------------------------
  */
 
 functor
 import
-   Component   at '../corecomp/Component.ozf'
    Utils       at '../utils/Misc.ozf'
 export
    New
 define
-   
+  
+   MaxKey = {NewCell 666} %% stateful max key
+   Factor = {NewCell 4} %% stateful replication factor
+
    %% Returns a list of 'f' hash keys symmetrically replicated whithin the
    %address space, from 0 to Max. 'f' is the replication Factor. The list
    %starts with the input Key. 
@@ -57,33 +58,29 @@ define
       HashKey|{GetLoop Factor - 1 HashKey}
    end
 
-   fun {New CallArgs}
-      Self
-      Listener
-      MsgLayer
-
-      Args
-      MaxKey
-
-      proc {Bulk bulk(Key Msg)}
-         skip
+   fun {New Args}
+      if {HasFeature Args maxKey} then
+         MaxKey := Args.maxKey
       end
-   
-      Events = events(
-                     bulk:       Bulk
-                     )
-   in
-      Args = {Utils.addDefaults CallArgs def(maxKey:666 repFactor:4)}
-      local
-         FullComponent
-      in
-         FullComponent  = {Component.new Events}
-         Self     = FullComponent.trigger
-         Listener = FullComponent.listener
+      
+      proc {Object Msg}
+         case Msg
+         of setMaxKey(Key) then
+            MaxKey := Key
+         [] setFactor(F) then
+            Factor := F
+         [] getSymReplicas(Key) then
+            {GetSymReplicas Key @MaxKey @Factor}
+         [] getSymReplicas(Key factor:F) then
+            {GetSymReplicas Key @MaxKey F}
+         [] getSymReplicas(Key maxKey:Key) then
+            {GetSymReplicas Key Key @Factor}
+         [] getSymReplicas(Key maxKey:Key factor:F) then
+            {GetSymReplicas Key Key F}
+         else
+            raise error(method_not_found)
+         end
       end
-      MsgLayer = {NewCell Component.dummy}
-      MaxKey   = {NewCell Args.maxKey}
-      Self
    end
-
+   
 end

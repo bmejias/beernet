@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=Replica
+SRCS=Bulk Replica
 
 all: $(foreach source, $(SRCS), src_$(source))
 
