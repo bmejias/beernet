@@ -19,27 +19,27 @@
  *
  * NOTES
  *      
- *    This might become a component in the future when eager retrieving of data
- *    upon churn is implemented. Meanwhile it just provides the set of keys
- *    corresponding to symmetric replication with plain function. 
+ *    This might become a component running on its own thread in the future
+ *    when eager retrieving of data upon churn is managed by this component.
+ *    Meanwhile it is implemented as a passive object, with the most basic
+ *    functionality of providing the set of keys corresponding to symmetric
+ *    replication.
  *
  *-------------------------------------------------------------------------
  */
 
 functor
 import
+   Component   at '../corecomp/Component.ozf'
    Utils       at '../utils/Misc.ozf'
 export
    New
 define
   
-   MaxKey = {NewCell 666} %% stateful max key
-   Factor = {NewCell 4} %% stateful replication factor
-
    %% Returns a list of 'f' hash keys symmetrically replicated whithin the
    %address space, from 0 to Max. 'f' is the replication Factor. The list
    %starts with the input Key. 
-   fun {GetSymReplicas Key Max Factor}
+   fun {MakeSymReplicas Key Max Factor}
       Increment = Max div Factor
       fun {GetLoop Iter Last}
          if Iter > 0 then
@@ -53,32 +53,59 @@ define
       HashKey
    in
       HashKey = {Utils.hash Key Max}
-      HashKey|{GetLoop Factor - 1 HashKey}
+      HashKey|{GetLoop Factor-1 HashKey}
    end
 
-   fun {New Args}
-      if {HasFeature Args maxKey} then
-         MaxKey := Args.maxKey
+   fun {New CallArgs}
+      Self
+      Listener
+
+      Args
+      MaxKey   % Maximum key
+      Factor   % Replication factor
+
+      proc {GetSymReplicas Event}
+         getSymReplicas(Key Keys ...) = Event
+         MKey
+         F
+      in
+         MKey = if {HasFeature Event maxKey} then Event.maxKey else @MaxKey end
+         F    = if {HasFeature Event factor} then Event.factor else @Factor end
+         Keys = {MakeSymReplicas Key MKey F}
       end
-      
-      proc {Object Msg}
-         case Msg
-         of setMaxKey(Key) then
-            MaxKey := Key
-         [] setFactor(F) then
-            Factor := F
-         [] getSymReplicas(Key) then
-            {GetSymReplicas Key @MaxKey @Factor}
-         [] getSymReplicas(Key factor:F) then
-            {GetSymReplicas Key @MaxKey F}
-         [] getSymReplicas(Key maxKey:Key) then
-            {GetSymReplicas Key Key @Factor}
-         [] getSymReplicas(Key maxKey:Key factor:F) then
-            {GetSymReplicas Key Key F}
-         else
-            raise error(method_not_found)
-         end
+
+      proc {QuickRead quickRead(Key ?Value)}
+         skip
       end
+
+      proc {SetFactor setFactor(F)}
+         Factor := F
+      end
+
+      proc {SetMaxKey setMaxKey(Key)}
+         MaxKey := Key
+      end
+
+      Events = events(
+                     getSymReplicas:GetSymReplicas
+                     quickRead:     QuickRead
+                     setFactor:     SetFactor
+                     setMaxKey:     SetMaxKey
+                     )
+   in
+      local
+         FullComponent
+      in
+         FullComponent  = {Component.new Events}
+         Self     = FullComponent.trigger
+         Listener = FullComponent.listener
+      end
+
+      Args     = {Utils.addDefaults CallArgs def(maxKey:666 repFactor:4)}
+      MaxKey   = {NewCell Args.maxKey}
+      Factor   = {NewCell Args.repFactor}
+
+      Self 
    end
    
 end

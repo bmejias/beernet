@@ -130,7 +130,6 @@ define
                      timeout:    TimeoutEvent
                      )
    in
-      Args = {Utils.addDefaults CallArgs def(timeout:1000 tries:5)}
       local
          FullComponent
       in
@@ -140,10 +139,13 @@ define
       end
       Node        = {NewCell Component.dummy}
       TheTimer    = {Timer.new}
+      Msgs        = {Dictionary.new}
+      LastMsgId   = {NewCell 0}
+
+      Args        = {Utils.addDefaults CallArgs def(timeout:1000 tries:5)}
       Timeout     = {NewCell Args.timeout}
       Tries       = {NewCell Args.tries}
-      LastMsgId   = {NewCell 0}
-      Msgs        = {Dictionary.new}
+
       Self
    end
 

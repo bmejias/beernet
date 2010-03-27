@@ -30,7 +30,7 @@
 functor
 import
    Component   at '../corecomp/Component.ozf'
-   Replica     at 'Replica.ozf'
+   ReplicaMan  at 'Replica.ozf'
    Utils       at '../utils/Misc.ozf'
 export
    New
@@ -40,9 +40,7 @@ define
       Self
       Listener
       MsgLayer
-
-      Args
-      MaxKey
+      Replica
 
       proc {Bulk bulk(Key Msg)}
          skip
@@ -52,7 +50,6 @@ define
                      bulk:       Bulk
                      )
    in
-      Args = {Utils.addDefaults CallArgs def(maxKey:666 repFactor:4)}
       local
          FullComponent
       in
@@ -61,7 +58,6 @@ define
          Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
-      MaxKey   = {NewCell Args.maxKey}
       Self
    end
 

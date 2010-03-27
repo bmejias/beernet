@@ -48,6 +48,7 @@ define
       MaxKey
       DB
 
+
       proc {Delete delete(Key)}
          HKey
       in
@@ -66,6 +67,7 @@ define
          {@MsgLayer send(getItem(HKey Key Value tag:dht) to:HKey)}
       end
 
+      %% To be used locally, within the peer. (binds a variable)
       proc {GetItem getItem(HKey Key ?Value tag:dht)}
          {@DB get(HKey Key Value)}
       end
@@ -105,7 +107,6 @@ define
                      setMsgLayer:SetMsgLayer
                      )
    in
-      Args = {Utils.addDefaults CallArgs def(maxKey:666 db:{SimpleDB.new})}
       local
          FullComponent
       in
@@ -114,8 +115,11 @@ define
          Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
+
+      Args     = {Utils.addDefaults CallArgs def(maxKey:666 db:{SimpleDB.new})}
       DB       = {NewCell Args.db}
       MaxKey   = {NewCell Args.maxKey}
+
       Self
    end
 
