@@ -78,7 +78,7 @@ define
          [] AnyEvent|NewStream then
             TargetSubscribers
          in
-            if {Member tag {Arity AnyEvent}} then
+            if {HasFeature AnyEvent tag} then
                TargetSubscribers = {Dictionary.condGet Subscribers
                                                        AnyEvent.tag
                                                        nil}
