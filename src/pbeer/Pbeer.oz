@@ -43,6 +43,7 @@ import
    RelaxedRing at '../son/relaxed-ring/Node.ozf'
    TheDHT      at '../dht/DHT.ozf'
    TheMsgLayer at '../messaging/MsgLayer.ozf'
+   Utils       at '../utils/Misc.ozf'
 export
    New
 define
@@ -57,13 +58,6 @@ define
       %% Inbox for receiving messages
       Inbox    % Port to receive messages
       NewMsgs  % Dynamic head of new messages
-
-      %%--- Make Delegators ---
-      fun {DelegatesTo Comp}
-         proc {$ Event}
-            {@Comp Event}
-         end
-      end
 
       %%--- Events ---
 
@@ -125,8 +119,8 @@ define
          {@MsgLayer Event}
       end
      
-      ToNode      = {DelegatesTo Node}
-      ToDHT       = {DelegatesTo DHT}
+      ToNode      = {Utils.delegatesTo Node}
+      ToDHT       = {Utils.delegatesTo DHT}
       %ToMsgLayer  = {DelegatesTo MsgLayer}
 
       Events = events(
@@ -168,6 +162,7 @@ define
       DHT      = {NewCell {TheDHT.new args(maxKey:{@Node getMaxKey($)})}}
       {@MsgLayer setNode(@Node)}
       {@Node setListener(@MsgLayer)}
+      {@DHT setMsgLayer(@MsgLayer)}
       local
          DHTBoard DHTSubscriber
       in
@@ -176,7 +171,6 @@ define
          {DHTSubscriber tagged(@DHT dht)}
          {@MsgLayer setListener(DHTBoard)}
       end
-      {@DHT setMsgLayer(@MsgLayer)}
 
       %% Creating the Inbox abstraction
       local Str in
