@@ -32,6 +32,7 @@
 
 functor
 import
+   System
    Component   at '../corecomp/Component.ozf'
    Utils       at '../utils/Misc.ozf'
    SimpleDB    at 'SimpleDB.ozf'
@@ -45,9 +46,19 @@ define
       MsgLayer
 
       Args
-      MaxKey
       DB
+      Gvars
+      Gid
+      MaxKey
+      NodeRef
 
+      fun {NextGid}
+         OldGid NewGid
+      in
+         OldGid = Gid := NewGid
+         NewGid = OldGid + 1
+         NewGid
+      end
 
       proc {Delete delete(Key)}
          HKey
@@ -62,14 +73,34 @@ define
 
       proc {Get get(Key ?Value)}
          HKey
+         NewGid
       in
-         HKey = {Utils.hash Key @MaxKey}
-         {@MsgLayer send(getItem(HKey Key Value tag:dht) to:HKey)}
+         HKey     = {Utils.hash Key @MaxKey}
+         NewGid   = {NextGid}
+         Gvars.NewGid := Value
+         {@MsgLayer send(needItem(HKey Key src:@NodeRef gid:NewGid tag:dht)
+                         to:HKey)}
       end
 
-      %% To be used locally, within the peer. (binds a variable)
+      %% To be used locally, within the peer. (it binds a variable)
       proc {GetItem getItem(HKey Key ?Value tag:dht)}
          {@DB get(HKey Key Value)}
+      end
+
+      proc {NeedItem needItem(HKey Key src:Src gid:AGid tag:dht)}
+         Value
+      in
+         {GetItem getItem(HKey Key Value tag:dht)}
+         {@MsgLayer dsend(to:Src needItemBack(gid:AGid value:Value tag:dht))}
+      end
+
+      proc {NeedItemBack needItemBack(gid:AGid value:Value tag:dht)}
+         GVal
+      in
+         %{System.show 'got the value back'#Value#'for gid'#AGid}
+         GVal = {Dictionary.condGet Gvars AGid _}
+         GVal = Value
+         {Dictionary.remove Gvars AGid}
       end
 
       proc {Put put(Key Value)}
@@ -93,18 +124,21 @@ define
 
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
          MsgLayer := AMsgLayer
+         NodeRef  := {@MsgLayer getRef($)}
       end
 
       Events = events(
-                     delete:     Delete
-                     deleteItem: DeleteItem
-                     get:        Get
-                     getItem:    GetItem
-                     put:        Put
-                     putItem:    PutItem
-                     setDB:      SetDB
-                     setMaxKey:  SetMaxKey
-                     setMsgLayer:SetMsgLayer
+                     delete:        Delete
+                     deleteItem:    DeleteItem
+                     get:           Get
+                     getItem:       GetItem
+                     needItem:      NeedItem
+                     needItemBack:  NeedItemBack
+                     put:           Put
+                     putItem:       PutItem
+                     setDB:         SetDB
+                     setMaxKey:     SetMaxKey
+                     setMsgLayer:   SetMsgLayer
                      )
    in
       local
@@ -119,6 +153,9 @@ define
       Args     = {Utils.addDefaults CallArgs def(maxKey:666 db:{SimpleDB.new})}
       DB       = {NewCell Args.db}
       MaxKey   = {NewCell Args.maxKey}
+      Gvars    = {Dictionary.new}
+      Gid      = {NewCell 0}
+      NodeRef  = {NewCell noref}
 
       Self
    end
