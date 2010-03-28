@@ -24,6 +24,7 @@ import
    Pickle
 export
    AddDefaults
+   DelegatesTo
    Hash
 define
 
@@ -64,6 +65,13 @@ define
       end
    in
       {Loop 0 5381}
+   end
+
+   %%--- Make Delegators ---
+   fun {DelegatesTo Comp}
+      proc {$ Event}
+         {@Comp Event}
+      end
    end
 
 end
