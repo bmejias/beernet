@@ -42,12 +42,19 @@ define
       MsgLayer
       Replica
 
+      NodeRef
+
       proc {Bulk bulk(Key Msg)}
          skip
       end
-   
+
+      proc {SetRef setRef(ARef)}
+         NodeRef := ARef
+      end
+
       Events = events(
                      bulk:       Bulk
+                     setRef:     SetRef
                      )
    in
       local
@@ -58,6 +65,7 @@ define
          Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
+      NodeRef  = {NewCell noref}
       Self
    end
 
