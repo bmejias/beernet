@@ -40,6 +40,7 @@ define
       Self
       Listener
       Node
+      NodeRef
       TheTimer
 
       Args
@@ -54,6 +55,16 @@ define
          OutId = LastMsgId := NewId
          NewId = OutId + 1
          OutId
+      end
+
+      %% --- Events ---
+
+      proc {DMsg dmsg(Msg)}
+         {@Listener Msg}
+      end
+
+      proc {DSend dsend(Msg to:To)}
+         {@Node dsend(dmsg(Msg) to:To)}
       end
 
       proc {Send Event}
@@ -74,16 +85,15 @@ define
             Outcome = Event.out
          end
          MsgId = {GetNewMsgId}
-         FullMsg = rsend(msg:Msg to:Target src:{@Node getRef($)}
-                         resp:Resp mid:MsgId)
+         FullMsg = rsend(msg:Msg to:Target src:@NodeRef resp:Resp mid:MsgId)
          Msgs.MsgId := data(msg:FullMsg outcome:Outcome c:@Tries)
-         {@Node route(msg:FullMsg to:Target src:{@Node getRef($)})} 
+         {@Node route(msg:FullMsg to:Target src:@NodeRef)} 
          {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
       end
 
       proc {RSend rsend(msg:Msg to:Target src:Src resp:Resp mid:MsgId)}
          %{System.show '+_+_MAYBE+_+_+_+_+_+_+_+_+_+got a message '#Msg}
-         if Resp orelse Target == {@Node getId($)} then
+         if Resp orelse Target == @NodeRef.id then
             %{System.show '+_+_+_+_+_+_+_+_+_+_+_+got a message '#Msg}
             {@Listener Msg}
             {@Node dsend(to:Src rsendAck(MsgId))}
@@ -101,7 +111,12 @@ define
       end
 
       proc {SetNode setNode(ANode)}
-         Node := ANode
+         Node     := ANode
+         NodeRef  := {@Node getRef($)}
+      end
+
+      proc {SetRef setRef(ARef)}
+         NodeRef := ARef
       end
 
       proc {TimeoutEvent timeout(MsgId)}
@@ -109,9 +124,7 @@ define
       in
          if Data \= done then
             if Data.c > 1 then
-               {@Node route(msg:Data.msg 
-                            to:Data.msg.to 
-                            src:{@Node getRef($)})} 
+               {@Node route(msg:Data.msg to:Data.msg.to src:@NodeRef)} 
                {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
                Msgs.MsgId := {Record.adjoinAt Data c Data.c-1}
             else
@@ -122,11 +135,19 @@ define
          end
       end
 
+      ToListener  = {Utils.delegatesTo Listener}
+      ToNode      = {Utils.delegatesTo Node}
+
       Events = events(
+                     any:        ToListener
                      rsend:      RSend
                      rsendAck:   RSendAck
+                     dmsg:       DMsg
+                     dsend:      DSend
+                     getRef:     ToNode
                      send:       Send
                      setNode:    SetNode
+                     setRef:     SetRef
                      timeout:    TimeoutEvent
                      )
    in
@@ -138,6 +159,7 @@ define
          Listener = FullComponent.listener
       end
       Node        = {NewCell Component.dummy}
+      NodeRef     = {NewCell noref}
       TheTimer    = {Timer.new}
       Msgs        = {Dictionary.new}
       LastMsgId   = {NewCell 0}
