@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=Replica
+SRCS=SymmetricReplication
 
 all: $(foreach source, $(SRCS), src_$(source))
 
