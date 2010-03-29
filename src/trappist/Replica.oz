@@ -18,12 +18,12 @@
  *    $Date$
  *
  * NOTES
- *      
- *    This might become a component running on its own thread in the future
- *    when eager retrieving of data upon churn is managed by this component.
- *    Meanwhile it is implemented as a passive object, with the most basic
- *    functionality of providing the set of keys corresponding to symmetric
- *    replication.
+ *    
+ *    Pre-condition: It needs a messaging layer to be set.
+ *
+ *    Bulk: bulk operations send a message to all peers in the replica set.
+ *    
+ *    Quick Red: it bulks a read message, and returns the first answer.
  *
  *-------------------------------------------------------------------------
  */
@@ -59,13 +59,19 @@ define
    fun {New CallArgs}
       Self
       Listener
+      MsgLayer
+      NodeRef
 
       Args
       MaxKey   % Maximum key
       Factor   % Replication factor
 
-      proc {GetSymReplicas Event}
-         getSymReplicas(Key Keys ...) = Event
+      proc {Bulk Event}
+         skip
+      end
+
+      proc {GetReplicaKeys Event}
+         getReplicaKeys(Key Keys ...) = Event
          MKey
          F
       in
@@ -75,7 +81,7 @@ define
       end
 
       proc {QuickRead quickRead(Key ?Value)}
-         skip
+         {Bulk bulk}
       end
 
       proc {SetFactor setFactor(F)}
@@ -86,11 +92,18 @@ define
          MaxKey := Key
       end
 
+      proc {SetMsgLayer setMsgLayer(AMsgLayer)}
+         MsgLayer := AMsgLayer
+         NodeRef  := {@MsgLayer getRef($)}
+      end
+
       Events = events(
-                     getSymReplicas:GetSymReplicas
+                     bulk:          Bulk
+                     getReplicaKeys:GetReplicaKeys
                      quickRead:     QuickRead
                      setFactor:     SetFactor
                      setMaxKey:     SetMaxKey
+                     setMsgLayer:   SetMsgLayer
                      )
    in
       local
@@ -100,10 +113,12 @@ define
          Self     = FullComponent.trigger
          Listener = FullComponent.listener
       end
+      MsgLayer = {NewCell Component.dummy}
 
       Args     = {Utils.addDefaults CallArgs def(maxKey:666 repFactor:4)}
       MaxKey   = {NewCell Args.maxKey}
       Factor   = {NewCell Args.repFactor}
+      NodeRef  = {NewCell noref}
 
       Self 
    end
