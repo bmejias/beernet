@@ -31,6 +31,7 @@
 functor
 import
    Component   at '../corecomp/Component.ozf'
+   Timer       at '../timer/Timer.ozf'
    Utils       at '../utils/Misc.ozf'
 export
    New
@@ -62,12 +63,14 @@ define
       MsgLayer
       NodeRef
       DHTman
+      TheTimer
 
       Args
       MaxKey   % Maximum key
       Factor   % Replication factor
       Gvars
       Gid
+      Timeout
 
       fun {NextGid}
          OldGid NewGid
@@ -98,27 +101,41 @@ define
          Keys = {MakeSymReplicas Key MKey F}
       end
 
-      proc {QuickRead quickRead(Key ?Value)}
+      proc {QuickRead quickRead(Key ?Val)}
          NewGid
       in
          NewGid   = {NextGid}
-         Gvars.NewGid := Value
-         {Bulk bulk(read(Key id:Gid src:@NodeRef tag:symrep) to:Key)}
+         Gvars.NewGid := var(variable:Val tries:0 state:waiting)
+         {Bulk bulk(read(Key id:NewGid src:@NodeRef tag:symrep) to:Key)}
+         {TheTimer startTrigger(@Timeout timeout(NewGid) Self)}
       end
 
       proc {Read read(Key id:Gid src:Src hkey:HKey tag:symrep)}
-         Value
+         Val
       in
-         {@DHTman getItem(HKey Key Value)}
-         {@MsgLayer dsend(to:Src readBack(value:Value id:Gid tag:symrep))}
+         {@DHTman getItem(HKey Key Val)}
+         {@MsgLayer dsend(to:Src readBack(value:Val gid:Gid tag:symrep))}
       end
 
-      proc {ReadBack readBack(gid:AGid value:Value tag:symrep)}
-         GVal
+      proc {ReadBack readBack(gid:AGid value:Val tag:symrep)}
+         Gvar
       in
-         GVal = {Dictionary.condGet Gvars AGid _}
-         GVal = Value
-         {Dictionary.remove Gvars AGid}
+         Gvar = {Dictionary.condGet Gvars AGid var(state:gone)}
+         if Gvar.state == waiting then
+            if {Value.isFailed Val} then
+               Tries = Gvar.tries+1
+            in
+               if Tries == @Factor then
+                  Gvar.variable = Val
+                  {Dictionary.remove Gvars AGid}
+               else
+                  Gvars.AGid := {Record.adjoinAt Gvar tries Tries}
+               end
+            else
+               Gvar.variable = Val
+               {Dictionary.remove Gvars AGid}
+            end
+         end
       end
 
       proc {SetDHT setDHT(DHTcomponent)}
@@ -138,6 +155,18 @@ define
          NodeRef  := {@MsgLayer getRef($)}
       end
 
+      proc {SetTimeout setTimeout(ATime)}
+         Timeout := ATime
+      end
+
+      proc {TimeoutEvent timeout(AGid)}
+         Gvar
+      in
+         Gvar = {Dictionary.condGet Gvars AGid var(variable:_)}
+         Gvar.variable = {Value.failed error('NOT FOUND')}
+         {Dictionary.remove Gvars AGid}
+      end
+
       Events = events(
                      bulk:          Bulk
                      getReplicaKeys:GetReplicaKeys
@@ -148,6 +177,8 @@ define
                      setFactor:     SetFactor
                      setMaxKey:     SetMaxKey
                      setMsgLayer:   SetMsgLayer
+                     setTimeout:    SetTimeout
+                     timeout:       TimeoutEvent
                      )
    in
       local
@@ -159,10 +190,14 @@ define
       end
       MsgLayer = {NewCell Component.dummy}
       DHTman   = {NewCell Component.dummy}      
+      TheTimer = {Timer.new}
 
-      Args     = {Utils.addDefaults CallArgs def(maxKey:666 repFactor:4)}
+      Args     = {Utils.addDefaults CallArgs def(maxKey:    666
+                                                 repFactor: 4
+                                                 timeout:   1000)}
       MaxKey   = {NewCell Args.maxKey}
       Factor   = {NewCell Args.repFactor}
+      Timeout  = {NewCell Args.timeout}
 
       Gvars    = {Dictionary.new}
       Gid      = {NewCell 0}

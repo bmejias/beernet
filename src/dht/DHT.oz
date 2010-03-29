@@ -71,47 +71,47 @@ define
          {@DB delete(HKey Key)}
       end
 
-      proc {Get get(Key ?Value)}
+      proc {Get get(Key ?Val)}
          HKey
          NewGid
       in
          HKey     = {Utils.hash Key @MaxKey}
          NewGid   = {NextGid}
-         Gvars.NewGid := Value
+         Gvars.NewGid := Val
          {@MsgLayer send(needItem(HKey Key src:@NodeRef gid:NewGid tag:dht)
                          to:HKey)}
       end
 
       %% To be used locally, within the peer. (it binds a variable)
-      proc {GetItem getItem(HKey Key ?Value)}
-         {@DB get(HKey Key Value)}
+      proc {GetItem getItem(HKey Key ?Val)}
+         {@DB get(HKey Key Val)}
       end
 
       proc {NeedItem needItem(HKey Key src:Src gid:AGid tag:dht)}
-         Value
+         Val
       in
-         {GetItem getItem(HKey Key Value)}
-         {@MsgLayer dsend(to:Src needItemBack(gid:AGid value:Value tag:dht))}
+         {GetItem getItem(HKey Key Val)}
+         {@MsgLayer dsend(to:Src needItemBack(gid:AGid value:Val tag:dht))}
       end
 
-      proc {NeedItemBack needItemBack(gid:AGid value:Value tag:dht)}
+      proc {NeedItemBack needItemBack(gid:AGid value:Val tag:dht)}
          GVal
       in
-         %{System.show 'got the value back'#Value#'for gid'#AGid}
+         %{System.show 'got the value back'#Val#'for gid'#AGid}
          GVal = {Dictionary.condGet Gvars AGid _}
-         GVal = Value
+         GVal = Val
          {Dictionary.remove Gvars AGid}
       end
 
-      proc {Put put(Key Value)}
+      proc {Put put(Key Val)}
          HKey  % HashKey for Key
       in
          HKey = {Utils.hash Key @MaxKey}
-         {@MsgLayer send(putItem(HKey Key Value tag:dht) to:HKey)}
+         {@MsgLayer send(putItem(HKey Key Val tag:dht) to:HKey)}
       end
 
-      proc {PutItem putItem(HKey Key Value tag:dht)}
-         {@DB put(HKey Key Value)}
+      proc {PutItem putItem(HKey Key Val tag:dht)}
+         {@DB put(HKey Key Val)}
       end
 
       proc {SetDB setDB(ADataBase)}

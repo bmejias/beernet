@@ -41,6 +41,7 @@ import
    Board       at '../corecomp/Board.ozf'
    Component   at '../corecomp/Component.ozf'
    RelaxedRing at '../son/relaxed-ring/Node.ozf'
+   Replication at '../trappist/SymmetricReplication.ozf'
    TheDHT      at '../dht/DHT.ozf'
    TheMsgLayer at '../messaging/MsgLayer.ozf'
    Utils       at '../utils/Misc.ozf'
@@ -53,6 +54,7 @@ define
       Node     % Node implementing the behaviour
       DHT      % DHT functionality
       MsgLayer % Reliable messaging layer
+      Replica  % Symmetric replication
       Self     % This component
 
       %% Inbox for receiving messages
@@ -68,18 +70,6 @@ define
 
       proc {Broadcast Event}
 %         broadcast(Range Msg) = Event
-%      in
-         skip
-      end
-      
-      proc {DHTGet Event}
-%         get(Key Value) = Event
-%      in
-         skip
-      end
-      
-      proc {DHTPut Event}
-%         put(Key Value) = Event
 %      in
          skip
       end
@@ -121,6 +111,7 @@ define
      
       ToNode      = {Utils.delegatesTo Node}
       ToDHT       = {Utils.delegatesTo DHT}
+      ToReplica   = {Utils.delegatesTo Replica}
       %ToMsgLayer  = {DelegatesTo MsgLayer}
 
       Events = events(
@@ -146,6 +137,9 @@ define
                   delete:           ToDHT
                   get:              ToDHT
                   put:              ToDHT
+                  %% Replication events
+                  bulk:             ToReplica
+                  quickRead:        ToReplica
                   )
 
    in
@@ -159,17 +153,26 @@ define
       end
       Node     = {NewCell {RelaxedRing.new args}} 
       MsgLayer = {NewCell {TheMsgLayer.new args}}
-      DHT      = {NewCell {TheDHT.new args(maxKey:{@Node getMaxKey($)})}}
+      local
+         MaxKey
+      in
+         MaxKey = {@Node getMaxKey($)}
+         DHT      = {NewCell {TheDHT.new args(maxKey:MaxKey)}}
+         Replica  = {NewCell {Replication.new args(maxKey:MaxKey repFactor:4)}}
+      end
       {@MsgLayer setNode(@Node)}
       {@Node setListener(@MsgLayer)}
       {@DHT setMsgLayer(@MsgLayer)}
+      {@Replica setMsgLayer(@MsgLayer)}
+      {@Replica setDHT(@DHT)}
       local
-         DHTBoard DHTSubscriber
+         StorageBoard StorageSubscriber
       in
-         [DHTBoard DHTSubscriber] = {Board.new}
-         {DHTSubscriber Self}
-         {DHTSubscriber tagged(@DHT dht)}
-         {@MsgLayer setListener(DHTBoard)}
+         [StorageBoard StorageSubscriber] = {Board.new}
+         {StorageSubscriber Self}
+         {StorageSubscriber tagged(@DHT dht)}
+         {StorageSubscriber tagged(@Replica symrep)}
+         {@MsgLayer setListener(StorageBoard)}
       end
 
       %% Creating the Inbox abstraction
