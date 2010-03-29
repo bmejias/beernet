@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
  *
- * Replica.oz
+ * SymmetricReplication.oz
  *
  *    This module provides operations for symmetric replication on circular
  *    address spaces.
@@ -61,13 +61,31 @@ define
       Listener
       MsgLayer
       NodeRef
+      DHTman
 
       Args
       MaxKey   % Maximum key
       Factor   % Replication factor
+      Gvars
+      Gid
 
-      proc {Bulk Event}
-         skip
+      fun {NextGid}
+         OldGid NewGid
+      in
+         OldGid = Gid := NewGid
+         NewGid = OldGid + 1
+         NewGid
+      end
+
+      %% --- Events ---
+
+      proc {Bulk bulk(Msg to:Key)}
+         RepKeys
+      in
+         RepKeys = {MakeSymReplicas Key @MaxKey @Factor}
+         for K in RepKeys do
+            {@MsgLayer send({Record.adjoinAt Msg hkey K} to:K)}
+         end
       end
 
       proc {GetReplicaKeys Event}
@@ -81,7 +99,30 @@ define
       end
 
       proc {QuickRead quickRead(Key ?Value)}
-         {Bulk bulk}
+         NewGid
+      in
+         NewGid   = {NextGid}
+         Gvars.NewGid := Value
+         {Bulk bulk(read(Key id:Gid src:@NodeRef tag:symrep) to:Key)}
+      end
+
+      proc {Read read(Key id:Gid src:Src hkey:HKey tag:symrep)}
+         Value
+      in
+         {@DHTman getItem(HKey Key Value)}
+         {@MsgLayer dsend(to:Src readBack(value:Value id:Gid tag:symrep))}
+      end
+
+      proc {ReadBack readBack(gid:AGid value:Value tag:symrep)}
+         GVal
+      in
+         GVal = {Dictionary.condGet Gvars AGid _}
+         GVal = Value
+         {Dictionary.remove Gvars AGid}
+      end
+
+      proc {SetDHT setDHT(DHTcomponent)}
+         DHTman := DHTcomponent
       end
 
       proc {SetFactor setFactor(F)}
@@ -101,6 +142,9 @@ define
                      bulk:          Bulk
                      getReplicaKeys:GetReplicaKeys
                      quickRead:     QuickRead
+                     read:          Read
+                     readBack:      ReadBack
+                     setDHT:        SetDHT
                      setFactor:     SetFactor
                      setMaxKey:     SetMaxKey
                      setMsgLayer:   SetMsgLayer
@@ -114,10 +158,14 @@ define
          Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
+      DHTman   = {NewCell Component.dummy}      
 
       Args     = {Utils.addDefaults CallArgs def(maxKey:666 repFactor:4)}
       MaxKey   = {NewCell Args.maxKey}
       Factor   = {NewCell Args.repFactor}
+
+      Gvars    = {Dictionary.new}
+      Gid      = {NewCell 0}
       NodeRef  = {NewCell noref}
 
       Self 

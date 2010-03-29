@@ -83,14 +83,14 @@ define
       end
 
       %% To be used locally, within the peer. (it binds a variable)
-      proc {GetItem getItem(HKey Key ?Value tag:dht)}
+      proc {GetItem getItem(HKey Key ?Value)}
          {@DB get(HKey Key Value)}
       end
 
       proc {NeedItem needItem(HKey Key src:Src gid:AGid tag:dht)}
          Value
       in
-         {GetItem getItem(HKey Key Value tag:dht)}
+         {GetItem getItem(HKey Key Value)}
          {@MsgLayer dsend(to:Src needItemBack(gid:AGid value:Value tag:dht))}
       end
 
