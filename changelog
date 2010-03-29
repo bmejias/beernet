@@ -1,3 +1,8 @@
+Beernet-0.5
+	- Symmetric Replication provides Bulk operations and QuickRead
+	- Several bug fixes
+	- License upgrade: Using Beerware instead of MIT/X11 (Keeping No Warranty)
+
 Beernet-0.4
 	- DHT functionality: put/get/delete
 	- SimpleDB component used by the DHT layer
