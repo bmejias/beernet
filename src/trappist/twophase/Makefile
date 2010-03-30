@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=SymmetricReplication Trappist
+SRCS=Participant Manager
 
 all: $(foreach source, $(SRCS), src_$(source))
 

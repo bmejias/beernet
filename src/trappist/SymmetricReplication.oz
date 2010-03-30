@@ -19,7 +19,8 @@
  *
  * NOTES
  *    
- *    Pre-condition: It needs a messaging layer to be set.
+ *    Pre-condition: It needs a messaging layer, the DHT component, and the
+ *    Node Reference
  *
  *    Bulk: bulk operations send a message to all peers in the replica set.
  *    
@@ -59,7 +60,7 @@ define
 
    fun {New CallArgs}
       Self
-      Listener
+      %Listener
       MsgLayer
       NodeRef
       DHTman
@@ -186,7 +187,7 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
-         Listener = FullComponent.listener
+         %Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
       DHTman   = {NewCell Component.dummy}      
