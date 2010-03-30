@@ -33,7 +33,6 @@
 
 functor
 import
-   System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'
    RingList    at '../../utils/RingList.ozf'
@@ -128,7 +127,6 @@ define
       proc {Route Event}
          route(msg:Msg src:Src to:Target ...) = Event
       in
-         %{System.show going_to_route#Event}
          if {Not {Record.label Msg} == join} then
             {Monitor monitor(Src)}
          end

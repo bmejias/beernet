@@ -32,7 +32,6 @@
 
 functor
 import
-   System
    Component   at '../corecomp/Component.ozf'
    Utils       at '../utils/Misc.ozf'
    SimpleDB    at 'SimpleDB.ozf'
@@ -42,7 +41,7 @@ define
    
    fun {New CallArgs}
       Self
-      Listener
+      %Listener
       MsgLayer
 
       Args
@@ -97,7 +96,6 @@ define
       proc {NeedItemBack needItemBack(gid:AGid value:Val tag:dht)}
          GVal
       in
-         %{System.show 'got the value back'#Val#'for gid'#AGid}
          GVal = {Dictionary.condGet Gvars AGid _}
          GVal = Val
          {Dictionary.remove Gvars AGid}
@@ -146,7 +144,7 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
-         Listener = FullComponent.listener
+         %Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
 
