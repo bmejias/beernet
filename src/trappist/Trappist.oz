@@ -31,11 +31,12 @@ import
    Utils          at '../utils/Misc.ozf'
    EagerPaxosTM   at 'eagerpaxos/EagerPaxos-TM.ozf'
    EagerPaxosTP   at 'eagerpaxos/EagerPaxos-TP.ozf'
-   PaxosTP        at 'paxos/Paxos-TP.ozf'
    PaxosTM        at 'paxos/Paxos-TM.ozf'
    PaxosTP        at 'paxos/Paxos-TP.ozf'
    TwoPCTM        at 'twophase/TwoPC-TM.ozf'
    TwoPCTP        at 'twophase/TwoPC-TP.ozf'
+   ValueSetTM    at 'valueset/ValueSet-TM.ozf'
+   ValueSetTP    at 'valueset/ValueSet-TP.ozf'
 export
    New
 define
@@ -50,23 +51,24 @@ define
 
       %Timeout
 
+      TMmakers = tms(eagerpaxos: EagerPaxosTM
+                     paxos:      PaxosTM
+                     twopc:      TwoPCTM
+                     valueset:   ValueSetTM
+                     )
+      TPmakers = tms(eagerpaxos: EagerPaxosTP
+                     paxos:      PaxosTP
+                     twopc:      TwoPCTP
+                     valueset:   ValueSetTP
+                     )
+
       %% --- Creating instances of transactional objects ---
+/*
       fun {NewTM Client Protocol Type}
-         case Type
-         of twopc then
-            {TwoPCTM.newTransactionManager Node Client}
-         [] paxos then
-            {PaxosTM.newTransactionManager Node Client leader}
-         [] paxosrtm then
-            {PaxosTM.newTransactionManager Node Client rtm}
-         [] paxoseager then
-            {PaxosEagerTM.newTransactionManager Node Client leader}
-         [] paxoseagerrtm then
-            {PaxosEagerTM.newTransactionManager Node Client rtm}
-         end
+         {TMmakers.Protocol.new args(type:Type client:Client)}
       end
 
-      fun {NewTransactionParticipant Node Tid Type}
+      fun {NewTransactionParticipant Node Tid Protocol}
          case Type
          of twopc then
             {TwoPCTP.newTransactionParticipant Node Tid}
@@ -76,7 +78,7 @@ define
             {PaxosEagerTP.newTransactionParticipant Node Tid}
          end
       end
-
+*/
       %% --- Event ---
 
       proc {BecomeReader Event}
@@ -90,7 +92,9 @@ define
       proc {RunTransaction runTransaction(Trans Client Protocol)}
          TM
       in
-         TM = {NewTM Client Protocol}
+         %TM = {NewTM Client Protocol}
+         TM = {TMmakers.Protocol.new args(type:leader client:Client)}
+         {Trans TM}
          skip
       end
 
