@@ -85,6 +85,56 @@ define
          NewGid
       end
 
+      proc {RegisterRead Key Val Type}
+         NewGid
+      in
+         NewGid   = {NextGid}
+         Gvars.NewGid := data(var:Val tries:0 state:waiting type:Type)
+         {Bulk bulk(read(Key id:NewGid src:@NodeRef tag:symrep) to:Key)}
+         {TheTimer startTrigger(@Timeout timeout(NewGid) Self)}
+      end
+
+      proc {HandleQuick AGid Val Gvar}
+         if {Value.isFailed Val} then
+            Tries = Gvar.tries+1
+         in
+            if Tries == @Factor then
+               Gvar.var = Val
+               {Dictionary.remove Gvars AGid}
+            else
+               Gvars.AGid := {Record.adjoinAt Gvar tries Tries}
+            end
+         else
+            Gvar.var = Val
+            {Dictionary.remove Gvars AGid}
+         end
+      end
+
+      proc {HandleList AGid Val Gvar Max}
+         Tries = Gvar.tries+1
+      in
+         if Tries == Max then
+            Gvar.var = Val|nil
+         else
+            NewTail
+         in
+            Gvar.var = Val|NewTail
+            Gvars.AGid := {Record.adjoin Gvar data(tries:Tries var:NewTail)}
+         end
+      end
+
+      proc {HandleAll AGid Val Gvar}
+         {HandleList AGid Val Gvar @Factor}
+      end
+
+      proc {HandleMajor AGid Val Gvar}
+         {HandleList AGid Val Gvar (@Factor div 2 + 1)}
+      end
+
+      ReadHandles = handles(quick:  HandleQuick
+                            all:    HandleAll
+                            major:  HandleMajor)
+
       %% --- Events ---
 
       proc {Bulk bulk(Msg to:Key)}
@@ -107,20 +157,15 @@ define
       end
 
       proc {QuickRead quickRead(Key ?Val)}
-         NewGid
-      in
-         NewGid   = {NextGid}
-         Gvars.NewGid := var(variable:Val tries:0 state:waiting)
-         {Bulk bulk(read(Key id:NewGid src:@NodeRef tag:symrep) to:Key)}
-         {TheTimer startTrigger(@Timeout timeout(NewGid) Self)}
+         {RegisterRead Key Val quick}
       end
 
       proc {ReadAll readAll(Key ?Vals)}
-         skip
+         {RegisterRead Key Vals all}
       end
 
       proc {ReadMajority readMajority(Key ?Vals)}
-         skip
+         {RegisterRead Key Vals major}
       end
 
       proc {Read read(Key id:Gid src:Src hkey:HKey tag:symrep)}
@@ -135,19 +180,7 @@ define
       in
          Gvar = {Dictionary.condGet Gvars AGid var(state:gone)}
          if Gvar.state == waiting then
-            if {Value.isFailed Val} then
-               Tries = Gvar.tries+1
-            in
-               if Tries == @Factor then
-                  Gvar.variable = Val
-                  {Dictionary.remove Gvars AGid}
-               else
-                  Gvars.AGid := {Record.adjoinAt Gvar tries Tries}
-               end
-            else
-               Gvar.variable = Val
-               {Dictionary.remove Gvars AGid}
-            end
+            {ReadHandles.(Gvar.type) AGid Val Gvar}
          end
       end
 
@@ -175,8 +208,8 @@ define
       proc {TimeoutEvent timeout(AGid)}
          Gvar
       in
-         Gvar = {Dictionary.condGet Gvars AGid var(variable:_)}
-         Gvar.variable = {Value.failed error('NOT FOUND')}
+         Gvar = {Dictionary.condGet Gvars AGid var(var:_)}
+         Gvar.var = {Value.failed error('NOT FOUND')}
          {Dictionary.remove Gvars AGid}
       end
 

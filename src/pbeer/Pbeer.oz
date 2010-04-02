@@ -140,6 +140,8 @@ define
                   %% Replication events
                   bulk:             ToReplica
                   quickRead:        ToReplica
+                  readAll:          ToReplica
+                  readMajority:     ToReplica
                   )
 
    in
