@@ -12,9 +12,7 @@ svn propset svn:keywords "Date Author Revision" Filename.oz
  *
  * LICENSE
  *
- *    Copyright (c) 2010 Universite catholique de Louvain
- *
- *    Beernet is released under the MIT License (see file LICENSE) 
+ *    Beernet is released under the Beerware License (see file LICENSE) 
  * 
  * IDENTIFICATION 
  *
