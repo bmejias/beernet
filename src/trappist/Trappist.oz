@@ -33,10 +33,10 @@ import
    EagerPaxosTP   at 'eagerpaxos/EagerPaxos-TP.ozf'
    PaxosTM        at 'paxos/Paxos-TM.ozf'
    PaxosTP        at 'paxos/Paxos-TP.ozf'
-   TwoPCTM        at 'twophase/TwoPC-TM.ozf'
-   TwoPCTP        at 'twophase/TwoPC-TP.ozf'
-   ValueSetTM    at 'valueset/ValueSet-TM.ozf'
-   ValueSetTP    at 'valueset/ValueSet-TP.ozf'
+   TwoPCTM        at 'twophase/TwpPC-TM.ozf'
+   TwoPCTP        at 'twophase/TwpPC-TP.ozf'
+   ValueSetTM     at 'valueset/ValueSet-TM.ozf'
+   ValueSetTP     at 'valueset/ValueSet-TP.ozf'
 export
    New
 define
@@ -50,6 +50,8 @@ define
       TheTimer
 
       %Timeout
+      TMs
+      TPs
 
       TMmakers = tms(eagerpaxos: EagerPaxosTM
                      paxos:      PaxosTM
@@ -62,23 +64,6 @@ define
                      valueset:   ValueSetTP
                      )
 
-      %% --- Creating instances of transactional objects ---
-/*
-      fun {NewTM Client Protocol Type}
-         {TMmakers.Protocol.new args(type:Type client:Client)}
-      end
-
-      fun {NewTransactionParticipant Node Tid Protocol}
-         case Type
-         of twopc then
-            {TwoPCTP.newTransactionParticipant Node Tid}
-         [] paxos then
-            {PaxosTP.newTransactionParticipant Node Tid}
-         [] paxoseager then
-            {PaxosEagerTP.newTransactionParticipant Node Tid}
-         end
-      end
-*/
       %% --- Event ---
 
       proc {BecomeReader Event}
@@ -92,8 +77,10 @@ define
       proc {RunTransaction runTransaction(Trans Client Protocol)}
          TM
       in
-         %TM = {NewTM Client Protocol}
          TM = {TMmakers.Protocol.new args(type:leader client:Client)}
+         {TM setMsgLayer(@MsgLayer)}
+         {TM setDHT(@DHTman)}
+         TMs.{TM getId($)} := TM
          {Trans TM}
          skip
       end
@@ -131,6 +118,9 @@ define
       MsgLayer = {NewCell Component.dummy}
       DHTman   = {NewCell Component.dummy}      
       TheTimer = {Timer.new}
+
+      TMs   = {Dictionary.new}
+      TPs   = {Dictionary.new}
 
       Self
    end

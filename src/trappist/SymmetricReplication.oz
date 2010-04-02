@@ -26,6 +26,10 @@
  *    
  *    Quick Red: it bulks a read message, and returns the first answer.
  *
+ *    Read All: Returns a list of items from all participants
+ *
+ *    Read Majority: Returns a list of items from a mojority
+ *
  *-------------------------------------------------------------------------
  */
 
@@ -111,6 +115,14 @@ define
          {TheTimer startTrigger(@Timeout timeout(NewGid) Self)}
       end
 
+      proc {ReadAll readAll(Key ?Vals)}
+         skip
+      end
+
+      proc {ReadMajority readMajority(Key ?Vals)}
+         skip
+      end
+
       proc {Read read(Key id:Gid src:Src hkey:HKey tag:symrep)}
          Val
       in
@@ -173,6 +185,8 @@ define
                      getReplicaKeys:GetReplicaKeys
                      quickRead:     QuickRead
                      read:          Read
+                     readAll:       ReadAll
+                     readMajority:  ReadMajority
                      readBack:      ReadBack
                      setDHT:        SetDHT
                      setFactor:     SetFactor

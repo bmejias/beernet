@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=Participant Manager
+SRCS=TwoPC-TM TwoPC-TP
 
 all: $(foreach source, $(SRCS), src_$(source))
 
