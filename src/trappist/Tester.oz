@@ -81,6 +81,22 @@ define
       {System.show 'Quick Reading'#Key#'we obtained'#Value}
    end
 
+   proc {ReadAll Key}
+      Val
+   in
+      {MasterOfPuppets readAll(Key Val)}
+      if {IsList Val} then skip end
+      {System.show 'Reading All'#Key#'we obtained'#Val}
+   end
+
+   proc {ReadMajority Key}
+      Val
+   in
+      {MasterOfPuppets readMajority(Key Val)}
+      if {IsList Val} then skip end
+      {System.show 'Reading Majority'#Key#'we obtained'#Val}
+   end
+
    proc {Delete Key}
       {System.show 'Deleting'#Key}
       {MasterOfPuppets delete(Key)}
@@ -108,6 +124,10 @@ in
    {Put foo flets}
    {Get foo}
    {QuickRead foo}
+   {ReadAll foo}
+   {ReadMajority foo}
+   {ReadAll foooo}
+   {ReadMajority foooo}
    {System.show '---- testing some message sending ----'}
    {MasterOfPuppets send(msg(text:'hello nurse' src:foo) to:{Utils.hash foo MaxKey})}
    {MasterOfPuppets send(msg(text:bla src:foo) to:{Utils.hash ina MaxKey})}

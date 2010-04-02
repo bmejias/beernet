@@ -95,18 +95,13 @@ define
       end
 
       proc {HandleQuick AGid Val Gvar}
-         if {Value.isFailed Val} then
-            Tries = Gvar.tries+1
-         in
-            if Tries == @Factor then
-               Gvar.var = Val
-               {Dictionary.remove Gvars AGid}
-            else
-               Gvars.AGid := {Record.adjoinAt Gvar tries Tries}
-            end
-         else
+         Tries = Gvar.tries+1
+      in
+         if {Not {Value.isFailed Val}} orelse Tries == @Factor then
             Gvar.var = Val
             {Dictionary.remove Gvars AGid}
+         else
+            Gvars.AGid := {Record.adjoinAt Gvar tries Tries}
          end
       end
 
@@ -114,12 +109,21 @@ define
          Tries = Gvar.tries+1
       in
          if Tries == Max then
-            Gvar.var = Val|nil
+            if {Value.isFailed Val} then
+               Gvar.var = nil
+            else
+               Gvar.var = Val|nil
+            end
+            {Dictionary.remove Gvars AGid}
          else
-            NewTail
-         in
-            Gvar.var = Val|NewTail
-            Gvars.AGid := {Record.adjoin Gvar data(tries:Tries var:NewTail)}
+            if {Value.isFailed Val} then
+               Gvars.AGid := {Record.adjoin Gvar data(tries:Tries)}
+            else
+               NewTail
+            in
+               Gvar.var = Val|NewTail
+               Gvars.AGid := {Record.adjoin Gvar data(tries:Tries var:NewTail)}
+            end
          end
       end
 
