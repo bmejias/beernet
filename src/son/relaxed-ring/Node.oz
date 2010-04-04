@@ -41,12 +41,12 @@ define
       Self
       ComLayer
       RlxRingNode
-      TheFTable
+      FTable
 
       proc {InjectPermFail injectPermFail}
          {ComLayer signalDestroy}
          {RlxRingNode signalDestroy}
-         {TheFTable signalDestroy}
+         {FTable signalDestroy}
          {Wait _}
       end
 
@@ -67,13 +67,13 @@ define
       local
          Id MaxKey
       in
-         {RlxRingNode getMaxKey(MaxKey)}
-         {RlxRingNode getId(Id)}
-         {RlxRingNode getComLayer(ComLayer)}
-         TheFTable = {FingerTable.new args(maxKey:MaxKey id:Id)}
-         {TheFTable setComLayer(ComLayer)}
+         MaxKey   = {RlxRingNode getMaxKey($)}
+         Id       = {RlxRingNode getId($)}
+         ComLayer = {RlxRingNode getComLayer($)}
+         FTable   = {FingerTable.new args(maxKey:MaxKey id:Id)}
+         {FTable setComLayer(ComLayer)}
       end
-      {RlxRingNode setFingerTable(TheFTable)}
+      {RlxRingNode setFingerTable(FTable)}
       Self
    end
 

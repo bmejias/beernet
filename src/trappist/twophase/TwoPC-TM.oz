@@ -29,9 +29,10 @@
 functor
 import
    OS
-   Component      at '../corecomp/Component.ozf'
-   Timer          at '../timer/Timer.ozf'
-   Utils          at '../utils/Misc.ozf'
+   System
+   Component      at '../../corecomp/Component.ozf'
+   Timer          at '../../timer/Timer.ozf'
+   Utils          at '../../utils/Misc.ozf'
 export
    New
 define
@@ -49,12 +50,25 @@ define
       LocalStore     % Stores involve items with their new values and operation
       Votes          % To collect votes from Transaction Participants
       Acks           % To collect final acknoweledgements from TPs
+      TPs            % Direct reference to transaction participants
       PreparedItems  % Collect items once enough votes are received 
       AckedItems     % Collect items once enough acks are received 
       Done           % Flag to know when we are done
 
-      %% --- Events ---
+      %% --- Util functions ---
+      fun lazy {GetRemote Key}
+         Item
+      in
+         Item = {@Replica quickRead(Key $)}
+         LocalStore.Key := {Record.adjoinAt Item op read}
+         Item
+      end
 
+      fun {GetItem Key}
+         {Dictionary.condGet LocalStore Key {GetRemote Key}}
+      end
+
+      %% --- Events ---
       %% --- Operations for the client ---
       proc {Abort abort}
          {Port.send Args.client abort}
@@ -63,19 +77,41 @@ define
       end
 
       proc {Commit commit}
-         %% Trigger the whole thing
-         skip % for now :)
+         %% - Loop over the items on LocalStore, filtering op:write
+         %% - Send 'prepare' to TPs for every item to be writen
+         %% - Collect responses from TPs (from all, this 2PC
+         %% - Decide on commit or abort
+         %% - Propagate decision to TPs
+         {System.show 'bulking prepare'}
+         for I in {Dictionary.items LocalStore} do
+            if I.op == write then
+               {@Replica bulk(to:I.key 'prepare'(tm:@NodeRef
+                                                 tid:Id
+                                                 item:I
+                                                 protocol:twopc
+                                                 tag:trappist
+                                                ))} 
+               Votes.(I.key)  := nil
+               Acks.(I.key)   := nil
+               TPs.(I.key)    := nil
+            end
+         end
       end
 
-      proc {Read read(Key ?Value)}
+      proc {Read read(Key ?Val)}
          Item
       in 
-         Item = {Dictionary.condGet }
-         {@Replica bulk(read())}
+         Item  = {GetItem Key}
+         Val   = try Item.value catch _ then Item end
       end
 
-      proc {Write write(Key Value)}
-         skip
+      proc {Write write(Key Val)}
+         Item
+         NewVersion
+      in
+         Item           = {GetItem Key}
+         NewVersion     = try Item.version catch _ then 1 end
+         LocalStore.Key := item(key:Key value:Val version:NewVersion op:write)
       end
 
       %% --- Interaction with TPs ---
@@ -125,6 +161,7 @@ define
          Self     = FullComponent.trigger
          Listener = FullComponent.listener
       end
+      NodeRef  = {NewCell noref}
       MsgLayer = {NewCell Component.dummy}
       Replica  = {NewCell Component.dummy}      
       TheTimer = {Timer.new}

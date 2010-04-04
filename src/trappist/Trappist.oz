@@ -26,6 +26,7 @@
 
 functor
 import
+   System
    Component      at '../corecomp/Component.ozf'
    Timer          at '../timer/Timer.ozf'
    Utils          at '../utils/Misc.ozf'
@@ -33,8 +34,8 @@ import
    EagerPaxosTP   at 'eagerpaxos/EagerPaxos-TP.ozf'
    PaxosTM        at 'paxos/Paxos-TM.ozf'
    PaxosTP        at 'paxos/Paxos-TP.ozf'
-   TwoPCTM        at 'twophase/TwpPC-TM.ozf'
-   TwoPCTP        at 'twophase/TwpPC-TP.ozf'
+   TwoPCTM        at 'twophase/TwoPC-TM.ozf'
+   TwoPCTP        at 'twophase/TwoPC-TP.ozf'
    ValueSetTM     at 'valueset/ValueSet-TM.ozf'
    ValueSetTP     at 'valueset/ValueSet-TP.ozf'
 export
@@ -47,6 +48,7 @@ define
       MsgLayer
       NodeRef
       DHTman
+      Replica
       TheTimer
 
       %Timeout
@@ -77,14 +79,21 @@ define
       proc {RunTransaction runTransaction(Trans Client Protocol)}
          TM
       in
+         {System.show 'going to run transaction'}
          TM = {TMmakers.Protocol.new args(type:leader client:Client)}
          {TM setMsgLayer(@MsgLayer)}
-         {TM setDHT(@DHTman)}
+         {TM setReplica(@DHTman)}
          TMs.{TM getId($)} := TM
+         {System.show 'going to run transaction'#{TM getId($)}}
          {Trans TM}
          skip
       end
 
+/*
+      proc {RunTransaction Event}
+         {System.show 'what the hell'}
+      end
+*/
       proc {SetDHT setDHT(DHTcomponent)}
          DHTman := DHTcomponent
       end
@@ -92,6 +101,10 @@ define
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
          MsgLayer := AMsgLayer
          NodeRef  := {@MsgLayer getRef($)}
+      end
+
+      proc {SetReplica setReplica(ReplicaMan)}
+         Replica := ReplicaMan
       end
 
       %proc {SetTimeout setTimeout(ATime)}
@@ -104,6 +117,7 @@ define
                      runTransaction:RunTransaction
                      setDHT:        SetDHT
                      setMsgLayer:   SetMsgLayer
+                     setReplica:    SetReplica
                      %setTimeout:    SetTimeout
                      %timeout:       TimeoutEvent
                      )
@@ -115,8 +129,10 @@ define
          Self     = FullComponent.trigger
          Listener = FullComponent.listener
       end
+      NodeRef  = {NewCell noref}
       MsgLayer = {NewCell Component.dummy}
-      DHTman   = {NewCell Component.dummy}      
+      DHTman   = {NewCell Component.dummy} 
+      Replica  = {NewCell Component.dummy}
       TheTimer = {Timer.new}
 
       TMs   = {Dictionary.new}

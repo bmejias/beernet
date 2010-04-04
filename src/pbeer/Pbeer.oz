@@ -38,13 +38,15 @@
 
 functor
 import
-   Board       at '../corecomp/Board.ozf'
-   Component   at '../corecomp/Component.ozf'
-   RelaxedRing at '../son/relaxed-ring/Node.ozf'
-   Replication at '../trappist/SymmetricReplication.ozf'
-   TheDHT      at '../dht/DHT.ozf'
-   TheMsgLayer at '../messaging/MsgLayer.ozf'
-   Utils       at '../utils/Misc.ozf'
+   System
+   Board          at '../corecomp/Board.ozf'
+   Component      at '../corecomp/Component.ozf'
+   RelaxedRing    at '../son/relaxed-ring/Node.ozf'
+   Replication    at '../trappist/SymmetricReplication.ozf'
+   TheDHT         at '../dht/DHT.ozf'
+   TheMsgLayer    at '../messaging/MsgLayer.ozf'
+   TransLayer     at '../trappist/Trappist.ozf'
+   Utils          at '../utils/Misc.ozf'
 export
    New
 define
@@ -56,6 +58,7 @@ define
       MsgLayer % Reliable messaging layer
       Replica  % Symmetric replication
       Self     % This component
+      Trappist % Transactional layer
 
       %% Inbox for receiving messages
       Inbox    % Port to receive messages
@@ -112,37 +115,42 @@ define
       ToNode      = {Utils.delegatesTo Node}
       ToDHT       = {Utils.delegatesTo DHT}
       ToReplica   = {Utils.delegatesTo Replica}
+      ToTrappist  = {Utils.delegatesTo Trappist}
       %ToMsgLayer  = {DelegatesTo MsgLayer}
 
       Events = events(
-                  any:              Any
-                  broadcast:        Broadcast
-                  getFullRef:       ToNode
-                  getId:            ToNode
-                  getMaxKey:        ToNode
-                  getPred:          ToNode
-                  getRange:         ToNode
-                  getRef:           ToNode
-                  getRingRef:       ToNode
-                  getSucc:          ToNode
-                  injectPermFail:   InjectPermFail
-                  join:             Join
-                  leave:            Leave
-                  lookup:           ToNode
-                  lookupHash:       ToNode
-                  receive:          ReceiveTagged
-                  send:             SendTagged
-                  setLogger:        ToNode
-                  %% DHT events
-                  delete:           ToDHT
-                  get:              ToDHT
-                  put:              ToDHT
-                  %% Replication events
-                  bulk:             ToReplica
-                  quickRead:        ToReplica
-                  readAll:          ToReplica
-                  readMajority:     ToReplica
-                  )
+                     %any:              Any
+                     broadcast:        Broadcast
+                     getFullRef:       ToNode
+                     getId:            ToNode
+                     getMaxKey:        ToNode
+                     getPred:          ToNode
+                     getRange:         ToNode
+                     getRef:           ToNode
+                     getRingRef:       ToNode
+                     getSucc:          ToNode
+                     injectPermFail:   InjectPermFail
+                     join:             Join
+                     leave:            Leave
+                     lookup:           ToNode
+                     lookupHash:       ToNode
+                     receive:          ReceiveTagged
+                     send:             SendTagged
+                     setLogger:        ToNode
+                     %% DHT events
+                     delete:           ToDHT
+                     get:              ToDHT
+                     put:              ToDHT
+                     %% Replication events
+                     bulk:             ToReplica
+                     quickRead:        ToReplica
+                     readAll:          ToReplica
+                     readMajority:     ToReplica
+                     %% Trappist Transactional layer
+                     becomeReader:     ToTrappist
+                     getLocks:         ToTrappist
+                     runTransaction:   ToTrappist
+                     )
 
    in
       %% Creating the component and collaborators
@@ -155,6 +163,7 @@ define
       end
       Node     = {NewCell {RelaxedRing.new args}} 
       MsgLayer = {NewCell {TheMsgLayer.new args}}
+      Trappist = {NewCell {TransLayer.new args}}
       local
          MaxKey
       in
@@ -167,6 +176,9 @@ define
       {@DHT setMsgLayer(@MsgLayer)}
       {@Replica setMsgLayer(@MsgLayer)}
       {@Replica setDHT(@DHT)}
+      {@Trappist setMsgLayer(@MsgLayer)}
+      {@Trappist setDHT(@DHT)}
+      {@Trappist setReplica(@Replica)}
       local
          StorageBoard StorageSubscriber
       in
@@ -174,6 +186,7 @@ define
          {StorageSubscriber Self}
          {StorageSubscriber tagged(@DHT dht)}
          {StorageSubscriber tagged(@Replica symrep)}
+         {StorageSubscriber tagged(@Trappist trappist)}
          {@MsgLayer setListener(StorageBoard)}
       end
 

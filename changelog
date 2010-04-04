@@ -1,3 +1,6 @@
+Beernet-0.6
+	- Symmetric Replication provides now "read all" and "read majority"
+
 Beernet-0.5
 	- Symmetric Replication provides Bulk operations and QuickRead
 	- Several bug fixes
