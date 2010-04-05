@@ -58,9 +58,15 @@ define
       %% --- Util functions ---
       fun lazy {GetRemote Key}
          Item
+         RemoteItem
       in
-         Item = {@Replica quickRead(Key $)}
-         LocalStore.Key := {Record.adjoinAt Item op read}
+         RemoteItem = {@Replica getOne(Key $)}
+         Item = try
+                   {Record.adjoinAt RemoteItem op read}
+                catch _ then
+                   item(key:Key value:Item version:0 readers:nil op:read)
+                end
+         LocalStore.Key := Item 
          Item
       end
 
@@ -99,19 +105,18 @@ define
       end
 
       proc {Read read(Key ?Val)}
-         Item
-      in 
-         Item  = {GetItem Key}
-         Val   = try Item.value catch _ then Item end
+         Val   = {GetItem Key}.value
       end
 
       proc {Write write(Key Val)}
          Item
-         NewVersion
       in
-         Item           = {GetItem Key}
-         NewVersion     = try Item.version catch _ then 1 end
-         LocalStore.Key := item(key:Key value:Val version:NewVersion op:write)
+         Item = {GetItem Key}
+         LocalStore.Key :=  item(key:Key
+                                 value:Val 
+                                 version:Item.version + 1
+                                 readers:Item.readers 
+                                 op:write)
       end
 
       %% --- Interaction with TPs ---

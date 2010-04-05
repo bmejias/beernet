@@ -79,14 +79,11 @@ define
       proc {RunTransaction runTransaction(Trans Client Protocol)}
          TM
       in
-         {System.show 'going to run transaction'}
          TM = {TMmakers.Protocol.new args(type:leader client:Client)}
          {TM setMsgLayer(@MsgLayer)}
-         {TM setReplica(@DHTman)}
+         {TM setReplica(@Replica)}
          TMs.{TM getId($)} := TM
-         {System.show 'going to run transaction'#{TM getId($)}}
          {Trans TM}
-         skip
       end
 
 /*
