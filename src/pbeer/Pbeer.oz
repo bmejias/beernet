@@ -12,9 +12,9 @@
  *
  *    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
  *
- *    Last change: $Revision: 140 $ $Author: boriss $
+ *    Last change: $Revision$ $Author$
  *
- *    $Date: 2010-03-22 12:34:12 +0100 (Mon, 22 Mar 2010) $
+ *    $Date$
  *
  * NOTES
  *      

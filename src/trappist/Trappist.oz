@@ -34,8 +34,8 @@ import
    EagerPaxosTP   at 'eagerpaxos/EagerPaxos-TP.ozf'
    PaxosTM        at 'paxos/Paxos-TM.ozf'
    PaxosTP        at 'paxos/Paxos-TP.ozf'
-   TwoPCTM        at 'twophase/TwoPC-TM.ozf'
-   TwoPCTP        at 'twophase/TwoPC-TP.ozf'
+   TwoPCTM        at 'twopc/TwoPC-TM.ozf'
+   TwoPCTP        at 'twopc/TwoPC-TP.ozf'
    ValueSetTM     at 'valueset/ValueSet-TM.ozf'
    ValueSetTP     at 'valueset/ValueSet-TP.ozf'
 export
