@@ -28,18 +28,14 @@
 functor
 import
    Component      at '../../corecomp/Component.ozf'
-   Timer          at '../../timer/Timer.ozf'
-   Utils          at '../../utils/Misc.ozf'
 export
    New
 define
 
    fun {New CallArgs}
       Self
-      Listener
       MsgLayer
       DHTman
-      TheTimer
 
       Id
       NodeRef
@@ -126,16 +122,9 @@ define
                      setMsgLayer:   SetMsgLayer
                      )
    in
-      local
-         FullComponent
-      in
-         FullComponent  = {Component.new Events}
-         Self     = FullComponent.trigger
-         Listener = FullComponent.listener
-      end
+      Self     = {Component.new Events}.trigger
       MsgLayer = {NewCell Component.dummy}
       DHTman   = {NewCell Component.dummy}      
-      TheTimer = {Timer.new}
 
       NodeRef  = {NewCell noref}
       Id       = {NewName}

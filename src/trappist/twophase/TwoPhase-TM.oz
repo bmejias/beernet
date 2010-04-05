@@ -27,18 +27,14 @@
 functor
 import
    Component      at '../../corecomp/Component.ozf'
-   Timer          at '../../timer/Timer.ozf'
-   Utils          at '../../utils/Misc.ozf'
 export
    New
 define
 
    fun {New Args}
       Self
-      Listener
       MsgLayer
       Replica
-      TheTimer
 
       Id             % Id of the transaction manager object
       RepFactor      % Replication Factor
@@ -158,7 +154,7 @@ define
 
       %% --- Interaction with TPs ---
 
-      proc {Ack ack(key:Key tid:Tid tp:TP tag:trapp)}
+      proc {Ack ack(key:Key tid:_/*Tid*/ tp:TP tag:trapp)}
          Acks.Key := TP | Acks.Key
          if {Length Acks.Key} == @RepFactor then
             AckedItems := Key | @AckedItems
@@ -216,16 +212,9 @@ define
                      setMsgLayer:   SetMsgLayer
                      )
    in
-      local
-         FullComponent
-      in
-         FullComponent  = {Component.new Events}
-         Self     = FullComponent.trigger
-         Listener = FullComponent.listener
-      end
+      Self        = {Component.new Events}.trigger
       MsgLayer    = {NewCell Component.dummy}
       Replica     = {NewCell Component.dummy}      
-      TheTimer    = {Timer.new}
 
       Id          = {NewName}
       RepFactor   = {NewCell 0}
