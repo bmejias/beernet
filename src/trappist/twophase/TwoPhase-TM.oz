@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
  *
- * TwoPC-TM.oz
+ * TwoPhase-TM.oz
  *
  *    Transaction Manager for the Two-Phase Commit Protocol    
  *
@@ -131,7 +131,7 @@ define
                {@Replica  bulk(to:I.key brew(tm:@NodeRef
                                              tid:Id
                                              item:I
-                                             protocol:twopc
+                                             protocol:twophase
                                              tag:trapp
                                              ))} 
                Votes.(I.key)  := nil

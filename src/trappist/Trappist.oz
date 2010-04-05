@@ -33,8 +33,8 @@ import
    EagerPaxosTP   at 'eagerpaxos/EagerPaxos-TP.ozf'
    PaxosTM        at 'paxos/Paxos-TM.ozf'
    PaxosTP        at 'paxos/Paxos-TP.ozf'
-   TwoPCTM        at 'twopc/TwoPC-TM.ozf'
-   TwoPCTP        at 'twopc/TwoPC-TP.ozf'
+   TwoPhaseTM     at 'twophase/TwoPhase-TM.ozf'
+   TwoPhaseTP     at 'twophase/TwoPhase-TP.ozf'
    ValueSetTM     at 'valueset/ValueSet-TM.ozf'
    ValueSetTP     at 'valueset/ValueSet-TP.ozf'
 export
@@ -56,12 +56,12 @@ define
 
       TMmakers = tms(eagerpaxos: EagerPaxosTM
                      paxos:      PaxosTM
-                     twopc:      TwoPCTM
+                     twophase:   TwoPhaseTM
                      valueset:   ValueSetTM
                      )
       TPmakers = tms(eagerpaxos: EagerPaxosTP
                      paxos:      PaxosTP
-                     twopc:      TwoPCTP
+                     twophase:   TwoPhaseTP
                      valueset:   ValueSetTP
                      )
 

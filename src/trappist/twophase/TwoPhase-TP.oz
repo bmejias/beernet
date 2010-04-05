@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
  *
- * TwoPC-TP.oz
+ * TwoPhase-TP.oz
  *
  *    Transaction Participant for the Two-Phase Commit Protocol    
  *
