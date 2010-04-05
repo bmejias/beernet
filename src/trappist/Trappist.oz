@@ -27,8 +27,6 @@
 functor
 import
    Component      at '../corecomp/Component.ozf'
-   Timer          at '../timer/Timer.ozf'
-   Utils          at '../utils/Misc.ozf'
    EagerPaxosTM   at 'eagerpaxos/EagerPaxos-TM.ozf'
    EagerPaxosTP   at 'eagerpaxos/EagerPaxos-TP.ozf'
    PaxosTM        at 'paxos/Paxos-TM.ozf'
@@ -43,12 +41,11 @@ define
 
    fun {New CallArgs}
       Self
-      Listener
+      %Listener
       MsgLayer
       NodeRef
       DHTman
       Replica
-      TheTimer
 
       %Timeout
       TMs
@@ -100,7 +97,7 @@ define
 
       %% --- For the TPs ---
       proc {Brew Event}
-         brew(hkey:HKey tm:TM tid:Tid item:Item protocol:Protocol ...) = Event
+         brew(tid:Tid protocol:Protocol ...) = Event
          TP
       in
          TP = {TPmakers.Protocol.new args(tid:Tid)} 
@@ -156,13 +153,12 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
-         Listener = FullComponent.listener
+%         Listener = FullComponent.listener
       end
       NodeRef  = {NewCell noref}
       MsgLayer = {NewCell Component.dummy}
       DHTman   = {NewCell Component.dummy} 
       Replica  = {NewCell Component.dummy}
-      TheTimer = {Timer.new}
 
       TMs   = {Dictionary.new}
       TPs   = {Dictionary.new}

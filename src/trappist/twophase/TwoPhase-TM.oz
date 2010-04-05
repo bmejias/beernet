@@ -45,7 +45,7 @@ define
       Votes          % To collect votes from Transaction Participants
       Acks           % To collect final acknoweledgements from TPs
       TPs            % Direct reference to transaction participants
-      VotedItems    % Collect items once enough votes are received 
+      VotedItems     % Collect items once enough votes are received 
       AckedItems     % Collect items once enough acks are received 
       Done           % Flag to know when we are done
 
@@ -58,7 +58,7 @@ define
          Item = if RemoteItem \= 'NOT_FOUND' then
                    {Record.adjoinAt RemoteItem op read}
                 else
-                   item(key:Key value:Item version:0 readers:nil op:read)
+                   item(key:Key value:RemoteItem version:0 readers:nil op:read)
                 end
          LocalStore.Key := Item 
          Item
@@ -194,7 +194,6 @@ define
 
       proc {SetReplica setReplica(ReplicaMan)}
          Replica     := ReplicaMan
-         
          RepFactor   := {@Replica getFactor($)}
       end
 

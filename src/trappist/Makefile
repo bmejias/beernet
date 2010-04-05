@@ -1,6 +1,6 @@
 MAKE = make
 SRCS = SymmetricReplication Trappist
-SUBDIRS = twophase
+SUBDIRS = twophase paxos
 
 all: $(foreach source, $(SRCS), src_$(source)) sublibs
 

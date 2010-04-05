@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=Paxos-TM.oz Paxos-TP.oz
+SRCS=Paxos-TM Paxos-TP
 
 all: $(foreach source, $(SRCS), src_$(source))
 
