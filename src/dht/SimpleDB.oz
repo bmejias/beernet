@@ -35,7 +35,7 @@ export
    New
 define
 
-   NO_VALUE = {Value.failed {Exception.error 'NOT_FOUND'}}
+   NO_VALUE = 'NOT_FOUND'
 
    fun {New}
       DB

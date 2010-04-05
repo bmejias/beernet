@@ -10,9 +10,7 @@
  * 
  * IDENTIFICATION 
  *
- *    Author: (main author)
- *
- *    Contributors: (if any)
+ *    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
  *
  *    Last change: $Revision$ $Author$
  *
@@ -28,7 +26,6 @@
 
 functor
 import
-   OS
    System
    Component      at '../../corecomp/Component.ozf'
    Timer          at '../../timer/Timer.ozf'
@@ -61,9 +58,9 @@ define
          RemoteItem
       in
          RemoteItem = {@Replica getOne(Key $)}
-         Item = try
+         Item = if RemoteItem \= 'NOT_FOUND' then
                    {Record.adjoinAt RemoteItem op read}
-                catch _ then
+                else
                    item(key:Key value:Item version:0 readers:nil op:read)
                 end
          LocalStore.Key := Item 
@@ -84,19 +81,19 @@ define
 
       proc {Commit commit}
          %% - Loop over the items on LocalStore, filtering op:write
-         %% - Send 'prepare' to TPs for every item to be writen
+         %% - Send 'brew' (prepare) to TPs for every item to be writen
          %% - Collect responses from TPs (from all, this 2PC
          %% - Decide on commit or abort
          %% - Propagate decision to TPs
-         {System.show 'bulking prepare'}
+         {System.show 'bulking brew'}
          for I in {Dictionary.items LocalStore} do
             if I.op == write then
-               {@Replica bulk(to:I.key 'prepare'(tm:@NodeRef
-                                                 tid:Id
-                                                 item:I
-                                                 protocol:twopc
-                                                 tag:trappist
-                                                ))} 
+               {@Replica  bulk(to:I.key brew(tm:@NodeRef
+                                             tid:Id
+                                             item:I
+                                             protocol:twopc
+                                             tag:trapp
+                                             ))} 
                Votes.(I.key)  := nil
                Acks.(I.key)   := nil
                TPs.(I.key)    := nil
@@ -171,7 +168,7 @@ define
       Replica  = {NewCell Component.dummy}      
       TheTimer = {Timer.new}
 
-      Id             = {OS.rand}
+      Id             = {NewName}
       LocalStore     = {Dictionary.new}
       Votes          = {Dictionary.new}
       Acks           = {Dictionary.new}

@@ -186,7 +186,7 @@ define
          {StorageSubscriber Self}
          {StorageSubscriber tagged(@DHT dht)}
          {StorageSubscriber tagged(@Replica symrep)}
-         {StorageSubscriber tagged(@Trappist trappist)}
+         {StorageSubscriber tagged(@Trappist trapp)}
          {@MsgLayer setListener(StorageBoard)}
       end
 

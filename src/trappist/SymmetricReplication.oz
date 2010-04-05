@@ -97,7 +97,7 @@ define
       proc {HandleOne AGid Val Gvar}
          Tries = Gvar.tries+1
       in
-         if {Not {Value.isFailed Val}} orelse Tries == @Factor then
+         if Val \= 'NOT_FOUND' orelse Tries == @Factor then
             Gvar.var = Val
             {Dictionary.remove Gvars AGid}
          else
@@ -109,14 +109,14 @@ define
          Tries = Gvar.tries+1
       in
          if Tries == Max then
-            if {Value.isFailed Val} then
+            if Val == 'NOT_FOUND' then
                Gvar.var = nil
             else
                Gvar.var = Val|nil
             end
             {Dictionary.remove Gvars AGid}
          else
-            if {Value.isFailed Val} then
+            if Val == 'NOT_FOUND' then
                Gvars.AGid := {Record.adjoin Gvar data(tries:Tries)}
             else
                NewTail
@@ -213,7 +213,7 @@ define
          Gvar
       in
          Gvar = {Dictionary.condGet Gvars AGid var(var:_)}
-         Gvar.var = {Value.failed error('NOT FOUND')}
+         Gvar.var = 'NOT FOUND'
          {Dictionary.remove Gvars AGid}
       end
 

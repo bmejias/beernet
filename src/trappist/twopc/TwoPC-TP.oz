@@ -10,9 +10,7 @@
  * 
  * IDENTIFICATION 
  *
- *    Author: (main author)
- *
- *    Contributors: (if any)
+ *    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
  *
  *    Last change: $Revision$ $Author$
  *
@@ -29,9 +27,10 @@
 
 functor
 import
-   Component      at '../corecomp/Component.ozf'
-   Timer          at '../timer/Timer.ozf'
-   Utils          at '../utils/Misc.ozf'
+   System
+   Component      at '../../corecomp/Component.ozf'
+   Timer          at '../../timer/Timer.ozf'
+   Utils          at '../../utils/Misc.ozf'
 export
    New
 define
@@ -40,13 +39,73 @@ define
       Self
       Listener
       MsgLayer
-      NodeRef
       DHTman
       TheTimer
 
+      Id
+      NodeRef
+      NewItem
       %% --- Event --
 
+      %% --- Interaction with TPs ---
+      proc {Brew brew(hkey:HKey tm:TM tid:Tid item:TrItem protocol:_ tag:trapp)}
+         Tmp
+         DHTItem
+      in 
+         {System.show 'starting to brew'#TrItem.key#'at'#@NodeRef.id}
+         NewItem  = TrItem % To be used when decision is taken
+         Tmp      = {@DHTman getItem(HKey TrItem.key $)}
+         {System.show 'keeping on brewing'}
+         DHTItem  = if Tmp == 'NOT_FOUND' then
+                        {System.show 'the value is failed'}
+                        item(key:      TrItem.key
+                             value:    Tmp 
+                             version:  0
+                             readers:  nil
+                             locked:   false)
+                    else
+                        {System.show 'the value is NOT failed'}
+                        {System.show Tmp}
+                       Tmp
+                    end
+         if TrItem.version >= DHTItem.version andthen {Not DHTItem.locked} then
+            {@MsgLayer  dsend(to:TM
+                              brewed(key: TrItem.key
+                                     rkey:HKey 
+                                     tid: Tid 
+                                     tag: trapp))}
+            {System.show 'going to lock'#TrItem.key#'at'#@NodeRef.id}
+            {@DHTman putItem(HKey TrItem.key {AdjoinAt DHTItem locked true})}
+         else
+            {@MsgLayer  dsend(to:TM
+                              denied(key: TrItem.key
+                                     rkey:HKey
+                                     tid: Tid))}
+         end
+      end
+
+      %% --- Various ---
+
+      proc {GetId getId(I)}
+         I = Id
+      end
+
+      proc {SetDHT setDHT(ADHT)}
+         DHTman := ADHT
+      end
+
+      proc {SetMsgLayer setMsgLayer(AMsgLayer)}
+         MsgLayer := AMsgLayer
+         NodeRef  := {@MsgLayer getRef($)}
+      end
+
       Events = events(
+                     %% Interaction with TM
+                     brew:          Brew
+                     %% Various
+                     getId:         GetId
+                     setDHT:        SetDHT
+                     setMsgLayer:   SetMsgLayer
                      )
    in
       local
@@ -59,6 +118,9 @@ define
       MsgLayer = {NewCell Component.dummy}
       DHTman   = {NewCell Component.dummy}      
       TheTimer = {Timer.new}
+
+      NodeRef  = {NewCell noref}
+      Id       = {NewName}
 
       Self
    end

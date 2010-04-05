@@ -66,7 +66,25 @@ define
                      valueset:   ValueSetTP
                      )
 
-      %% --- Event ---
+      proc {AddTP Tid TP}
+         TheTPs
+      in
+         TheTPs = {Dictionary.condGet TPs Tid tps}
+         TPs.Tid := {Record.adjoinAt TheTPs {TP getId($)} TP}
+      end
+
+      %% --- Events ---
+
+      proc {Brew Event}
+         brew(hkey:HKey tm:TM tid:Tid item:Item protocol:Protocol ...) = Event
+         TP
+      in
+         TP = {TPmakers.Protocol.new args(tid:Tid)} 
+         {TP setMsgLayer(@MsgLayer)}
+         {TP setDHT(@DHTman)}
+         {AddTP Tid TP}
+         {TP Event}
+      end
 
       proc {BecomeReader Event}
          skip
@@ -86,11 +104,6 @@ define
          {Trans TM}
       end
 
-/*
-      proc {RunTransaction Event}
-         {System.show 'what the hell'}
-      end
-*/
       proc {SetDHT setDHT(DHTcomponent)}
          DHTman := DHTcomponent
       end
@@ -111,6 +124,7 @@ define
       Events = events(
                      becomeReader:  BecomeReader
                      getLocks:      GetLocks
+                     brew:          Brew
                      runTransaction:RunTransaction
                      setDHT:        SetDHT
                      setMsgLayer:   SetMsgLayer

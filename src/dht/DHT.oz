@@ -108,7 +108,9 @@ define
          {@MsgLayer send(putItem(HKey Key Val tag:dht) to:HKey)}
       end
 
-      proc {PutItem putItem(HKey Key Val tag:dht)}
+      proc {PutItem Event}
+         putItem(HKey Key Val ...) = Event
+      in
          {@DB put(HKey Key Val)}
       end
 
