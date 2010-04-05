@@ -27,7 +27,6 @@
 
 functor
 import
-   System
    Component      at '../../corecomp/Component.ozf'
    Timer          at '../../timer/Timer.ozf'
    Utils          at '../../utils/Misc.ozf'
@@ -54,33 +53,27 @@ define
          DHTItem
          Vote
       in 
-         {System.show 'starting to brew'#TrItem.key#'at'#@NodeRef.id}
          NewItem  = item(hkey:HKey item:TrItem tid:Tid)
          Leader   = TM
          Tmp      = {@DHTman getItem(HKey TrItem.key $)}
-         {System.show 'keeping on brewing'}
          DHTItem  = if Tmp == 'NOT_FOUND' then
-                        {System.show 'the value is failed'}
                         item(key:      TrItem.key
                              value:    Tmp 
                              version:  0
                              readers:  nil
                              locked:   false)
                     else
-                        {System.show 'the value is NOT failed'}
-                        {System.show Tmp}
                        Tmp
                     end
          %% Brewing vote
-         Vote = vote(vote: _
-                     key:  TrItem.key 
-                    % rkey: HKey 
-                     tid:  Tid 
-                     tp:   tp(id:Id src:@NodeRef)
-                     tag:  trapp)
-         if TrItem.version >= DHTItem.version andthen {Not DHTItem.locked} then
+         Vote = vote(vote:    _
+                     key:     TrItem.key 
+                     version: DHTItem.version 
+                     tid:     Tid 
+                     tp:      tp(id:Id ref:@NodeRef)
+                     tag:     trapp)
+         if TrItem.version > DHTItem.version andthen {Not DHTItem.locked} then
             Vote.vote = brewed
-            {System.show 'going to lock'#TrItem.key#'at'#@NodeRef.id}
             {@DHTman putItem(HKey TrItem.key {AdjoinAt DHTItem locked true})}
          else
             Vote.vote = denied
@@ -90,7 +83,10 @@ define
 
       proc {PutItemAndAck HKey Key Item}
          {@DHTman  putItem(HKey Key {Record.adjoinAt Item locked false})}
-         {@MsgLayer dsend(to:Leader ack(key:Key tid:NewItem.tid tag:trapp))}
+         {@MsgLayer dsend(to:Leader ack(key:Key
+                                        tid:NewItem.tid
+                                        tp:tp(id:Id ref:@NodeRef)
+                                        tag:trapp))}
       end
 
       proc {Abort abort}
@@ -101,7 +97,7 @@ define
       end
 
       proc {Commit commit}
-         {PutItemAndAck NewItem.hkey NewItem.item.key NewItem}
+         {PutItemAndAck NewItem.hkey NewItem.item.key NewItem.item}
       end
 
       %% --- Various ---

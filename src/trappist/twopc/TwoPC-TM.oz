@@ -26,7 +26,6 @@
 
 functor
 import
-   System
    Component      at '../../corecomp/Component.ozf'
    Timer          at '../../timer/Timer.ozf'
    Utils          at '../../utils/Misc.ozf'
@@ -104,7 +103,7 @@ define
       proc {SpreadDecision Decision}
          for Key in {Dictionary.keys Votes} do
             for TP in TPs.Key do
-               {@MsgLayer dsend(to:TP.src final(decision:Decision
+               {@MsgLayer dsend(to:TP.ref final(decision:Decision
                                                 tid:     Id
                                                 tpid:    TP.id
                                                 tag:     trapp
@@ -127,7 +126,6 @@ define
          %% - Collect responses from TPs (from all, this 2PC
          %% - Decide on commit or abort
          %% - Spread decision to TPs
-         {System.show 'bulking brew'}
          for I in {Dictionary.items LocalStore} do
             if I.op == write then
                {@Replica  bulk(to:I.key brew(tm:@NodeRef
@@ -160,8 +158,15 @@ define
 
       %% --- Interaction with TPs ---
 
-      proc {Ack ack}
-         skip
+      proc {Ack ack(key:Key tid:Tid tp:TP tag:trapp)}
+         Acks.Key := TP | Acks.Key
+         if {Length Acks.Key} == @RepFactor then
+            AckedItems := Key | @AckedItems
+            if {Length @AckedItems} == {Length {Dictionary.keys Votes}} then
+               {Port.send Args.client FinalDecision}
+               Done := true
+            end
+         end
       end
 
       proc {Vote FullVote}
@@ -175,11 +180,7 @@ define
                %% Collected everything
                FinalDecision = if {GotAllBrewed} then commit else abort end
                {SpreadDecision FinalDecision}
-%            else
-%               {System.show got#{Length @VotedItems}#items_instead#{Length {Dictionary.keys Votes}}}
             end
-%         else
-%            {System.show got#{Length TPs.Key}#votes_for#Key}
          end
       end
 
@@ -191,6 +192,7 @@ define
 
       proc {SetReplica setReplica(ReplicaMan)}
          Replica     := ReplicaMan
+         
          RepFactor   := {@Replica getFactor($)}
       end
 

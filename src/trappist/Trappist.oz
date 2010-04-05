@@ -26,7 +26,6 @@
 
 functor
 import
-   System
    Component      at '../corecomp/Component.ozf'
    Timer          at '../timer/Timer.ozf'
    Utils          at '../utils/Misc.ozf'
@@ -95,9 +94,7 @@ define
 
       %% --- For the TMs ---
       proc {ForwardToTM Event}
-         {System.show forwarding#Event#TMs.(Event.tid)}
          {TMs.(Event.tid) Event}
-         {System.show forwarded}
       end 
 
       %% --- For the TPs ---
@@ -141,6 +138,7 @@ define
                      runTransaction:RunTransaction
                      %% For the TMs
                      vote:          ForwardToTM
+                     ack:           ForwardToTM
                      %% For the TPs
                      brew:          Brew
                      final:         Final
