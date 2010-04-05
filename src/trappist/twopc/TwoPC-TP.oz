@@ -45,6 +45,7 @@ define
       Id
       NodeRef
       NewItem
+      Leader
       %% --- Event --
 
       %% --- Interaction with TPs ---
@@ -54,7 +55,8 @@ define
          Vote
       in 
          {System.show 'starting to brew'#TrItem.key#'at'#@NodeRef.id}
-         NewItem  = TrItem % To be used when decision is taken
+         NewItem  = item(hkey:HKey item:TrItem tid:Tid)
+         Leader   = TM
          Tmp      = {@DHTman getItem(HKey TrItem.key $)}
          {System.show 'keeping on brewing'}
          DHTItem  = if Tmp == 'NOT_FOUND' then
@@ -72,7 +74,7 @@ define
          %% Brewing vote
          Vote = vote(vote: _
                      key:  TrItem.key 
-                     rkey: HKey 
+                    % rkey: HKey 
                      tid:  Tid 
                      tp:   tp(id:Id src:@NodeRef)
                      tag:  trapp)
@@ -83,7 +85,23 @@ define
          else
             Vote.vote = denied
          end
-         {@MsgLayer  dsend(to:TM Vote)}
+         {@MsgLayer dsend(to:Leader Vote)}
+      end
+
+      proc {PutItemAndAck HKey Key Item}
+         {@DHTman  putItem(HKey Key {Record.adjoinAt Item locked false})}
+         {@MsgLayer dsend(to:Leader ack(key:Key tid:NewItem.tid tag:trapp))}
+      end
+
+      proc {Abort abort}
+         DHTItem
+      in
+         DHTItem = {@DHTman getItem(NewItem.hkey NewItem.item.key $)}
+         {PutItemAndAck NewItem.hkey NewItem.item.key DHTItem}
+      end
+
+      proc {Commit commit}
+         {PutItemAndAck NewItem.hkey NewItem.item.key NewItem}
       end
 
       %% --- Various ---
@@ -104,6 +122,8 @@ define
       Events = events(
                      %% Interaction with TM
                      brew:          Brew
+                     abort:         Abort
+                     commit:        Commit
                      %% Various
                      getId:         GetId
                      setDHT:        SetDHT

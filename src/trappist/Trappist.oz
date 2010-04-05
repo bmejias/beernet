@@ -113,7 +113,7 @@ define
       end
 
       proc {Final Event}
-         {TPs.(Event.tid).(Event.tpid) Event}
+         {TPs.(Event.tid).(Event.tpid) Event.decision}
       end
 
       %% --- Internal to the Pbeer ---
