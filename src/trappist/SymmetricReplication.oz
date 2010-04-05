@@ -150,6 +150,10 @@ define
          end
       end
 
+      proc {GetFactor getFactor(F)}
+         F = @Factor
+      end
+
       proc {GetReplicaKeys Event}
          getReplicaKeys(Key Keys ...) = Event
          MKey
@@ -221,6 +225,7 @@ define
                      bulk:          Bulk
                      getOne:        GetOne
                      getAll:        GetAll
+                     getFactor:     GetFactor
                      getMajority:   GetMajority
                      getReplicaKeys:GetReplicaKeys
                      read:          Read

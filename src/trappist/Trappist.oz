@@ -75,17 +75,6 @@ define
 
       %% --- Events ---
 
-      proc {Brew Event}
-         brew(hkey:HKey tm:TM tid:Tid item:Item protocol:Protocol ...) = Event
-         TP
-      in
-         TP = {TPmakers.Protocol.new args(tid:Tid)} 
-         {TP setMsgLayer(@MsgLayer)}
-         {TP setDHT(@DHTman)}
-         {AddTP Tid TP}
-         {TP Event}
-      end
-
       proc {BecomeReader Event}
          skip
       end
@@ -104,6 +93,30 @@ define
          {Trans TM}
       end
 
+      %% --- For the TMs ---
+      proc {ForwardToTM Event}
+         {System.show forwarding#Event#TMs.(Event.tid)}
+         {TMs.(Event.tid) Event}
+         {System.show forwarded}
+      end 
+
+      %% --- For the TPs ---
+      proc {Brew Event}
+         brew(hkey:HKey tm:TM tid:Tid item:Item protocol:Protocol ...) = Event
+         TP
+      in
+         TP = {TPmakers.Protocol.new args(tid:Tid)} 
+         {TP setMsgLayer(@MsgLayer)}
+         {TP setDHT(@DHTman)}
+         {AddTP Tid TP}
+         {TP Event}
+      end
+
+      proc {Final Event}
+         {TPs.(Event.tid).(Event.tpid) Event}
+      end
+
+      %% --- Internal to the Pbeer ---
       proc {SetDHT setDHT(DHTcomponent)}
          DHTman := DHTcomponent
       end
@@ -122,10 +135,16 @@ define
       %end
 
       Events = events(
+                     %% Trappist's API
                      becomeReader:  BecomeReader
                      getLocks:      GetLocks
-                     brew:          Brew
                      runTransaction:RunTransaction
+                     %% For the TMs
+                     vote:          ForwardToTM
+                     %% For the TPs
+                     brew:          Brew
+                     final:         Final
+                     %% Internal to the Pbeer
                      setDHT:        SetDHT
                      setMsgLayer:   SetMsgLayer
                      setReplica:    SetReplica

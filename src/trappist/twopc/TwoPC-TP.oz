@@ -51,6 +51,7 @@ define
       proc {Brew brew(hkey:HKey tm:TM tid:Tid item:TrItem protocol:_ tag:trapp)}
          Tmp
          DHTItem
+         Vote
       in 
          {System.show 'starting to brew'#TrItem.key#'at'#@NodeRef.id}
          NewItem  = TrItem % To be used when decision is taken
@@ -68,20 +69,21 @@ define
                         {System.show Tmp}
                        Tmp
                     end
+         %% Brewing vote
+         Vote = vote(vote: _
+                     key:  TrItem.key 
+                     rkey: HKey 
+                     tid:  Tid 
+                     tp:   tp(id:Id src:@NodeRef)
+                     tag:  trapp)
          if TrItem.version >= DHTItem.version andthen {Not DHTItem.locked} then
-            {@MsgLayer  dsend(to:TM
-                              brewed(key: TrItem.key
-                                     rkey:HKey 
-                                     tid: Tid 
-                                     tag: trapp))}
+            Vote.vote = brewed
             {System.show 'going to lock'#TrItem.key#'at'#@NodeRef.id}
             {@DHTman putItem(HKey TrItem.key {AdjoinAt DHTItem locked true})}
          else
-            {@MsgLayer  dsend(to:TM
-                              denied(key: TrItem.key
-                                     rkey:HKey
-                                     tid: Tid))}
+            Vote.vote = denied
          end
+         {@MsgLayer  dsend(to:TM Vote)}
       end
 
       %% --- Various ---
