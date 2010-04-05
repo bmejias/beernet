@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=TwoPC-TM TwoPC-TP
+SRCS=TwoPhase-TM TwoPhase-TP
 
 all: $(foreach source, $(SRCS), src_$(source))
 
