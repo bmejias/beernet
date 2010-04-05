@@ -24,7 +24,7 @@
  *
  *    Bulk: bulk operations send a message to all peers in the replica set.
  *    
- *    Quick Red: it bulks a read message, and returns the first answer.
+ *    Get One: it bulks a read message, and returns the first answer.
  *
  *    Read All: Returns a list of items from all participants
  *
@@ -94,7 +94,7 @@ define
          {TheTimer startTrigger(@Timeout timeout(NewGid) Self)}
       end
 
-      proc {HandleQuick AGid Val Gvar}
+      proc {HandleOne AGid Val Gvar}
          Tries = Gvar.tries+1
       in
          if {Not {Value.isFailed Val}} orelse Tries == @Factor then
@@ -135,7 +135,7 @@ define
          {HandleList AGid Val Gvar (@Factor div 2 + 1)}
       end
 
-      ReadHandles = handles(quick:  HandleQuick
+      ReadHandles = handles(first:  HandleOne
                             all:    HandleAll
                             major:  HandleMajor)
 
@@ -160,15 +160,15 @@ define
          Keys = {MakeSymReplicas Key MKey F}
       end
 
-      proc {QuickRead quickRead(Key ?Val)}
-         {RegisterRead Key Val quick}
+      proc {GetOne getOne(Key ?Val)}
+         {RegisterRead Key Val first}
       end
 
-      proc {ReadAll readAll(Key ?Vals)}
+      proc {GetAll getAll(Key ?Vals)}
          {RegisterRead Key Vals all}
       end
 
-      proc {ReadMajority readMajority(Key ?Vals)}
+      proc {GetMajority getMajority(Key ?Vals)}
          {RegisterRead Key Vals major}
       end
 
@@ -219,11 +219,11 @@ define
 
       Events = events(
                      bulk:          Bulk
+                     getOne:        GetOne
+                     getAll:        GetAll
+                     getMajority:   GetMajority
                      getReplicaKeys:GetReplicaKeys
-                     quickRead:     QuickRead
                      read:          Read
-                     readAll:       ReadAll
-                     readMajority:  ReadMajority
                      readBack:      ReadBack
                      setDHT:        SetDHT
                      setFactor:     SetFactor

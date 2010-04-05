@@ -5,7 +5,6 @@ functor
 
 import
    Application
-   OS
    Property
    System
    Network        at '../network/Network.ozf'
@@ -73,26 +72,26 @@ define
       {System.show 'Getting'#Key#'we obtained'#Value}
    end
 
-   proc {QuickRead Key}
+   proc {GetOne Key}
       Value
    in
-      {MasterOfPuppets quickRead(Key Value)}
+      {MasterOfPuppets getOne(Key Value)}
       {Wait Value}
-      {System.show 'Quick Reading'#Key#'we obtained'#Value}
+      {System.show 'Getting one replica of'#Key#'we obtained'#Value}
    end
 
-   proc {ReadAll Key}
+   proc {GetAll Key}
       Val
    in
-      {MasterOfPuppets readAll(Key Val)}
+      {MasterOfPuppets getAll(Key Val)}
       if {IsList Val} then skip end
       {System.show 'Reading All'#Key#'we obtained'#Val}
    end
 
-   proc {ReadMajority Key}
+   proc {GetMajority Key}
       Val
    in
-      {MasterOfPuppets readMajority(Key Val)}
+      {MasterOfPuppets getMajority(Key Val)}
       if {IsList Val} then skip end
       {System.show 'Reading Majority'#Key#'we obtained'#Val}
    end
@@ -118,16 +117,16 @@ in
    {Get foo}
    {Get beer}
    {Get bink}
-   {QuickRead foo}
-   {QuickRead beer}
-   {QuickRead bink}
+   {GetOne foo}
+   {GetOne beer}
+   {GetOne bink}
    {Put foo flets}
    {Get foo}
-   {QuickRead foo}
-   {ReadAll foo}
-   {ReadMajority foo}
-   {ReadAll foooo}
-   {ReadMajority foooo}
+   {GetOne foo}
+   {GetAll foo}
+   {GetMajority foo}
+   {GetAll foooo}
+   {GetMajority foooo}
    {System.show '---- testing some message sending ----'}
    {MasterOfPuppets send(msg(text:'hello nurse' src:foo) to:{Utils.hash foo MaxKey})}
    {MasterOfPuppets send(msg(text:bla src:foo) to:{Utils.hash ina MaxKey})}
@@ -141,7 +140,7 @@ in
    end
    {Delay 1000}
    {Get foo}
-   {QuickRead foo}
+   {GetOne foo}
    local
       Pbeer HKey
    in
@@ -151,13 +150,13 @@ in
    end
    {Delay 1000}
    {Get foo}
-   {QuickRead foo}
-   {QuickRead foo}
+   {GetOne foo}
+   {GetOne foo}
    {Delete nada}
    {Delay 1000}
    {Delete foo}
    {Delay 500}
    {Get foo}
-   {QuickRead foo}
+   {GetOne foo}
    {Application.exit 0}
 end

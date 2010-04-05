@@ -1,5 +1,6 @@
 Beernet-0.6
-	- Symmetric Replication provides now "read all" and "read majority"
+	- Symmetric Replication provides now "getAll(Key)" and "getMajority(Key)"
+	- Change on Replication API: quickRead becomes getOne
 
 Beernet-0.5
 	- Symmetric Replication provides Bulk operations and QuickRead

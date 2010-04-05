@@ -143,9 +143,9 @@ define
                      put:              ToDHT
                      %% Replication events
                      bulk:             ToReplica
-                     quickRead:        ToReplica
-                     readAll:          ToReplica
-                     readMajority:     ToReplica
+                     getOne:           ToReplica
+                     getAll:           ToReplica
+                     getMajority:      ToReplica
                      %% Trappist Transactional layer
                      becomeReader:     ToTrappist
                      getLocks:         ToTrappist
