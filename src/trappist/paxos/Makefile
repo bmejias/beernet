@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=Participant Manager
+SRCS=Paxos-TM.oz Paxos-TP.oz
 
 all: $(foreach source, $(SRCS), src_$(source))
 

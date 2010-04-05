@@ -65,11 +65,11 @@ define
                      valueset:   ValueSetTP
                      )
 
-      proc {AddTP Tid TP}
-         TheTPs
+      proc {AddTransObj TransDict Tid ObjId Obj}
+         TheObjs
       in
-         TheTPs = {Dictionary.condGet TPs Tid tps}
-         TPs.Tid := {Record.adjoinAt TheTPs {TP getId($)} TP}
+         TheObjs = {Dictionary.condGet TransDict Tid objs}
+         TransDict.Tid := {Record.adjoinAt TheObjs ObjId Obj}
       end
 
       %% --- Events ---
@@ -88,13 +88,14 @@ define
          TM = {TMmakers.Protocol.new args(type:leader client:Client)}
          {TM setMsgLayer(@MsgLayer)}
          {TM setReplica(@Replica)}
+         {AddTransObj TMs {TM getTid($)} {TM getId($)} TM}
          TMs.{TM getId($)} := TM
          {Trans TM}
       end
 
       %% --- For the TMs ---
       proc {ForwardToTM Event}
-         {TMs.(Event.tid) Event}
+         {TMs.(Event.tid).(Event.tmid) Event}
       end 
 
       %% --- For the TPs ---
@@ -105,7 +106,7 @@ define
          TP = {TPmakers.Protocol.new args(tid:Tid)} 
          {TP setMsgLayer(@MsgLayer)}
          {TP setDHT(@DHTman)}
-         {AddTP Tid TP}
+         {AddTransObj TPs Tid {TP getId($)} TP}
          {TP Event}
       end
 

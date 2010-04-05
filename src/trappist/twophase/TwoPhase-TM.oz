@@ -37,6 +37,7 @@ define
       Replica
 
       Id             % Id of the transaction manager object
+      Tid            % Id of the transaction
       RepFactor      % Replication Factor
       NodeRef        % Node Reference
       FinalDecision  % Decision taken after collecting votes
@@ -100,7 +101,7 @@ define
          for Key in {Dictionary.keys Votes} do
             for TP in TPs.Key do
                {@MsgLayer dsend(to:TP.ref final(decision:Decision
-                                                tid:     Id
+                                                tid:     Tid
                                                 tpid:    TP.id
                                                 tag:     trapp
                                                 ))}
@@ -124,11 +125,12 @@ define
          %% - Spread decision to TPs
          for I in {Dictionary.items LocalStore} do
             if I.op == write then
-               {@Replica  bulk(to:I.key brew(tm:@NodeRef
-                                             tid:Id
-                                             item:I
+               {@Replica  bulk(to:I.key brew(tm:   @NodeRef
+                                             tid:  Tid
+                                             tmid: Id
+                                             item: I
                                              protocol:twophase
-                                             tag:trapp
+                                             tag:  trapp
                                              ))} 
                Votes.(I.key)  := nil
                Acks.(I.key)   := nil
@@ -154,7 +156,7 @@ define
 
       %% --- Interaction with TPs ---
 
-      proc {Ack ack(key:Key tid:_/*Tid*/ tp:TP tag:trapp)}
+      proc {Ack ack(key:Key tid:_ tmid:_ tp:TP tag:trapp)}
          Acks.Key := TP | Acks.Key
          if {Length Acks.Key} == @RepFactor then
             AckedItems := Key | @AckedItems
@@ -186,6 +188,10 @@ define
          I = Id
       end
 
+      proc {GetTid getTid(I)}
+         I = Tid
+      end
+
       proc {SetReplica setReplica(ReplicaMan)}
          Replica     := ReplicaMan
          
@@ -208,6 +214,7 @@ define
                      vote:          Vote
                      %% Various
                      getId:         GetId
+                     getTid:        GetTid
                      setReplica:    SetReplica
                      setMsgLayer:   SetMsgLayer
                      )
@@ -217,6 +224,7 @@ define
       Replica     = {NewCell Component.dummy}      
 
       Id          = {NewName}
+      Tid         = {NewName}
       RepFactor   = {NewCell 0}
       NodeRef     = {NewCell noref}
       LocalStore  = {Dictionary.new}

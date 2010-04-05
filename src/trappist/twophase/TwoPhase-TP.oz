@@ -44,12 +44,18 @@ define
       %% --- Event --
 
       %% --- Interaction with TPs ---
-      proc {Brew brew(hkey:HKey tm:TM tid:Tid item:TrItem protocol:_ tag:trapp)}
+      proc {Brew brew(hkey:   HKey
+                      tm:     TM 
+                      tid:    Tid
+                      tmid:   TMid
+                      item:   TrItem 
+                      protocol:_ 
+                      tag:trapp)}
          Tmp
          DHTItem
          Vote
       in 
-         NewItem  = item(hkey:HKey item:TrItem tid:Tid)
+         NewItem  = item(hkey:HKey item:TrItem tid:Tid tmid:TMid)
          Leader   = TM
          Tmp      = {@DHTman getItem(HKey TrItem.key $)}
          DHTItem  = if Tmp == 'NOT_FOUND' then
@@ -66,6 +72,7 @@ define
                      key:     TrItem.key 
                      version: DHTItem.version 
                      tid:     Tid 
+                     tmid:    TMid
                      tp:      tp(id:Id ref:@NodeRef)
                      tag:     trapp)
          if TrItem.version > DHTItem.version andthen {Not DHTItem.locked} then
@@ -79,10 +86,11 @@ define
 
       proc {PutItemAndAck HKey Key Item}
          {@DHTman  putItem(HKey Key {Record.adjoinAt Item locked false})}
-         {@MsgLayer dsend(to:Leader ack(key:Key
-                                        tid:NewItem.tid
-                                        tp:tp(id:Id ref:@NodeRef)
-                                        tag:trapp))}
+         {@MsgLayer dsend(to:Leader ack(key: Key
+                                        tid: NewItem.tid
+                                        tmid:NewItem.tmid
+                                        tp:  tp(id:Id ref:@NodeRef)
+                                        tag: trapp))}
       end
 
       proc {Abort abort}
