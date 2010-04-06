@@ -1,6 +1,8 @@
 Beernet-0.6
-	- Symmetric Replication provides now "getAll(Key)" and "getMajority(Key)"
+	- Trappist now provides Two-Phase Commit
+	- Symmetric Replication provides now getAll(Key) and getMajority(Key)
 	- Change on Replication API: quickRead becomes getOne
+	- And the usual bug fixes here and there
 
 Beernet-0.5
 	- Symmetric Replication provides Bulk operations and QuickRead

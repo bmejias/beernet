@@ -1,0 +1,6 @@
+- TwoPhase Commit: Lock read items too
+
+- Paxos
+	- Manage better locks for reading
+	- Propagate final decision to participants
+
