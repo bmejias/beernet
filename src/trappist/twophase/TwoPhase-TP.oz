@@ -75,7 +75,7 @@ define
                      tmid:    TMid
                      tp:      tp(id:Id ref:@NodeRef)
                      tag:     trapp)
-         if TrItem.version > DHTItem.version andthen {Not DHTItem.locked} then
+         if TrItem.version >= DHTItem.version andthen {Not DHTItem.locked} then
             Vote.vote = brewed
             {@DHTman putItem(HKey TrItem.key {AdjoinAt DHTItem locked true})}
          else

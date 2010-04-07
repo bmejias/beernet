@@ -118,24 +118,22 @@ define
       end
 
       proc {Commit commit}
-         %% - Loop over the items on LocalStore, filtering op:write
-         %% - Send 'brew' (prepare) to TPs for every item to be writen
+         %% - Loop over the items on LocalStore.
+         %% - Send 'brew' (prepare) to TPs for every item
          %% - Collect responses from TPs (from all, this 2PC
          %% - Decide on commit or abort
          %% - Spread decision to TPs
          for I in {Dictionary.items LocalStore} do
-            if I.op == write then
-               {@Replica  bulk(to:I.key brew(tm:   @NodeRef
-                                             tid:  Tid
-                                             tmid: Id
-                                             item: I
-                                             protocol:twophase
-                                             tag:  trapp
-                                             ))} 
-               Votes.(I.key)  := nil
-               Acks.(I.key)   := nil
-               TPs.(I.key)    := nil
-            end
+            {@Replica  bulk(to:I.key brew(tm:   @NodeRef
+                                          tid:  Tid
+                                          tmid: Id
+                                          item: I
+                                          protocol:twophase
+                                          tag:  trapp
+                                          ))} 
+            Votes.(I.key)  := nil
+            Acks.(I.key)   := nil
+            TPs.(I.key)    := nil
          end
       end
 
