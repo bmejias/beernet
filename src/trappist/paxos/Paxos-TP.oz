@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------
  *
- * TwoPC-TP.oz
+ * Paxos-TP.oz
  *
- *    Transaction Participant for the Two-Phase Commit Protocol    
+ *    Transaction Participant for the Paxos Consensus Commit Protocol    
  *
  * LICENSE
  *
@@ -10,9 +10,7 @@
  * 
  * IDENTIFICATION 
  *
- *    Author: (main author)
- *
- *    Contributors: (if any)
+ *    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
  *
  *    Last change: $Revision$ $Author$
  *
@@ -20,9 +18,9 @@
  *
  * NOTES
  *
- *    Implementation of the classical two-phase commit protocol for replicated
- *    databases. This is one of the replicas of the protocol. Known as the
- *    transaction participant.
+ *    Implementation of transaction participant (TP) role on the paxos
+ *    consensus algorithm. This is one of the replicas of the protocol. If the
+ *    majority of TPs survives the transaction, the transaction will finish. 
  *    
  *-------------------------------------------------------------------------
  */
