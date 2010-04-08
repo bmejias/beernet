@@ -29,9 +29,9 @@
 
 functor
 import
-   Component      at '../corecomp/Component.ozf'
-   Timer          at '../timer/Timer.ozf'
-   Utils          at '../utils/Misc.ozf'
+   Component      at '../../corecomp/Component.ozf'
+   Timer          at '../../timer/Timer.ozf'
+   Utils          at '../../utils/Misc.ozf'
 export
    New
 define

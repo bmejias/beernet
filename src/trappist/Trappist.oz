@@ -26,6 +26,7 @@
 
 functor
 import
+   System
    Component      at '../corecomp/Component.ozf'
    EagerPaxosTM   at 'eagerpaxos/EagerPaxos-TM.ozf'
    EagerPaxosTP   at 'eagerpaxos/EagerPaxos-TP.ozf'
@@ -82,15 +83,25 @@ define
       proc {RunTransaction runTransaction(Trans Client Protocol)}
          TM
       in
-         TM = {TMmakers.Protocol.new args(type:leader client:Client)}
+         TM = {TMmakers.Protocol.new args(role:leader client:Client)}
          {TM setMsgLayer(@MsgLayer)}
          {TM setReplica(@Replica)}
          {AddTransObj TMs {TM getTid($)} {TM getId($)} TM}
-         TMs.{TM getId($)} := TM
          {Trans TM}
       end
 
       %% --- For the TMs ---
+      proc {InitRTM Event}
+         initRTM(client:Client prot:Protocol tid:Tid ...) = Event
+         RTM
+      in
+         RTM = {TMmakers.Protocol.new args(role:rtm client:Client)}
+         {RTM setMsgLayer(@MsgLayer)}
+         {RTM setReplica(@Replica)}
+         {AddTransObj TMs Tid {RTM getId($)} RTM}
+         {RTM Event}
+      end
+
       proc {ForwardToTM Event}
          {TMs.(Event.tid).(Event.tmid) Event}
       end 
@@ -135,8 +146,9 @@ define
                      getLocks:      GetLocks
                      runTransaction:RunTransaction
                      %% For the TMs
-                     vote:          ForwardToTM
                      ack:           ForwardToTM
+                     initRTM:       InitRTM
+                     vote:          ForwardToTM
                      %% For the TPs
                      brew:          Brew
                      final:         Final

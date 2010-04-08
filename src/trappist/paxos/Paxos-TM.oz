@@ -28,9 +28,9 @@
 
 functor
 import
-   Component      at '../corecomp/Component.ozf'
-   Timer          at '../timer/Timer.ozf'
-   Utils          at '../utils/Misc.ozf'
+   Component      at '../../corecomp/Component.ozf'
+   Timer          at '../../timer/Timer.ozf'
+   Utils          at '../../utils/Misc.ozf'
 export
    New
 define
@@ -47,9 +47,11 @@ define
       RepFactor      % Replication Factor
       NodeRef        % Node Reference
       FinalDecision  % Decision taken after collecting votes
+      Leader         % Transaction Leader
       LocalStore     % Stores involve items with their new values and operation
       Votes          % To collect votes from Transaction Participants
       Acks           % To collect final acknoweledgements from TPs
+      Role           % Role of the TM: leader or rtm
       RTMs           % Set of replicated transaction managers rTMs
       TPs            % Direct reference to transaction participants
       VotedItems     % Collect items once enough votes are received 
@@ -126,14 +128,13 @@ define
       * - Propagate decision to TPs
       */
 
-         {@Replica  bulk(to:@NodeRef.id initRTM(tm:      @NodeRef
+         {@Replica  bulk(to:@NodeRef.id initRTM(leader:  @NodeRef
                                                 tid:     Tid
                                                 tmid:    Id
                                                 protocol:paxos
                                                 client:  Args.client
                                                 tag:     trapp
                                                 ))} 
-         @RTMs := nil
       end
 
       proc {Read read(Key ?Val)}
@@ -199,16 +200,20 @@ define
       TheTimer    = {Timer.new}
 
       Id          = {NewName}
-      Tid         = {NewName}
       RepFactor   = {NewCell 0}
       NodeRef     = {NewCell noref}
       LocalStore  = {Dictionary.new}
       Votes       = {Dictionary.new}
       Acks        = {Dictionary.new}
       TPs         = {Dictionary.new}
+      RTMs        = {NewCell nil}
       VotedItems  = {NewCell nil}
       AckedItems  = {NewCell nil}
       Done        = {NewCell false}
+      Role        = {NewCell Args.role}
+      if @Role == leader then
+         Tid      = {NewName}
+      end
 
       Self
    end
