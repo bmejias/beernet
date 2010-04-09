@@ -141,6 +141,9 @@ define
                      delete:           ToDHT
                      get:              ToDHT
                      put:              ToDHT
+                     add:              ToDHT
+                     remove:           ToDHT
+                     readSet:          ToDHT
                      %% Replication events
                      bulk:             ToReplica
                      getOne:           ToReplica
