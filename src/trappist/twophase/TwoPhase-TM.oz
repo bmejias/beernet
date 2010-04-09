@@ -220,8 +220,8 @@ define
       MsgLayer    = {NewCell Component.dummy}
       Replica     = {NewCell Component.dummy}      
 
-      Id          = {NewName}
-      Tid         = {NewName}
+      Id          = {Name.new}
+      Tid         = {Name.new}
       RepFactor   = {NewCell 0}
       NodeRef     = {NewCell noref}
       LocalStore  = {Dictionary.new}

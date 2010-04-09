@@ -538,7 +538,7 @@ define
       PredList    = {NewCell {RingList.new}}
       SuccList    = {NewCell {RingList.new}} 
       Crashed     = {NewCell {PbeerList.new}}
-      Ring        = {NewCell ring(name:lucifer id:{NewName})}
+      Ring        = {NewCell ring(name:lucifer id:{Name.new})}
       WishedRing  = {NewCell none}
       FingerTable = {NewCell BasicForward}
       %% Return the component

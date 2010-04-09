@@ -35,7 +35,7 @@ define
    DictS  %% Stream of request
    DictP  %% Listening port
    DB     %% Gdbm database
-   UniqueMarker = {NewName}
+   UniqueMarker = {Name.new}
    
    %% This object can be used in case you don't want (or cannot) use gdbm
    fun {MakeDictionaryDB}

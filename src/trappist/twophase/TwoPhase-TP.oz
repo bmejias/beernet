@@ -135,7 +135,7 @@ define
       DHTman   = {NewCell Component.dummy}      
 
       NodeRef  = {NewCell noref}
-      Id       = {NewName}
+      Id       = {Name.new}
 
       Self
    end

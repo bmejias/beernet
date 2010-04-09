@@ -94,7 +94,7 @@ define
          end
       end
    in
-      Key         = {NewName}
+      Key         = {Name.new}
       Subscribers = {Dictionary.new}
       Subscribers.notag := nil
       BoardPort   = {Port.new BoardStream}

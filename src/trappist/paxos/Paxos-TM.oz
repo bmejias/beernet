@@ -199,7 +199,7 @@ define
       Replica     = {NewCell Component.dummy}      
       TheTimer    = {Timer.new}
 
-      Id          = {NewName}
+      Id          = {Name.new}
       RepFactor   = {NewCell 0}
       NodeRef     = {NewCell noref}
       LocalStore  = {Dictionary.new}
@@ -212,7 +212,7 @@ define
       Done        = {NewCell false}
       Role        = {NewCell Args.role}
       if @Role == leader then
-         Tid      = {NewName}
+         Tid      = {Name.new}
       end
 
       Self

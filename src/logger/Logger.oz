@@ -94,8 +94,8 @@ define
       end
       {System.show 'logfile created'}
       LogListener = {NewCell Component.dummy}
-      KeyCloser   = {NewName}
-      KeyListener = {NewName}
+      KeyCloser   = {Name.new}
+      KeyListener = {Name.new}
       {System.show 'loglistener and key created'}
       local
          LogStream
