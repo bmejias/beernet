@@ -2,6 +2,7 @@ Beernet-0.6
 	- Trappist now provides Two-Phase Commit
 	- Symmetric Replication provides now getAll(Key) and getMajority(Key)
 	- Change on Replication API: quickRead becomes getOne
+	- DHT supports basic set operations: add(k v), remove(k v), readSet(k)
 	- And the usual bug fixes here and there
 
 Beernet-0.5
