@@ -43,10 +43,9 @@
  *       set(add:Dcitionary remove:Dictionary)
  *
  *    Each of these dictionaries associates a value to its operation id (opid).
- *    Note that the value is used as the key of the dictionary. This might
- *    seems odd, but it is actually more efficient. The reason is that readSet
- *    needs to go through all add operations, and try to identify if there is
- *    no other remove operation associated to the same value.
+ *    The key of the dictionary corresponds to a hash key for the value. The
+ *    dictionary value is a tuple containing the stored value together with the
+ *    opid.
  *
  *
  *-------------------------------------------------------------------------
@@ -110,16 +109,16 @@ define
          Adds     % Add operations
          Removes  % Remove operations
          Elements % Elements of the set
-         fun {GetValues Values}
-            case Values
-            of V|MoreValues then
+         fun {GetValues ValueKeys}
+            case ValueKeys
+            of VK|MoreValueKeys then
                R
             in
-               R = {Dictionary.condGet Removes V unit}
+               R = {Dictionary.condGet Removes VK unit}
                if R == unit then
-                  V|{GetValues MoreValues}
+                  Adds.VK.val|{GetValues MoreValueKeys}
                else
-                  {GetValues MoreValues}
+                  {GetValues MoreValueKeys}
                end
             [] nil then
                nil
@@ -177,16 +176,18 @@ define
 
       proc {AddToSet addToSet(HKey Key Val OpId tag:dht)}
          Set
+         HVal
       in
-         Set = {@DB get(HKey Key $)}
+         Set   = {@DB get(HKey Key $)}
+         HVal  = {Utils.hash Val @MaxKey}
          if Set == SimpleDB.noValue then
             AddDict
          in
             AddDict = {Dictionary.new}
-            AddDict.Val := OpId
+            AddDict.HVal := data(val:Val opid:OpId)
             {@DB put(HKey Key set(add:AddDict remove:{Dictionary.new}))}
          else
-            Set.add.Val := OpId
+            Set.add.HVal := data(val:Val opid:OpId)
          end
       end
 
@@ -222,10 +223,12 @@ define
 
       proc {RemoveFromSet removeFromSet(HKey Key Val OpId tag:dht)}
          Set
+         HVal
       in
-         Set = {@DB get(HKey Key $)}
+         Set   = {@DB get(HKey Key $)}
          if Set \= SimpleDB.noValue then
-            Set.remove.Val := OpId
+            HVal  = {Utils.hash Val @MaxKey}
+            Set.remove.HVal := data(val:Val opid:OpId)
          end
       end
 

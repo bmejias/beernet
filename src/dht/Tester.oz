@@ -148,8 +148,11 @@ in
    {ReadSet chicos}
    {ReadSet chicas}
    {Remove chicos foo}
+   {Remove chicos nada}
    {Remove chicas foo}
    {ReadSet chicos}
    {ReadSet chicas}
+   {Add chicos gatos(foo flets)}
+   {ReadSet chicos}
    {Application.exit 0}
 end
