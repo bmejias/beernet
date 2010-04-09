@@ -5,7 +5,6 @@ functor
 
 import
    Application
-   OS
    Property
    System
    Network        at '../network/Network.ozf'
@@ -60,22 +59,40 @@ define
       end
    end
 
-   proc {Put Key Value}
-      {System.show 'Going to put'#Value#'with Key'#Key}
-      {MasterOfPuppets put(Key Value)}
+   proc {Put Key Val}
+      {System.show 'Going to put'#Val#'with Key'#Key}
+      {MasterOfPuppets put(Key Val)}
    end
 
    proc {Get Key}
-      Value
+      Val
    in
-      {MasterOfPuppets get(Key Value)}
-      {Wait Value}
-      {System.show 'Getting'#Key#'we obtained'#Value}
+      {MasterOfPuppets get(Key Val)}
+      {Wait Val}
+      {System.show 'Getting'#Key#'we obtained'#Val}
    end
 
    proc {Delete Key}
       {System.show 'Deleting'#Key}
       {MasterOfPuppets delete(Key)}
+   end
+
+   proc {Add Key Val}
+      {System.show 'Going to add'#Val#'to set'#Key}
+      {MasterOfPuppets add(Key Val)}
+   end
+
+   proc {Remove Key Val}
+      {System.show 'Going to remove'#Val#'from set'#Key}
+      {MasterOfPuppets remove(Key Val)}
+   end
+
+   proc {ReadSet Key}
+      Val
+   in
+      {MasterOfPuppets readSet(Key Val)}
+      {Wait Val}
+      {System.show 'Set'#Key#'is:'#Val}
    end
 
 in
@@ -123,5 +140,16 @@ in
    {Delete foo}
    {Delay 500}
    {Get foo}
+   {System.show '-------------------------------------------------------------'}
+   {System.show '------- testing sets -----'}
+   {Add chicos foo}
+   {Add chicos flets}
+   {Add chicos ina}
+   {ReadSet chicos}
+   {ReadSet chicas}
+   {Remove chicos foo}
+   {Remove chicas foo}
+   {ReadSet chicos}
+   {ReadSet chicas}
    {Application.exit 0}
 end

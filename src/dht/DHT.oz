@@ -20,12 +20,34 @@
  * NOTES
  *      
  *    The basic operations for distributed hash table do not provide any sort
- *    of replication.  For replicated storage use the transactional layer. The
- *    basic operations provided are: put(key, value) - get(key) - delete(key).
+ *    of replication.  For replicated storage use the transactional layer.
  *
- *    It needs a messaging layer to be set. It uses SimpleDB as default
- *    database, it uses a default maxkey but it basically needs one as
+ *    This component needs a messaging layer to be set. It uses SimpleDB as
+ *    default database, it uses a default maxkey but it basically needs one as
  *    argument.
+ *
+ *    The basic operations provided for key/value pairs are: put(key, value) -
+ *    get(key) - delete(key). The basic operations provided for key/value-sets
+ *    are: add(key, value) - remove(key, value) - readSet(key).
+ *
+ *    SimpleDB is used to store key/value pairs and key/value-sets. The
+ *    structure to store key/value pairs is the following: There is a
+ *    dictionary to associate each key1 with its own dictionary. The second
+ *    dictionary associates key2 to each value.
+ *
+ *    The structure to store key/value-sets is the following: As with key/value
+ *    pairs, the global dictionary for key1 is used. The second dictionary
+ *    instead of associating key2 to value, it associates key2 to a record of
+ *    the form:
+ *
+ *       set(add:Dcitionary remove:Dictionary)
+ *
+ *    Each of these dictionaries associates a value to its operation id (opid).
+ *    Note that the value is used as the key of the dictionary. This might
+ *    seems odd, but it is actually more efficient. The reason is that readSet
+ *    needs to go through all add operations, and try to identify if there is
+ *    no other remove operation associated to the same value.
+ *
  *
  *-------------------------------------------------------------------------
  */
@@ -51,6 +73,7 @@ define
       MaxKey
       NodeRef
 
+      %% --- Auxiliar functions ---------------------------------------------
       fun {NextGid}
          OldGid NewGid
       in
@@ -59,6 +82,65 @@ define
          NewGid
       end
 
+      proc {SendNeedItem Key Val Type}
+         HKey
+         NewGid
+      in
+         HKey     = {Utils.hash Key @MaxKey}
+         NewGid   = {NextGid}
+         Gvars.NewGid := data(var:Val type:Type)
+         {@MsgLayer send(to:HKey
+                         needItem(HKey Key src:@NodeRef gid:NewGid tag:dht))}
+      end
+
+      proc {SendSetOperation Key Val Op}
+         HKey
+         OpId
+      in
+         HKey = {Utils.hash Key @MaxKey}
+         OpId = {Name.new}
+         {@MsgLayer send(Op(HKey Key Val OpId tag:dht) to:HKey)}
+      end
+
+      proc {HandlePair ClientVar Val}
+         ClientVar = Val
+      end
+
+      proc {HandleSet ClientVar Val}
+         Adds     % Add operations
+         Removes  % Remove operations
+         Elements % Elements of the set
+         fun {GetValues Values}
+            case Values
+            of V|MoreValues then
+               R
+            in
+               R = {Dictionary.condGet Removes V unit}
+               if R == unit then
+                  V|{GetValues MoreValues}
+               else
+                  {GetValues MoreValues}
+               end
+            [] nil then
+               nil
+            end
+         end
+      in
+         if Val == SimpleDB.noValue then
+            ClientVar = empty
+         else
+            Adds     = Val.add
+            Removes  = Val.remove
+            Elements = {GetValues {Dictionary.keys Adds}}
+            ClientVar= {List.toTuple set Elements}
+         end
+      end
+
+      ValueHandle = handles(pair:HandlePair set:HandleSet)
+
+      %% --- Events ---------------------------------------------------------
+
+      %% --- Key/Value pairs API for applications ---------------------------
       proc {Delete delete(Key)}
          HKey
       in
@@ -66,24 +148,55 @@ define
          {@MsgLayer send(deleteItem(HKey Key tag:dht) to:HKey)}
       end
    
-      proc {DeleteItem deleteItem(HKey Key tag:dht)}
-         {@DB delete(HKey Key)}
+      proc {Get get(Key ?Val)}
+         {SendNeedItem Key Val pair}
       end
 
-      proc {Get get(Key ?Val)}
+      proc {Put put(Key Val)}
          HKey
-         NewGid
       in
-         HKey     = {Utils.hash Key @MaxKey}
-         NewGid   = {NextGid}
-         Gvars.NewGid := Val
-         {@MsgLayer send(needItem(HKey Key src:@NodeRef gid:NewGid tag:dht)
-                         to:HKey)}
+         HKey = {Utils.hash Key @MaxKey}
+         {@MsgLayer send(putItem(HKey Key Val tag:dht) to:HKey)}
+      end
+
+      %% --- Key/Value-Set API for applications -----------------------------
+
+      proc {Add add(Key Val)}
+         {SendSetOperation Key Val addToSet}
+      end 
+
+      proc {Remove remove(Key Val)}
+         {SendSetOperation Key Val removeFromSet}
+      end
+
+      proc {ReadSet readSet(Key ?Val)}
+         {SendNeedItem Key Val set}
+      end
+
+      %% --- Events used by system protocols --------------------------------
+
+      proc {AddToSet addToSet(HKey Key Val OpId tag:dht)}
+         Set
+      in
+         Set = {@DB get(HKey Key $)}
+         if Set == SimpleDB.noValue then
+            AddDict
+         in
+            AddDict = {Dictionary.new}
+            AddDict.Val := OpId
+            {@DB put(HKey Key set(add:AddDict remove:{Dictionary.new}))}
+         else
+            Set.add.Val := OpId
+         end
       end
 
       %% To be used locally, within the peer. (it binds a variable)
       proc {GetItem getItem(HKey Key ?Val)}
          {@DB get(HKey Key Val)}
+      end
+
+      proc {DeleteItem deleteItem(HKey Key tag:dht)}
+         {@DB delete(HKey Key)}
       end
 
       proc {NeedItem needItem(HKey Key src:Src gid:AGid tag:dht)}
@@ -94,18 +207,11 @@ define
       end
 
       proc {NeedItemBack needItemBack(gid:AGid value:Val tag:dht)}
-         GVal
+         Gdata
       in
-         GVal = {Dictionary.condGet Gvars AGid _}
-         GVal = Val
+         Gdata = {Dictionary.condGet Gvars AGid data(var:_ type:pair)}
+         {ValueHandle.(Gdata.type) Gdata.var Val}
          {Dictionary.remove Gvars AGid}
-      end
-
-      proc {Put put(Key Val)}
-         HKey  % HashKey for Key
-      in
-         HKey = {Utils.hash Key @MaxKey}
-         {@MsgLayer send(putItem(HKey Key Val tag:dht) to:HKey)}
       end
 
       proc {PutItem Event}
@@ -114,6 +220,16 @@ define
          {@DB put(HKey Key Val)}
       end
 
+      proc {RemoveFromSet removeFromSet(HKey Key Val OpId tag:dht)}
+         Set
+      in
+         Set = {@DB get(HKey Key $)}
+         if Set \= SimpleDB.noValue then
+            Set.remove.Val := OpId
+         end
+      end
+
+      %% --- Component Setters ----------------------------------------------
       proc {SetDB setDB(ADataBase)}
          @DB := ADataBase
       end
@@ -128,14 +244,23 @@ define
       end
 
       Events = events(
+                     %% Key/Value pairs
                      delete:        Delete
-                     deleteItem:    DeleteItem
                      get:           Get
+                     put:           Put
+                     %% Key/Value-Sets
+                     add:           Add
+                     remove:        Remove
+                     readSet:       ReadSet
+                     %% System protocols
+                     addToSet:      AddToSet
+                     deleteItem:    DeleteItem
                      getItem:       GetItem
                      needItem:      NeedItem
                      needItemBack:  NeedItemBack
-                     put:           Put
                      putItem:       PutItem
+                     removeFromSet: RemoveFromSet
+                     %% Setters
                      setDB:         SetDB
                      setMaxKey:     SetMaxKey
                      setMsgLayer:   SetMsgLayer
