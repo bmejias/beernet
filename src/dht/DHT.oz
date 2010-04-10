@@ -72,7 +72,38 @@ define
       MaxKey
       NodeRef
 
-      %% --- Auxiliar functions ---------------------------------------------
+      %% === Auxiliar functions =============================================
+
+      fun {AddToList L X HX}
+         case L
+         of Val|MoreValues then
+            if HX < Val.hash then
+               v(value:X hash:HX)|L
+            elseif X == Val.value then
+               L
+            else
+               Val|{AddToList MoreValues X HX}
+            end
+         [] nil then
+            [v(value:X hash:HX)]
+         end
+      end
+
+      fun {RemoveFromList L X HX}
+         case L
+         of Val|MoreValues then
+            if X == Val.value then
+               MoreValues
+            elseif HX < Val.hash then
+               L
+            else
+               Val|{RemoveFromList MoreValues X HX}
+            end
+         [] nil then
+            nil
+         end
+      end
+
       fun {NextGid}
          OldGid NewGid
       in
@@ -94,50 +125,39 @@ define
 
       proc {SendSetOperation Key Val Op}
          HKey
-         OpId
       in
          HKey = {Utils.hash Key @MaxKey}
-         OpId = {Name.new}
-         {@MsgLayer send(Op(HKey Key Val OpId tag:dht) to:HKey)}
+         {@MsgLayer send(Op(HKey Key Val tag:dht) to:HKey)}
       end
+
+      %% --- Handling NeedItem back replies ---------------------------------
 
       proc {HandlePair ClientVar Val}
          ClientVar = Val
       end
 
       proc {HandleSet ClientVar Val}
-         Adds     % Add operations
-         Removes  % Remove operations
-         Elements % Elements of the set
-         fun {GetValues ValueKeys}
-            case ValueKeys
-            of VK|MoreValueKeys then
-               R
-            in
-               R = {Dictionary.condGet Removes VK unit}
-               if R == unit then
-                  Adds.VK.val|{GetValues MoreValueKeys}
-               else
-                  {GetValues MoreValueKeys}
-               end
+         fun {GetValues L}
+            case L
+            of H|T then
+               H.value|{GetValues T}
             [] nil then
                nil
             end
          end
+         Elements
       in
-         if Val == SimpleDB.noValue then
+         if Val == SimpleDB.noValue orelse Val == nil then
             ClientVar = empty
          else
-            Adds     = Val.add
-            Removes  = Val.remove
-            Elements = {GetValues {Dictionary.keys Adds}}
+            Elements = {GetValues Val}
             ClientVar= {List.toTuple set Elements}
          end
       end
 
       ValueHandle = handles(pair:HandlePair set:HandleSet)
 
-      %% --- Events ---------------------------------------------------------
+      %% === Events =========================================================
 
       %% --- Key/Value pairs API for applications ---------------------------
       proc {Delete delete(Key)}
@@ -174,23 +194,6 @@ define
 
       %% --- Events used by system protocols --------------------------------
 
-      proc {AddToSet addToSet(HKey Key Val OpId tag:dht)}
-         Set
-         HVal
-      in
-         Set   = {@DB get(HKey Key $)}
-         HVal  = {Utils.hash Val @MaxKey}
-         if Set == SimpleDB.noValue then
-            AddDict
-         in
-            AddDict = {Dictionary.new}
-            AddDict.HVal := data(val:Val opid:OpId)
-            {@DB put(HKey Key set(add:AddDict remove:{Dictionary.new}))}
-         else
-            Set.add.HVal := data(val:Val opid:OpId)
-         end
-      end
-
       %% To be used locally, within the peer. (it binds a variable)
       proc {GetItem getItem(HKey Key ?Val)}
          {@DB get(HKey Key Val)}
@@ -221,14 +224,27 @@ define
          {@DB put(HKey Key Val)}
       end
 
-      proc {RemoveFromSet removeFromSet(HKey Key Val OpId tag:dht)}
+      proc {AddToSet addToSet(HKey Key Val tag:dht)}
          Set
          HVal
       in
          Set   = {@DB get(HKey Key $)}
+         HVal  = {Utils.hash Val @MaxKey}
+         if Set == SimpleDB.noValue then
+            {@DB put(HKey Key [v(value:Val hash:HVal)])}
+         else
+            {@DB put(HKey Key {AddToList Set Val HVal})}
+         end
+      end
+
+      proc {RemoveFromSet removeFromSet(HKey Key Val tag:dht)}
+         Set
+         HVal
+      in
+         Set   = {@DB get(HKey Key $)}
+         HVal  = {Utils.hash Val @MaxKey}
          if Set \= SimpleDB.noValue then
-            HVal  = {Utils.hash Val @MaxKey}
-            Set.remove.HVal := data(val:Val opid:OpId)
+            {@DB put(HKey Key {RemoveFromList Set Val HVal})}
          end
       end
 

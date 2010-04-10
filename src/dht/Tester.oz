@@ -95,64 +95,153 @@ define
       {System.show 'Set'#Key#'is:'#Val}
    end
 
+   %% For feedback
+   Show   = System.show
+   Say    = System.showInfo
+   Args
+   
+   proc {HelpMessage}
+      {Say "Usage: "#{Property.get 'application.url'}#" <test> [option]"}
+      {Say ""}
+      {Say "Tests:"}
+      {Say "\tall\tRun all tests (default)"}
+      {Say "\tpairs\tTest key/value pairs"}
+      {Say "\tsets\tTest key/value-sets"}
+      {Say ""}
+      {Say "Options:"}
+      {Say "  -h, -?, --help\tThis help"}
+   end
+
+   proc {Bootstrap}
+      {CreateNetwork}
+      MaxKey = {MasterOfPuppets getMaxKey($)}
+   end
+
+   proc {TestPairs}
+      {Show 'network created. Going to put, get and delete values'}
+      {Put foo bar}
+      {Put beer net}
+      {Put bink beer(name:adelardus style:dubbel alc:7)}
+      {Show 'waiting a bit'}
+      {Delay 1000}
+      {Get foo}
+      {Get beer}
+      {Get bink}
+      {Put foo flets}
+      {Get foo}
+      {Show '---- testing some message sending ----'}
+      {MasterOfPuppets send(msg(text:'hello nurse' src:foo)
+                            to:{Utils.hash foo MaxKey})}
+      {MasterOfPuppets send(msg(text:bla src:foo) 
+                            to:{Utils.hash ina MaxKey})}
+      {Delay 1000}
+      {System.show 'TESTING DIRECT ACCESS TO THE STORE OF A PEER'}
+      local
+         Pbeer
+      in
+         {MasterOfPuppets lookup(key:foo res:Pbeer)}
+         {MasterOfPuppets send(put(foo bla) to:Pbeer.id)}
+      end
+      {Delay 1000}
+      {Get foo}
+      local
+         Pbeer HKey
+      in
+         HKey = {Utils.hash foo MaxKey} 
+         {MasterOfPuppets lookupHash(hkey:HKey res:Pbeer)}
+         {MasterOfPuppets send(putItem(HKey foo tetete tag:dht) to:Pbeer.id)}
+      end
+      {Delay 1000}
+      {Get foo}
+      {Delete nada}
+      {Delay 1000}
+      {Delete foo}
+      {Delay 500}
+      {Get foo}
+   end
+
+   proc {TestSets}
+      {Show '-------------------------------------------------------------'}
+      {Show '------- testing sets -----'}
+      {Add chicos foo}
+      {Add chicos flets}
+      {Add chicos ina}
+      {ReadSet chicos}
+      {ReadSet chicas}
+      {Remove chicos foo}
+      {Remove chicos nada}
+      {Remove chicas foo}
+      {ReadSet chicos}
+      {ReadSet chicas}
+      {Add chicos gatos(foo flets)}
+      {Add chicos ina}
+      {ReadSet chicos}
+      {Add chicos foo}
+      {ReadSet chicos}
+      {Remove chicos gatos(foo flets)}
+      {Remove chicos ina}
+      {Remove chicos foo}
+      {Remove chicos flets}
+      {ReadSet chicos}
+      {Add chicos foo}
+      {Add chicos flets}
+      {ReadSet chicos}
+      {Get chicos}
+      {Put chicos nil}
+      {Get chicos}
+      {ReadSet chicos}
+   end
+
+   proc {TestAll}
+      {TestPairs}
+      {TestSets}
+   end
 in
 
    {Property.put 'print.width' 1000}
    {Property.put 'print.depth' 1000}
 
-   {CreateNetwork}
-   MaxKey = {MasterOfPuppets getMaxKey($)}
-   {System.show 'network created. Going to put, get and delete values'}
-   {Put foo bar}
-   {Put beer net}
-   {Put bink beer(name:adelardus style:dubbel alc:7)}
-   {System.show 'waiting a bit'}
-   {Delay 1000}
-   {Get foo}
-   {Get beer}
-   {Get bink}
-   {Put foo flets}
-   {Get foo}
-   {System.show '---- testing some message sending ----'}
-   {MasterOfPuppets send(msg(text:'hello nurse' src:foo) to:{Utils.hash foo MaxKey})}
-   {MasterOfPuppets send(msg(text:bla src:foo) to:{Utils.hash ina MaxKey})}
-   {Delay 1000}
-   {System.show 'TESTING DIRECT ACCESS TO THE STORE OF A PEER'}
-   local
-      Pbeer
-   in
-      {MasterOfPuppets lookup(key:foo res:Pbeer)}
-      {MasterOfPuppets send(put(foo bla) to:Pbeer.id)}
+   %% Defining input arguments
+   Args = try
+             {Application.getArgs
+              record(
+                     help(single char:[&? &h] default:false)
+                     )}
+
+          catch _ then
+             {Say 'Unrecognised arguments'}
+             optRec(help:true)
+          end
+
+   %% Help message
+   if Args.help then
+      {HelpMessage}
+      {Application.exit 0}
    end
-   {Delay 1000}
-   {Get foo}
-   local
-      Pbeer HKey
-   in
-      HKey = {Utils.hash foo MaxKey} 
-      {MasterOfPuppets lookupHash(hkey:HKey res:Pbeer)}
-      {MasterOfPuppets send(putItem(HKey foo tetete tag:dht) to:Pbeer.id)}
+   
+   case Args.1
+   of Command|nil then
+      case Command
+      of "all" then
+         {Bootstrap}
+         {TestAll}
+      [] "pairs" then
+         {Bootstrap}
+         {TestPairs}
+      [] "sets" then
+         {Bootstrap}
+         {TestSets}
+      else
+         {Say "ERROR: Invalid invocation\n"}
+         {HelpMessage}
+      end
+   [] nil then
+      {Bootstrap}
+      {TestAll}
+   else
+      {Say "ERROR: Invalid invocation\n"}
+      {HelpMessage}
    end
-   {Delay 1000}
-   {Get foo}
-   {Delete nada}
-   {Delay 1000}
-   {Delete foo}
-   {Delay 500}
-   {Get foo}
-   {System.show '-------------------------------------------------------------'}
-   {System.show '------- testing sets -----'}
-   {Add chicos foo}
-   {Add chicos flets}
-   {Add chicos ina}
-   {ReadSet chicos}
-   {ReadSet chicas}
-   {Remove chicos foo}
-   {Remove chicos nada}
-   {Remove chicas foo}
-   {ReadSet chicos}
-   {ReadSet chicas}
-   {Add chicos gatos(foo flets)}
-   {ReadSet chicos}
+
    {Application.exit 0}
 end

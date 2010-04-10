@@ -304,7 +304,7 @@ define
          end
       end
    in
-      {System.showInfo "*** Test Summary ***"}
+      {Say "*** Test Summary ***"}
       if Tests == [all] then
          {SummaryLoop [build buildPred massacre churn]}
       else
