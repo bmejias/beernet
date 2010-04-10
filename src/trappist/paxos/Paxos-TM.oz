@@ -90,7 +90,7 @@ define
          {Dictionary.condGet LocalStore Key {GetRemote Key}}
       end
 
-      %% --- Events --
+      %% === Events =========================================================
 
       proc {Ack Event}
          skip
@@ -100,7 +100,29 @@ define
          skip
       end
 
-      %% --- Operations for the client ---
+      proc {InitRTM initRTM(leader: TheLeader
+                            tid:    TransId
+                            client: Client
+                            store:  Store
+                            protocol:_
+                            hkey:   _
+                            tag:    trapp
+                            )}
+         Tid         = TransId
+         Leader      = {NewCell TheLeader}
+         LocalStore  = Store
+         for I in {Dictionary.items LocalStore} do
+            Votes.(I.key)  := nil
+            Acks.(I.key)   := nil
+            TPs.(I.key)    := nil
+         end
+         {@MsgLayer dsend(to:@Leader.ref registerRTM(rtm: tm(ref:@NodeRef id:Id)
+                                                     tmid:@Leader.id
+                                                     tid: Tid
+                                                     tag: trapp))}
+      end
+
+      %% --- Operations for the client --------------------------------------
       proc {Abort abort}
          {Port.send Args.client abort}
          Done := true
@@ -128,11 +150,11 @@ define
       * - Propagate decision to TPs
       */
 
-         {@Replica  bulk(to:@NodeRef.id initRTM(leader:  @NodeRef
+         {@Replica  bulk(to:@NodeRef.id initRTM(leader:  tm(ref:@NodeRef id:Id)
                                                 tid:     Tid
-                                                tmid:    Id
                                                 protocol:paxos
                                                 client:  Args.client
+                                                store:   LocalStore
                                                 tag:     trapp
                                                 ))} 
       end
@@ -152,7 +174,7 @@ define
                                  op:      write)
       end
 
-      %% --- Various ---
+      %% --- Various --------------------------------------------------------
 
       proc {GetId getId(I)}
          I = Id
@@ -178,6 +200,8 @@ define
                      commit:        Commit
                      read:          Read
                      write:         Write
+                     %% Interaction with rTMs
+                     initRTM:       InitRTM
                      %% Interaction with TPs
                      ack:           Ack
                      vote:          Vote
@@ -202,7 +226,6 @@ define
       Id          = {Name.new}
       RepFactor   = {NewCell 0}
       NodeRef     = {NewCell noref}
-      LocalStore  = {Dictionary.new}
       Votes       = {Dictionary.new}
       Acks        = {Dictionary.new}
       TPs         = {Dictionary.new}
@@ -212,7 +235,8 @@ define
       Done        = {NewCell false}
       Role        = {NewCell Args.role}
       if @Role == leader then
-         Tid      = {Name.new}
+         Tid         = {Name.new}
+         LocalStore  = {Dictionary.new}
       end
 
       Self

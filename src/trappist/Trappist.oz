@@ -92,7 +92,7 @@ define
 
       %% --- For the TMs ---
       proc {InitRTM Event}
-         initRTM(client:Client prot:Protocol tid:Tid ...) = Event
+         initRTM(client:Client protocol:Protocol tid:Tid ...) = Event
          RTM
       in
          RTM = {TMmakers.Protocol.new args(role:rtm client:Client)}
