@@ -63,7 +63,7 @@ define
       in 
          RTMs     = TheRTMs
          NewItem  = item(hkey:HKey item:TrItem tid:Tid)
-         Leader   = TheLeader
+         Leader   := TheLeader
          Tmp      = {@DHTman getItem(HKey TrItem.key $)}
          DHTItem  = if Tmp == 'NOT_FOUND' then
                         item(key:      TrItem.key
@@ -87,7 +87,8 @@ define
          else
             Vote.vote = denied
          end
-         {@MsgLayer dsend(to:Leader.ref {Record.adjoinAt Vote tmid Leader.id})}
+         {@MsgLayer dsend(to:@Leader.ref 
+                          {Record.adjoinAt Vote tmid @Leader.id})}
          for TM in RTMs do
             {@MsgLayer dsend(to:TM.ref {Record.adjoinAt Vote tmid TM.id})}
          end
@@ -147,6 +148,7 @@ define
 
       Id       = {Name.new}
       NodeRef  = {NewCell noref}
+      Leader   = {NewCell noleader}
 
       Self
    end

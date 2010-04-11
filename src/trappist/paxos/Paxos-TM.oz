@@ -116,6 +116,7 @@ define
          TheVotes = Votes.Key
          %{System.show TheVotes}
          %{System.show {Dictionary.keys VotingPolls}}
+         {System.show 'votes for'#Key#{Length TheVotes}}
          if VotingPolls.Key == open andthen {Length TheVotes} < @RepFactor then
             none
          else
@@ -123,8 +124,18 @@ define
             VotingPolls.Key := close
             %{System.show 'poll closed'}
             if {CountBrewed TheVotes 0} > @RepFactor div 2 then
+               if @Leader.id == Id then
+                  {System.show Key#'brewed'#leader}
+               else
+                  {System.show Key#'brewed'}
+               end
                brewed
             else
+               if @Leader.id == Id then
+                  {System.show Key#'denied'#leader}
+               else
+                  {System.show Key#'denied'}
+               end
                denied
             end
          end
@@ -132,19 +143,25 @@ define
 
       proc {CheckDecision}
          if {Length @VotedItems} == {Length {Dictionary.keys Votes}} then
+            {System.show 'COLLECTED EVERYTHING'}
             %% Collected everything
             if {EnoughRTMacks {Dictionary.keys VotesAcks}} then
+               {System.show 'ENOUGH rtms: everything is decided'}
                FinalDecision = if {GotAllBrewed} then commit else abort end
                Done := true
                {SpreadDecision FinalDecision}
+            else
+               {System.show 'rtms still collecting'}
             end
+         else
+            {System.show 'still not enough votes'}
          end
       end
 
       fun {EnoughRTMacks Keys}
          case Keys
          of K|MoreKeys then
-            if {Length VotesAcks.K} >= RepFactor div 2 then
+            if {Length VotesAcks.K} >= @RepFactor div 2 then
                {EnoughRTMacks MoreKeys}
             else
                false
@@ -179,7 +196,7 @@ define
          end
          %% Initiate TPs per each item. Ask them to vote
          for I in {Dictionary.items LocalStore} do
-            {@Replica  bulk(to:I.key brew(leader:  tm(ref:@NodeRef id:Id)
+            {@Replica  bulk(to:I.key brew(leader:  @Leader
                                           rtms:    @RTMs
                                           tid:     Tid
                                           item:    I
@@ -189,11 +206,12 @@ define
             Votes.(I.key)  := nil
             Acks.(I.key)   := nil
             TPs.(I.key)    := nil
+            VotesAcks.(I.key) := nil
          end
          %% Open VotingPolls and launch timers
          for I in {Dictionary.items LocalStore} do
             VotingPolls.(I.key) := open
-            {TheTimer startTrigger(@VotingPeriod timeout(I.key))}
+            {TheTimer startTrigger(@VotingPeriod timeoutPoll(I.key))}
          end
       end
 
@@ -229,12 +247,13 @@ define
          Key = FullVote.key
          Consensus
       in
+         {System.show 'collecting votes: got'#FullVote.vote}
          Votes.Key   := FullVote | Votes.Key
          TPs.Key     := FullVote.tp | TPs.Key
          Consensus   = {AnyMajority Key}
          if Consensus \= none then
             VotedItems := vote(key:Key consensus:Consensus) | @VotedItems
-            if @Leader.id == @NodeRef.id then
+            if @Leader.id == Id then
                {CheckDecision}
             else
                {@MsgLayer dsend(to:@Leader.ref
@@ -245,7 +264,7 @@ define
                                         rtm:    @NodeRef
                                         tag:    trapp))}
             end
-         elseif Consensus == late andthen @Leader.id == @NodeRef.id then
+         elseif Consensus == late andthen @Leader.id == Id then
             thread
                {Wait FinalDecision}
                {@MsgLayer dsend(to:FullVote.tp.ref
@@ -280,6 +299,7 @@ define
             Votes.(I.key)  := nil
             Acks.(I.key)   := nil
             TPs.(I.key)    := nil
+            VotesAcks.(I.key) := nil
             VotingPolls.(I.key) := open
          end
          {@MsgLayer dsend(to:@Leader.ref registerRTM(rtm: tm(ref:@NodeRef id:Id)
@@ -299,7 +319,7 @@ define
       proc {SetRTMs rtms(TheRTMs tid:_ tmid:_ tag:trapp)}
          RTMs := TheRTMs
          for I in {Dictionary.items LocalStore} do
-            {TheTimer startTrigger(@VotingPeriod timeout(I.key))}
+            {TheTimer startTrigger(@VotingPeriod timeoutPoll(I.key))}
          end
       end
 
@@ -331,7 +351,7 @@ define
       * - Propagate decision to TPs
       */
 
-         {@Replica  bulk(to:@NodeRef.id initRTM(leader:  tm(ref:@NodeRef id:Id)
+         {@Replica  bulk(to:@NodeRef.id initRTM(leader:  @Leader
                                                 tid:     Tid
                                                 protocol:paxos
                                                 client:  Client
@@ -373,6 +393,9 @@ define
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
          MsgLayer := AMsgLayer
          NodeRef  := {@MsgLayer getRef($)}
+         if @Role == leader then
+            Leader := tm(ref:@NodeRef id:Id)
+         end
       end
 
       proc {SetVotingPeriod setVotingPeriod(Period)}
@@ -425,6 +448,7 @@ define
       Votes       = {Dictionary.new}
       Acks        = {Dictionary.new}
       TPs         = {Dictionary.new}
+      VotesAcks   = {Dictionary.new}
       VotingPolls = {Dictionary.new}
       VotingPeriod= {NewCell 3000}
       RTMs        = {NewCell nil}
@@ -435,6 +459,7 @@ define
       if @Role == leader then
          Tid         = {Name.new}
          LocalStore  = {Dictionary.new}
+         Leader      = {NewCell noref}
       end
 
       Self
