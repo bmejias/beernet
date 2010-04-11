@@ -152,6 +152,7 @@ define
                      initRTM:       InitRTM
                      registerRTM:   ForwardToTM
                      rtms:          ForwardToTM
+                     setFinal:      ForwardToTM
                      vote:          ForwardToTM
                      voteAck:       ForwardToTM
                      %% For the TPs

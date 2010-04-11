@@ -71,7 +71,7 @@ define
          fun {GetNewest L Newest}
             case L
             of H|T then
-               if H.version > Newest then
+               if H.version > Newest.version then
                   {GetNewest T H}
                else
                   {GetNewest T Newest}
@@ -112,30 +112,14 @@ define
          end
          TheVotes
       in
-         %{System.show 'searching for any majority'}
          TheVotes = Votes.Key
-         %{System.show TheVotes}
-         %{System.show {Dictionary.keys VotingPolls}}
-         {System.show 'votes for'#Key#{Length TheVotes}}
          if VotingPolls.Key == open andthen {Length TheVotes} < @RepFactor then
             none
          else
-            %{System.show 'closing the poll'}
             VotingPolls.Key := close
-            %{System.show 'poll closed'}
             if {CountBrewed TheVotes 0} > @RepFactor div 2 then
-               if @Leader.id == Id then
-                  {System.show Key#'brewed'#leader}
-               else
-                  {System.show Key#'brewed'}
-               end
                brewed
             else
-               if @Leader.id == Id then
-                  {System.show Key#'denied'#leader}
-               else
-                  {System.show Key#'denied'}
-               end
                denied
             end
          end
@@ -143,18 +127,12 @@ define
 
       proc {CheckDecision}
          if {Length @VotedItems} == {Length {Dictionary.keys Votes}} then
-            {System.show 'COLLECTED EVERYTHING'}
             %% Collected everything
             if {EnoughRTMacks {Dictionary.keys VotesAcks}} then
-               {System.show 'ENOUGH rtms: everything is decided'}
                FinalDecision = if {GotAllBrewed} then commit else abort end
                Done := true
                {SpreadDecision FinalDecision}
-            else
-               {System.show 'rtms still collecting'}
             end
-         else
-            {System.show 'still not enough votes'}
          end
       end
 
@@ -181,7 +159,7 @@ define
                   false
                end
             [] nil then
-               nil
+               true
             end
          end
       in
@@ -239,15 +217,14 @@ define
 
       %% === Events =========================================================
 
-      proc {Ack Event}
-         skip
+      proc {Ack ack(key:Key tp:TP tid:_ tmid:_ tag:trapp)}
+         Acks.Key := TP | Acks.Key
       end
 
       proc {Vote FullVote}
          Key = FullVote.key
          Consensus
       in
-         {System.show 'collecting votes: got'#FullVote.vote}
          Votes.Key   := FullVote | Votes.Key
          TPs.Key     := FullVote.tp | TPs.Key
          Consensus   = {AnyMajority Key}
@@ -321,6 +298,10 @@ define
          for I in {Dictionary.items LocalStore} do
             {TheTimer startTrigger(@VotingPeriod timeoutPoll(I.key))}
          end
+      end
+
+      proc {SetFinal setFinal(decision:Decision tid:_ tmid:_ tag:trapp)}
+         FinalDecision = Decision
       end
 
       %% --- Operations for the client --------------------------------------
@@ -416,6 +397,7 @@ define
                      initRTM:       InitRTM
                      registerRTM:   RegisterRTM
                      rtms:          SetRTMs
+                     setFinal:      SetFinal
                      voteAck:       VoteAck
                      %% Interaction with TPs
                      ack:           Ack

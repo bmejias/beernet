@@ -1,3 +1,6 @@
+- All protocols
+   - Add remove operation
+
 - Paxos
 	- Manage better locks for reading
 	- Propagate final decision to participants

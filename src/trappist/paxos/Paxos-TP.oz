@@ -95,18 +95,24 @@ define
       end
 
       proc {Abort abort}
-/*
          DHTItem
       in
          DHTItem = {@DHTman getItem(NewItem.hkey NewItem.item.key $)}
          {PutItemAndAck NewItem.hkey NewItem.item.key DHTItem}
-*/
          skip
       end
 
       proc {Commit commit}
-         skip
-%         {PutItemAndAck NewItem.hkey NewItem.item.key NewItem.item}
+         {PutItemAndAck NewItem.hkey NewItem.item.key NewItem.item}
+      end
+
+      proc {PutItemAndAck HKey Key Item}
+         {@DHTman  putItem(HKey Key {Record.adjoinAt Item locked false})}
+         {@MsgLayer dsend(to:@Leader.ref ack(key: Key
+                                             tid: NewItem.tid
+                                             tmid:@Leader.id
+                                             tp:  tp(id:Id ref:@NodeRef)
+                                             tag: trapp))}
       end
 
       %% --- Various --------------------------------------------------------
