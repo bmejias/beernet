@@ -95,11 +95,13 @@ define
          initRTM(client:Client protocol:Protocol tid:Tid ...) = Event
          RTM
       in
-         RTM = {TMmakers.Protocol.new args(role:rtm client:Client)}
-         {RTM setMsgLayer(@MsgLayer)}
-         {RTM setReplica(@Replica)}
-         {AddTransObj TMs Tid {RTM getId($)} RTM}
-         {RTM Event}
+         if @NodeRef.id \= Event.leader.ref.id then
+            RTM = {TMmakers.Protocol.new args(role:rtm client:Client)}
+            {RTM setMsgLayer(@MsgLayer)}
+            {RTM setReplica(@Replica)}
+            {AddTransObj TMs Tid {RTM getId($)} RTM}
+            {RTM Event}
+         end
       end
 
       proc {ForwardToTM Event}
@@ -148,7 +150,10 @@ define
                      %% For the TMs
                      ack:           ForwardToTM
                      initRTM:       InitRTM
+                     registerRTM:   ForwardToTM
+                     rtms:          ForwardToTM
                      vote:          ForwardToTM
+                     voteAck:       ForwardToTM
                      %% For the TPs
                      brew:          Brew
                      final:         Final

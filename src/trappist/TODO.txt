@@ -1,6 +1,6 @@
-- TwoPhase Commit: Lock read items too
-
 - Paxos
 	- Manage better locks for reading
 	- Propagate final decision to participants
 
+- Bulk
+   - bulk to identifier, not only of client keys

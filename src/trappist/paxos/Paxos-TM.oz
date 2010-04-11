@@ -28,6 +28,7 @@
 
 functor
 import
+   System
    Component      at '../../corecomp/Component.ozf'
    Timer          at '../../timer/Timer.ozf'
    Utils          at '../../utils/Misc.ozf'
@@ -42,6 +43,7 @@ define
       Replica
       TheTimer
 
+      Client         % Client port to communicate final decision
       Id             % Id of the transaction manager object
       Tid            % Id of the transaction
       RepFactor      % Replication Factor
@@ -50,15 +52,18 @@ define
       Leader         % Transaction Leader
       LocalStore     % Stores involve items with their new values and operation
       Votes          % To collect votes from Transaction Participants
+      VotingPeriod   % Time to vote for TPs
+      VotingPolls    % Register time for voting
       Acks           % To collect final acknoweledgements from TPs
       Role           % Role of the TM: leader or rtm
       RTMs           % Set of replicated transaction managers rTMs
+      VotesAcks      % Collect decided items from rTMs
       TPs            % Direct reference to transaction participants
       VotedItems     % Collect items once enough votes are received 
       AckedItems     % Collect items once enough acks are received 
       Done           % Flag to know when we are done
 
-      %% --- Util functions ---
+      %% --- Util functions -------------------------------------------------
       fun lazy {GetRemote Key}
          Item
          RemoteItem
@@ -90,19 +95,178 @@ define
          {Dictionary.condGet LocalStore Key {GetRemote Key}}
       end
 
+      %% AnyMajority uses a timer to wait for all TPs instead of claiming
+      %% majority as soon as it is reached.
+      fun {AnyMajority Key}
+         fun {CountBrewed L Acc}
+            case L
+            of Vote|MoreVotes then
+               if Vote.vote == brewed then
+                  {CountBrewed MoreVotes Acc+1}
+               else
+                  {CountBrewed MoreVotes Acc}
+               end
+            [] nil then
+               Acc
+            end
+         end
+         TheVotes
+      in
+         %{System.show 'searching for any majority'}
+         TheVotes = Votes.Key
+         %{System.show TheVotes}
+         %{System.show {Dictionary.keys VotingPolls}}
+         if VotingPolls.Key == open andthen {Length TheVotes} < @RepFactor then
+            none
+         else
+            %{System.show 'closing the poll'}
+            VotingPolls.Key := close
+            %{System.show 'poll closed'}
+            if {CountBrewed TheVotes 0} > @RepFactor div 2 then
+               brewed
+            else
+               denied
+            end
+         end
+      end
+
+      proc {CheckDecision}
+         if {Length @VotedItems} == {Length {Dictionary.keys Votes}} then
+            %% Collected everything
+            if {EnoughRTMacks {Dictionary.keys VotesAcks}} then
+               FinalDecision = if {GotAllBrewed} then commit else abort end
+               Done := true
+               {SpreadDecision FinalDecision}
+            end
+         end
+      end
+
+      fun {EnoughRTMacks Keys}
+         case Keys
+         of K|MoreKeys then
+            if {Length VotesAcks.K} >= RepFactor div 2 then
+               {EnoughRTMacks MoreKeys}
+            else
+               false
+            end
+         [] nil then
+            true
+         end
+      end
+
+      fun {GotAllBrewed}
+         fun {Loop L}
+            case L
+            of Vote|MoreVotes then
+               if Vote.consensus == brewed then
+                  {Loop MoreVotes}
+               else
+                  false
+               end
+            [] nil then
+               nil
+            end
+         end
+      in
+         {Loop @VotedItems}
+      end
+
+      proc {StartValidation}
+         %% Notify all rTMs
+         for RTM in @RTMs do
+            {@MsgLayer dsend(to:RTM.ref
+                             rtms(@RTMs tid:Tid tmid:RTM.id tag:trapp))}
+         end
+         %% Initiate TPs per each item. Ask them to vote
+         for I in {Dictionary.items LocalStore} do
+            {@Replica  bulk(to:I.key brew(leader:  tm(ref:@NodeRef id:Id)
+                                          rtms:    @RTMs
+                                          tid:     Tid
+                                          item:    I
+                                          protocol:paxos
+                                          tag:     trapp
+                                          ))} 
+            Votes.(I.key)  := nil
+            Acks.(I.key)   := nil
+            TPs.(I.key)    := nil
+         end
+         %% Open VotingPolls and launch timers
+         for I in {Dictionary.items LocalStore} do
+            VotingPolls.(I.key) := open
+            {TheTimer startTrigger(@VotingPeriod timeout(I.key))}
+         end
+      end
+
+      proc {SpreadDecision Decision}
+         %% Send to the Client
+         {Port.send Client Decision}
+         %% Send to all TPs
+         for Key in {Dictionary.keys Votes} do
+            for TP in TPs.Key do
+               {@MsgLayer dsend(to:TP.ref final(decision:Decision
+                                                tid:     Tid
+                                                tpid:    TP.id
+                                                tag:     trapp
+                                                ))}
+            end
+         end
+         %% Send to all rTMs
+         for TM in @RTMs do
+            {@MsgLayer dsend(to:TM.ref setFinal(decision:Decision
+                                                tid:     Tid
+                                                tmid:    TM.id
+                                                tag:     trapp))}
+         end
+      end
+
       %% === Events =========================================================
 
       proc {Ack Event}
          skip
       end
 
-      proc {Vote Event}
-         skip
+      proc {Vote FullVote}
+         Key = FullVote.key
+         Consensus
+      in
+         Votes.Key   := FullVote | Votes.Key
+         TPs.Key     := FullVote.tp | TPs.Key
+         Consensus   = {AnyMajority Key}
+         if Consensus \= none then
+            VotedItems := vote(key:Key consensus:Consensus) | @VotedItems
+            if @Leader.id == @NodeRef.id then
+               {CheckDecision}
+            else
+               {@MsgLayer dsend(to:@Leader.ref
+                                voteAck(key:    Key
+                                        vote:   Consensus
+                                        tid:    Tid
+                                        tmid:   @Leader.id
+                                        rtm:    @NodeRef
+                                        tag:    trapp))}
+            end
+         elseif Consensus == late andthen @Leader.id == @NodeRef.id then
+            thread
+               {Wait FinalDecision}
+               {@MsgLayer dsend(to:FullVote.tp.ref
+                                final(decision: FinalDecision
+                                      tid:Tid
+                                      tpid:FullVote.tp.id
+                                      tag:trapp))}
+            end
+         end
+      end
+
+      proc {VoteAck voteAck(key:Key vote:V tid:_ tmid:_ rtm:TM tag:trapp)}
+         VotesAcks.Key := TM | VotesAcks.Key
+         if {Not @Done} then
+            {CheckDecision}
+         end
       end
 
       proc {InitRTM initRTM(leader: TheLeader
                             tid:    TransId
-                            client: Client
+                            client: TheClient
                             store:  Store
                             protocol:_
                             hkey:   _
@@ -111,10 +275,12 @@ define
          Tid         = TransId
          Leader      = {NewCell TheLeader}
          LocalStore  = Store
+         Client      = TheClient
          for I in {Dictionary.items LocalStore} do
             Votes.(I.key)  := nil
             Acks.(I.key)   := nil
             TPs.(I.key)    := nil
+            VotingPolls.(I.key) := open
          end
          {@MsgLayer dsend(to:@Leader.ref registerRTM(rtm: tm(ref:@NodeRef id:Id)
                                                      tmid:@Leader.id
@@ -122,9 +288,24 @@ define
                                                      tag: trapp))}
       end
 
+      proc {RegisterRTM registerRTM(rtm:NewRTM tmid:_ tid:_ tag:trapp)}
+         RTMs := NewRTM|@RTMs
+         if {List.length @RTMs} == @RepFactor then %% Should be RepFactor - 1
+            %% We are done with initialization. We start with validation
+            {StartValidation}
+         end
+      end
+         
+      proc {SetRTMs rtms(TheRTMs tid:_ tmid:_ tag:trapp)}
+         RTMs := TheRTMs
+         for I in {Dictionary.items LocalStore} do
+            {TheTimer startTrigger(@VotingPeriod timeout(I.key))}
+         end
+      end
+
       %% --- Operations for the client --------------------------------------
       proc {Abort abort}
-         {Port.send Args.client abort}
+         {Port.send Client abort}
          Done := true
          {Self signalDestroy}
       end
@@ -153,7 +334,7 @@ define
          {@Replica  bulk(to:@NodeRef.id initRTM(leader:  tm(ref:@NodeRef id:Id)
                                                 tid:     Tid
                                                 protocol:paxos
-                                                client:  Args.client
+                                                client:  Client
                                                 store:   LocalStore
                                                 tag:     trapp
                                                 ))} 
@@ -194,6 +375,14 @@ define
          NodeRef  := {@MsgLayer getRef($)}
       end
 
+      proc {SetVotingPeriod setVotingPeriod(Period)}
+         VotingPeriod := Period
+      end
+
+      proc {TimeoutPoll timeoutPoll(Key)}
+         VotingPolls.Key := close
+      end
+
       Events = events(
                      %% Operations for the client
                      abort:         Abort
@@ -202,6 +391,9 @@ define
                      write:         Write
                      %% Interaction with rTMs
                      initRTM:       InitRTM
+                     registerRTM:   RegisterRTM
+                     rtms:          SetRTMs
+                     voteAck:       VoteAck
                      %% Interaction with TPs
                      ack:           Ack
                      vote:          Vote
@@ -210,6 +402,8 @@ define
                      getTid:        GetTid
                      setReplica:    SetReplica
                      setMsgLayer:   SetMsgLayer
+                     setVotingPeriod:SetVotingPeriod
+                     timeoutPoll:   TimeoutPoll
                      )
    in
       local
@@ -222,13 +416,17 @@ define
       MsgLayer    = {NewCell Component.dummy}
       Replica     = {NewCell Component.dummy}      
       TheTimer    = {Timer.new}
+      {TheTimer setListener(Self)}
 
+      Client      = Args.client
       Id          = {Name.new}
       RepFactor   = {NewCell 0}
       NodeRef     = {NewCell noref}
       Votes       = {Dictionary.new}
       Acks        = {Dictionary.new}
       TPs         = {Dictionary.new}
+      VotingPolls = {Dictionary.new}
+      VotingPeriod= {NewCell 3000}
       RTMs        = {NewCell nil}
       VotedItems  = {NewCell nil}
       AckedItems  = {NewCell nil}

@@ -42,9 +42,96 @@ define
       DHTman
       TheTimer
 
-      %% --- Event --
+      Id
+      NewItem
+      Leader
+      RTMs
+
+      %% === Events =========================================================
+
+      %% --- Interaction with TPs ---
+      proc {Brew brew(hkey:   HKey
+                      leader: TheLeader
+                      rtms:   TheRTMs
+                      tid:    Tid
+                      item:   TrItem 
+                      protocol:_ 
+                      tag:trapp)}
+         Tmp
+         DHTItem
+         Vote
+      in 
+         RTMs     = TheRTMs
+         NewItem  = item(hkey:HKey item:TrItem tid:Tid)
+         Leader   = TheLeader
+         Tmp      = {@DHTman getItem(HKey TrItem.key $)}
+         DHTItem  = if Tmp == 'NOT_FOUND' then
+                        item(key:      TrItem.key
+                             value:    Tmp 
+                             version:  0
+                             readers:  nil
+                             locked:   false)
+                    else
+                       Tmp
+                    end
+         %% Brewing vote - tmid needs to be added before sending
+         Vote = vote(vote:    _
+                     key:     TrItem.key 
+                     version: DHTItem.version 
+                     tid:     Tid 
+                     tp:      tp(id:Id ref:@NodeRef)
+                     tag:     trapp)
+         if TrItem.version >= DHTItem.version andthen {Not DHTItem.locked} then
+            Vote.vote = brewed
+            {@DHTman putItem(HKey TrItem.key {AdjoinAt DHTItem locked true})}
+         else
+            Vote.vote = denied
+         end
+         {@MsgLayer dsend(to:Leader.ref {Record.adjoinAt Vote tmid Leader.id})}
+         for TM in RTMs do
+            {@MsgLayer dsend(to:TM.ref {Record.adjoinAt Vote tmid TM.id})}
+         end
+      end
+
+      proc {Abort abort}
+/*
+         DHTItem
+      in
+         DHTItem = {@DHTman getItem(NewItem.hkey NewItem.item.key $)}
+         {PutItemAndAck NewItem.hkey NewItem.item.key DHTItem}
+*/
+         skip
+      end
+
+      proc {Commit commit}
+         skip
+%         {PutItemAndAck NewItem.hkey NewItem.item.key NewItem.item}
+      end
+
+      %% --- Various --------------------------------------------------------
+
+      proc {GetId getId(I)}
+         I = Id
+      end
+
+      proc {SetDHT setDHT(ADHT)}
+         DHTman := ADHT
+      end
+
+      proc {SetMsgLayer setMsgLayer(AMsgLayer)}
+         MsgLayer := AMsgLayer
+         NodeRef  := {@MsgLayer getRef($)}
+      end
 
       Events = events(
+                     %% Interaction with TM
+                     brew:          Brew
+                     abort:         Abort
+                     commit:        Commit
+                     %% Various
+                     getId:         GetId
+                     setDHT:        SetDHT
+                     setMsgLayer:   SetMsgLayer
                      )
    in
       local
@@ -57,6 +144,9 @@ define
       MsgLayer = {NewCell Component.dummy}
       DHTman   = {NewCell Component.dummy}      
       TheTimer = {Timer.new}
+
+      Id       = {Name.new}
+      NodeRef  = {NewCell noref}
 
       Self
    end
