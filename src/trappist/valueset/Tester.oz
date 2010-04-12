@@ -7,9 +7,9 @@ import
    Application
    Property
    System
-   Network        at '../network/Network.ozf'
-   PbeerMaker     at '../pbeer/Pbeer.ozf'
-   Utils          at '../utils/Misc.ozf'
+   Network        at '../../network/Network.ozf'
+   PbeerMaker     at '../../pbeer/Pbeer.ozf'
+   Utils          at '../../utils/Misc.ozf'
 
 define
    SIZE  = 42
@@ -20,6 +20,9 @@ define
    MaxKey
    Pbeers
    NetRef
+
+   MyPort
+   MyStream
 
    proc {CreateNetwork}
       %{System.show 'first line'}
@@ -79,20 +82,20 @@ define
 
    proc {Add Key Val}
       {System.show 'Going to add'#Val#'to set'#Key}
-      {MasterOfPuppets singleAdd(Key Val)}
+      {MasterOfPuppets add(Key Val MyPort)}
    end
 
    proc {Remove Key Val}
       {System.show 'Going to remove'#Val#'from set'#Key}
-      {MasterOfPuppets singleRemove(Key Val)}
+      {MasterOfPuppets remove(Key Val MyPort)}
    end
 
    proc {ReadSet Key}
       Val
    in
-      {MasterOfPuppets singleReadSet(Key Val)}
+      {MasterOfPuppets readSet(Key Val)}
       {Wait Val}
-      {System.show 'Set'#Key#'is:'#Val}
+      {System.show '\\\\\\\\\\\\\\\\\\ Set'#Key#'is:'#Val}
    end
 
    %% For feedback
@@ -166,22 +169,28 @@ define
       {Add chicos foo}
       {Add chicos flets}
       {Add chicos ina}
+      {Wait MyStream.2.2.1}
       {ReadSet chicos}
       {ReadSet chicas}
       {Remove chicos foo}
       {Remove chicos nada}
       {Remove chicas foo}
+      {Wait MyStream.2.2.2.2.2.1}
+      {System.show 'until now'#MyStream}
       {ReadSet chicos}
       {ReadSet chicas}
       {Add chicos gatos(foo flets)}
       {Add chicos ina}
+      {Wait MyStream.2.2.2.2.2.2.2.1}
       {ReadSet chicos}
       {Add chicos foo}
+      {Delay 1000}
       {ReadSet chicos}
       {Remove chicos gatos(foo flets)}
       {Remove chicos ina}
       {Remove chicos foo}
       {Remove chicos flets}
+      {Wait MyStream.2.2.2.2.2.2.2.2.2.2.2.2.1}
       {ReadSet chicos}
       {Add chicos foo}
       {Add chicos flets}
@@ -189,6 +198,7 @@ define
       {Get chicos}
       {Put chicos nil}
       {Get chicos}
+      {Delay 1000}
       {ReadSet chicos}
    end
 
@@ -200,6 +210,8 @@ in
 
    {Property.put 'print.width' 1000}
    {Property.put 'print.depth' 1000}
+
+   MyPort = {NewPort MyStream}
 
    %% Defining input arguments
    Args = try
@@ -243,5 +255,6 @@ in
       {HelpMessage}
    end
 
+   {System.show "The Stream: "#MyStream}
    {Application.exit 0}
 end

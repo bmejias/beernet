@@ -54,6 +54,7 @@
 functor
 import
    Component   at '../corecomp/Component.ozf'
+   HashedList  at '../utils/HashedList.ozf'
    Utils       at '../utils/Misc.ozf'
    SimpleDB    at 'SimpleDB.ozf'
 export
@@ -73,36 +74,6 @@ define
       NodeRef
 
       %% === Auxiliar functions =============================================
-
-      fun {AddToList L X HX}
-         case L
-         of Val|MoreValues then
-            if HX < Val.hash then
-               v(value:X hash:HX)|L
-            elseif X == Val.value then
-               L
-            else
-               Val|{AddToList MoreValues X HX}
-            end
-         [] nil then
-            [v(value:X hash:HX)]
-         end
-      end
-
-      fun {RemoveFromList L X HX}
-         case L
-         of Val|MoreValues then
-            if X == Val.value then
-               MoreValues
-            elseif HX < Val.hash then
-               L
-            else
-               Val|{RemoveFromList MoreValues X HX}
-            end
-         [] nil then
-            nil
-         end
-      end
 
       fun {NextGid}
          OldGid NewGid
@@ -224,7 +195,8 @@ define
          {@DB put(HKey Key Val)}
       end
 
-      proc {AddToSet addToSet(HKey Key Val tag:dht)}
+      proc {AddToSet Event}
+         addToSet(HKey Key Val ...) = Event
          Set
          HVal
       in
@@ -233,19 +205,24 @@ define
          if Set == SimpleDB.noValue then
             {@DB put(HKey Key [v(value:Val hash:HVal)])}
          else
-            {@DB put(HKey Key {AddToList Set Val HVal})}
+            {@DB put(HKey Key {HashedList.add Set Val HVal})}
          end
       end
 
-      proc {RemoveFromSet removeFromSet(HKey Key Val tag:dht)}
+      proc {RemoveFromSet Event}
+         removeFromSet(HKey Key Val ...) = Event
          Set
          HVal
       in
          Set   = {@DB get(HKey Key $)}
          HVal  = {Utils.hash Val @MaxKey}
          if Set \= SimpleDB.noValue then
-            {@DB put(HKey Key {RemoveFromList Set Val HVal})}
+            {@DB put(HKey Key {HashedList.remove Set Val HVal})}
          end
+      end
+
+      proc {ReadLocalSet readLocalSet(HKey Key Val)}
+         {ValueHandle.set Val {GetItem getItem(HKey Key $)}}
       end
 
       %% --- Component Setters ----------------------------------------------
@@ -279,6 +256,7 @@ define
                      needItemBack:  NeedItemBack
                      putItem:       PutItem
                      removeFromSet: RemoveFromSet
+                     readLocalSet:  ReadLocalSet
                      %% Setters
                      setDB:         SetDB
                      setMaxKey:     SetMaxKey

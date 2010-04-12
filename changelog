@@ -1,4 +1,5 @@
 Beernet-0.7
+	- Trappist provides add/remove/read set operations (alfa)
 	- Trappist provides Paxos Consensus Algorithm
 	- Trappist provides Two-Phase Commit
 	- DHT supports basic set operations: add(k v), remove(k v), readSet(k)

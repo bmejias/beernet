@@ -85,12 +85,13 @@ define
          NewGid
       end
 
-      proc {RegisterRead Key Val Type}
+      proc {RegisterRead Key Val Type GetType}
          NewGid
       in
          NewGid   = {NextGid}
          Gvars.NewGid := data(var:Val tries:0 state:waiting type:Type)
-         {Bulk bulk(read(Key id:NewGid src:@NodeRef tag:symrep) to:Key)}
+         {Bulk bulk(to:Key
+                    read(Key id:NewGid src:@NodeRef get:GetType tag:symrep))}
          {TheTimer startTrigger(@Timeout timeout(NewGid) Self)}
       end
 
@@ -165,21 +166,29 @@ define
       end
 
       proc {GetOne getOne(Key ?Val)}
-         {RegisterRead Key Val first}
+         {RegisterRead Key Val first getItem}
       end
 
       proc {GetAll getAll(Key ?Vals)}
-         {RegisterRead Key Vals all}
+         {RegisterRead Key Vals all getItem}
       end
 
       proc {GetMajority getMajority(Key ?Vals)}
-         {RegisterRead Key Vals major}
+         {RegisterRead Key Vals major getItem}
       end
 
-      proc {Read read(Key id:Gid src:Src hkey:HKey tag:symrep)}
+      proc {GetOneSet getOneSet(Key ?Val)}
+         {RegisterRead Key Val first readLocalSet}
+      end
+
+      proc {GetMajoritySet getMajoritySet(Key ?Vals)}
+         {RegisterRead Key Vals major readLocalSet}
+      end
+
+      proc {Read read(Key id:Gid src:Src hkey:HKey get:GetType tag:symrep)}
          Val
       in
-         {@DHTman getItem(HKey Key Val)}
+         {@DHTman GetType(HKey Key Val)}
          {@MsgLayer dsend(to:Src readBack(value:Val gid:Gid tag:symrep))}
       end
 
@@ -228,6 +237,8 @@ define
                      getFactor:     GetFactor
                      getMajority:   GetMajority
                      getReplicaKeys:GetReplicaKeys
+                     getOneSet:     GetOneSet
+                     getMajoritySet:GetMajoritySet
                      read:          Read
                      readBack:      ReadBack
                      setDHT:        SetDHT

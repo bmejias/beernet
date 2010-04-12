@@ -95,13 +95,17 @@ define
       %% --- Trappist API for Key/Value-Sets --------------------------------
       %% Slightly different that Run Transaction
       proc {ToValueSet Event}
-         TM
+         TM OpEvent Op ClientP
       in
-         TM = {TMmakers.valueset.new args(role:leader client:none)}
+         TM = {TMmakers.valueset.new args(role:leader)}
          {TM setMsgLayer(@MsgLayer)}
          {TM setReplica(@Replica)}
          {AddTransObj TMs {TM getTid($)} {TM getId($)} TM}
-         {TM Event}
+         %% Add default client before calling the TM
+         Op       = {Label Event}
+         ClientP  = if {HasFeature Event 3} then Event.3 else {NewPort _} end
+         OpEvent  = Op(key:Event.1 val:Event.2 client:ClientP)
+         {TM OpEvent}
       end
 
       %% --- For the TMs ----------------------------------------------------

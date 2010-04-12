@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------
  *
- * Paxos-TP.oz
+ * ValueSet-TP.oz
  *
- *    Transaction Participant for the Paxos Consensus Commit Protocol    
+ *    Transaction Participant for the Key/Value-Set abstraction   
  *
  * LICENSE
  *
@@ -18,9 +18,9 @@
  *
  * NOTES
  *
- *    Implementation of transaction participant (TP) role on the paxos
- *    consensus algorithm. This is one of the replicas of the protocol. If the
- *    majority of TPs survives the transaction, the transaction will finish. 
+ *    Implementation of transaction participant (TP) role on the key/value-set
+ *    protocol, which also uses consensus, as in Paxos, but it does not lock
+ *    the value-sets.
  *    
  *-------------------------------------------------------------------------
  */
@@ -40,9 +40,38 @@ define
       DHTman
 
       Id
-      NewItem
+      NewOp
       Leader
       RTMs
+
+      %% === Auxiliar Functions =============================================
+      local
+         Ok    = ok(add:1 remove:~1)
+         Tmp   = tmp(add:tmp(add:conflict remove:not_found)
+                     remove:tmp(add:duplicated remove:conflict))
+         Final = ok(0:ok(add:brewed remove:not_found)
+                    1:ok(add:duplicated remove:brewed))
+         fun {DecisionLoop Ops NewOp State}
+            case Ops
+            of Op|MoreOps then
+               if Op.val == NewOp.val then
+                  if Op.status == tmp then
+                     Tmp.(Op.op).(NewOp.op)
+                  else
+                     {DecisionLoop MoreOps NewOp (State + Ok.(Op.op))}
+                  end
+               else
+                  {DecisionLoop MoreOps NewOp State}
+               end
+            [] nil then
+               Final.State.(NewOp.op)
+            end
+         end
+      in
+         fun {DecideVote Set NewOp}
+            {DecisionLoop {Record.toList Set} NewOp 0}
+         end
+      end
 
       %% === Events =========================================================
 
@@ -51,38 +80,25 @@ define
                       leader: TheLeader
                       rtms:   TheRTMs
                       tid:    Tid
-                      item:   TrItem 
+                      item:   op(id:OpId op:Op val:Val key:Key)
                       protocol:_ 
                       tag:trapp)}
-         Tmp
-         DHTItem
+         DHTSet
          Vote
       in 
          RTMs     = TheRTMs
-         NewItem  = item(hkey:HKey item:TrItem tid:Tid)
+         NewOp    = op(hkey:HKey id:OpId op:Op val:Val key:Key)
          Leader   := TheLeader
-         Tmp      = {@DHTman getItem(HKey TrItem.key $)}
-         DHTItem  = if Tmp == 'NOT_FOUND' then
-                        item(key:      TrItem.key
-                             value:    Tmp 
-                             version:  0
-                             readers:  nil
-                             locked:   false)
-                    else
-                       Tmp
-                    end
+         DHTSet   = {@DHTman readLocalSet(HKey Key $)}
          %% Brewing vote - tmid needs to be added before sending
-         Vote = vote(vote:    _
-                     key:     TrItem.key 
-                     version: DHTItem.version 
+         Vote = vote(vote:    {DecideVote DHTSet NewOp}
+                     key:     Key 
+                     version: 0
                      tid:     Tid 
                      tp:      tp(id:Id ref:@NodeRef)
                      tag:     trapp)
-         if TrItem.version >= DHTItem.version andthen {Not DHTItem.locked} then
-            Vote.vote = brewed
-            {@DHTman putItem(HKey TrItem.key {AdjoinAt DHTItem locked true})}
-         else
-            Vote.vote = denied
+         if Vote.vote == brewed then
+            {@DHTman addToSet(HKey Key {AdjoinAt NewOp status tmp})}
          end
          {@MsgLayer dsend(to:@Leader.ref 
                           {Record.adjoinAt Vote tmid @Leader.id})}
@@ -92,23 +108,19 @@ define
       end
 
       proc {Abort abort}
-         DHTItem
-      in
-         DHTItem = {@DHTman getItem(NewItem.hkey NewItem.item.key $)}
-         {PutItemAndAck NewItem.hkey NewItem.item.key DHTItem}
+         {@DHTman removeFromSet(NewOp.hkey
+                                NewOp.key 
+                                {AdjoinAt NewOp status tmp})}
       end
 
       proc {Commit commit}
-         {PutItemAndAck NewItem.hkey NewItem.item.key NewItem.item}
-      end
-
-      proc {PutItemAndAck HKey Key Item}
-         {@DHTman  putItem(HKey Key {Record.adjoinAt Item locked false})}
-         {@MsgLayer dsend(to:@Leader.ref ack(key: Key
-                                             tid: NewItem.tid
-                                             tmid:@Leader.id
-                                             tp:  tp(id:Id ref:@NodeRef)
-                                             tag: trapp))}
+         {@DHTman removeFromSet(NewOp.hkey
+                                NewOp.key
+                                {AdjoinAt NewOp status tmp})}
+         {@DHTman addToSet(NewOp.hkey NewOp.key op(id:NewOp.id
+                                                   op:NewOp.op
+                                                   val:NewOp.val
+                                                   status:ok))}
       end
 
       %% --- Various --------------------------------------------------------
