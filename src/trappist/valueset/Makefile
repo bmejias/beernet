@@ -1,5 +1,5 @@
 MAKE=make
-SRCS=Participant Manager
+SRCS=ValueSet-TM ValueSet-TP
 
 all: $(foreach source, $(SRCS), src_$(source))
 

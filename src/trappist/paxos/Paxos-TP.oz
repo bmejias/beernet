@@ -28,19 +28,16 @@
 functor
 import
    Component      at '../../corecomp/Component.ozf'
-   Timer          at '../../timer/Timer.ozf'
-   Utils          at '../../utils/Misc.ozf'
 export
    New
 define
 
    fun {New CallArgs}
       Self
-      Listener
+      %Listener
       MsgLayer
       NodeRef
       DHTman
-      TheTimer
 
       Id
       NewItem
@@ -146,11 +143,10 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
-         Listener = FullComponent.listener
+         %Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
       DHTman   = {NewCell Component.dummy}      
-      TheTimer = {Timer.new}
 
       Id       = {Name.new}
       NodeRef  = {NewCell noref}

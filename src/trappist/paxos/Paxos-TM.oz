@@ -28,10 +28,8 @@
 
 functor
 import
-   System
    Component      at '../../corecomp/Component.ozf'
    Timer          at '../../timer/Timer.ozf'
-   Utils          at '../../utils/Misc.ozf'
 export
    New
 define
@@ -60,7 +58,7 @@ define
       VotesAcks      % Collect decided items from rTMs
       TPs            % Direct reference to transaction participants
       VotedItems     % Collect items once enough votes are received 
-      AckedItems     % Collect items once enough acks are received 
+      %AckedItems     % Collect items once enough acks are received 
       Done           % Flag to know when we are done
 
       %% --- Util functions -------------------------------------------------
@@ -253,7 +251,7 @@ define
          end
       end
 
-      proc {VoteAck voteAck(key:Key vote:V tid:_ tmid:_ rtm:TM tag:trapp)}
+      proc {VoteAck voteAck(key:Key vote:_ tid:_ tmid:_ rtm:TM tag:trapp)}
          VotesAcks.Key := TM | VotesAcks.Key
          if {Not @Done} then
             {CheckDecision}
@@ -435,7 +433,7 @@ define
       VotingPeriod= {NewCell 3000}
       RTMs        = {NewCell nil}
       VotedItems  = {NewCell nil}
-      AckedItems  = {NewCell nil}
+      %AckedItems  = {NewCell nil}
       Done        = {NewCell false}
       Role        = {NewCell Args.role}
       if @Role == leader then

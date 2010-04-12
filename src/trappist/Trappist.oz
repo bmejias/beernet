@@ -26,7 +26,7 @@
 
 functor
 import
-   System
+%   System
    Component      at '../corecomp/Component.ozf'
    EagerPaxosTM   at 'eagerpaxos/EagerPaxos-TM.ozf'
    EagerPaxosTP   at 'eagerpaxos/EagerPaxos-TP.ozf'

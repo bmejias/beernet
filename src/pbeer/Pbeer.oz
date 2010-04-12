@@ -38,7 +38,7 @@
 
 functor
 import
-   System
+%   System
    Board          at '../corecomp/Board.ozf'
    Component      at '../corecomp/Component.ozf'
    RelaxedRing    at '../son/relaxed-ring/Node.ozf'
@@ -112,6 +112,20 @@ define
          {@MsgLayer Event}
       end
      
+      %% --- Forwarding to DHT with different event name --------------------
+      proc {SingleAdd Event}
+         {@DHT {Record.adjoinList add {Record.toListInd Event}}}
+      end
+
+      proc {SingleRemove Event}
+         {@DHT {Record.adjoinList remove {Record.toListInd Event}}}
+      end
+
+      proc {SingleReadSet Event}
+         {@DHT {Record.adjoinList readSet {Record.toListInd Event}}}
+      end
+      %% --- end forward to DHT with different event name -------------------
+
       ToNode      = {Utils.delegatesTo Node}
       ToDHT       = {Utils.delegatesTo DHT}
       ToReplica   = {Utils.delegatesTo Replica}
@@ -141,9 +155,9 @@ define
                      delete:           ToDHT
                      get:              ToDHT
                      put:              ToDHT
-                     add:              ToDHT
-                     remove:           ToDHT
-                     readSet:          ToDHT
+                     singleAdd:        SingleAdd
+                     singleRemove:     SingleRemove
+                     singleReadSet:    SingleReadSet
                      %% Replication events
                      bulk:             ToReplica
                      getOne:           ToReplica
@@ -153,6 +167,9 @@ define
                      becomeReader:     ToTrappist
                      getLocks:         ToTrappist
                      runTransaction:   ToTrappist
+                     add:              ToTrappist
+                     remove:           ToTrappist
+                     readSet:          ToTrappist
                      )
 
    in
