@@ -70,7 +70,9 @@ define
          TransDict.Tid := {Record.adjoinAt TheObjs ObjId Obj}
       end
 
-      %% --- Events ---
+      %% === Events =========================================================
+
+      %% --- Trappist API ---------------------------------------------------
 
       proc {BecomeReader Event}
          skip
@@ -90,7 +92,19 @@ define
          {Trans TM}
       end
 
-      %% --- For the TMs ---
+      %% --- Trappist API for Key/Value-Sets --------------------------------
+      %% Slightly different that Run Transaction
+      proc {ToValueSet Event}
+         TM
+      in
+         TM = {TMmakers.valueset.new args(role:leader client:none)}
+         {TM setMsgLayer(@MsgLayer)}
+         {TM setReplica(@Replica)}
+         {AddTransObj TMs {TM getTid($)} {TM getId($)} TM}
+         {TM Event}
+      end
+
+      %% --- For the TMs ----------------------------------------------------
       proc {InitRTM Event}
          initRTM(client:Client protocol:Protocol tid:Tid ...) = Event
          RTM
@@ -108,7 +122,7 @@ define
          {TMs.(Event.tid).(Event.tmid) Event}
       end 
 
-      %% --- For the TPs ---
+      %% --- For the TPs ----------------------------------------------------
       proc {Brew Event}
          brew(tid:Tid protocol:Protocol ...) = Event
          TP
@@ -147,6 +161,10 @@ define
                      becomeReader:  BecomeReader
                      getLocks:      GetLocks
                      runTransaction:RunTransaction
+                     %% Directly to Key/Value-Sets
+                     add:           ToValueSet
+                     remove:        ToValueSet
+                     readSet:       ToValueSet
                      %% For the TMs
                      ack:           ForwardToTM
                      initRTM:       InitRTM
