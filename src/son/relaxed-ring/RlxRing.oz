@@ -83,6 +83,8 @@ define
       %Logger      % Component to log every sent and received message
       Timer       % Component to rigger some events after the requested time
 
+      FirstAck    % One shoot acknowledgement for first join
+
       fun {AddToList Peer L}
          {RingList.add Peer L @SelfRef.id MaxKey}
       end
@@ -369,6 +371,7 @@ define
             {RingList.forAll @SuccList proc {$ Pbeer}
                                           {@FingerTable monitor(Pbeer)}
                                        end}
+            FirstAck = unit
          end
          if {BelongsTo NewPred.id @Pred.id @SelfRef.id} then
             {Zend NewPred newSucc(newSucc:@SelfRef succList:@SuccList)}
@@ -516,6 +519,10 @@ define
       Timer = {TimerMaker.new}
       ComLayer = {NewCell {Network.new}}
       {@ComLayer setListener(Self)}
+
+      if {HasFeature Args firstAck} then
+         FirstAck = Args.firstAck
+      end
 
       if {HasFeature Args maxKey} then
          MaxKey = Args.maxKey
