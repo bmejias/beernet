@@ -279,7 +279,7 @@ define
          fun {Remove L E}
             case L
             of H|T then
-               {System.show '---------------------- comparing '#H#E}
+               %{System.show '---------------------- comparing '#H#E}
                if H==E then
                   T
                else
@@ -307,8 +307,8 @@ define
       in
          [Adds Rems] = {FilterSets Sets}
          AddedValues = {AddValues Adds}
-         {System.show '****** Added:'#AddedValues}
-         {System.show '****** Removing:'#Rems}
+         %{System.show '****** Added:'#AddedValues}
+         %{System.show '****** Removing:'#Rems}
          {RemoveAndBuild AddedValues Rems}
       end
 

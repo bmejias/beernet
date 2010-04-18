@@ -226,7 +226,7 @@ define
          Gvar
       in
          Gvar = {Dictionary.condGet Gvars AGid var(var:_)}
-         Gvar.var = 'NOT FOUND'
+         Gvar.var = 'NOT_FOUND'
          {Dictionary.remove Gvars AGid}
       end
 
@@ -262,7 +262,7 @@ define
 
       Args     = {Utils.addDefaults CallArgs def(maxKey:    666
                                                  repFactor: 4
-                                                 timeout:   1000)}
+                                                 timeout:   7000)}
       MaxKey   = {NewCell Args.maxKey}
       Factor   = {NewCell Args.repFactor}
       Timeout  = {NewCell Args.timeout}
