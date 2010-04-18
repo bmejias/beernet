@@ -181,7 +181,11 @@ define
          Self     = FullComponent.trigger
          %Listener = FullComponent.listener
       end
-      Node     = {NewCell {RelaxedRing.new args}} 
+      if {HasFeature Args firstAck} then
+         Node     = {NewCell {RelaxedRing.new args(firstAck:Args.firstAck)}} 
+      else
+         Node     = {NewCell {RelaxedRing.new args}}
+      end
       MsgLayer = {NewCell {TheMsgLayer.new args}}
       Trappist = {NewCell {TransLayer.new args}}
       local
