@@ -23,6 +23,7 @@ functor
 import
    OS
 export
+   SetSeed
    Urand
    UrandNoBounds
    UrandInt
@@ -33,6 +34,12 @@ define
       RMax
       {OS.randLimits RMin RMax}
    in
+
+      %% Set seed using process id
+      proc {SetSeed}
+         {OS.srand {OS.getPID}}
+      end
+
       %% Returns a uniform random number [0,1]
       fun {Urand}
           {Int.toFloat {OS.rand} - RMin} / {Int.toFloat RMax - RMin}

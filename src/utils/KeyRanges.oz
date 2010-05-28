@@ -34,6 +34,10 @@ export
    Log
 define
 
+   %% Use process id to seed the random numbers, but do it only once.
+   %% So, if the pbeer is not alone, it is worng to reset the seed.
+   OnlyPbeer = {NewCell true}
+
    %% Check if a Key is in between From and To considering circular ranges
    fun {BelongsTo Key From To}
       if From < To then
@@ -50,6 +54,14 @@ define
 
    %% Random Key generator
    fun {GetRandomKey NetworkSize}
+      State
+      NewState
+   in
+      State = OnlyPbeer := NewState
+      if State then
+         {Random.setSeed}
+      end
+      NewState = false
       {Random.urandInt 0 NetworkSize}
    end
 

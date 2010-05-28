@@ -36,7 +36,6 @@
 
 functor
 import
-   OS
    System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'   
