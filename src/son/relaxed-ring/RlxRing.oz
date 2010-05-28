@@ -36,6 +36,7 @@
 
 functor
 import
+   OS
    System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'   
@@ -63,7 +64,7 @@ define
    end
 
    %% --- Exported ---
-   fun {New Args}
+   fun {New CallArgs}
       Crashed     % List of crashed peers
       LogMaxKey   % Frequently used value
       MaxKey      % Maximum value for a key
@@ -83,6 +84,7 @@ define
       %Logger      % Component to log every sent and received message
       Timer       % Component to rigger some events after the requested time
 
+      Args
       FirstAck    % One shoot acknowledgement for first join
 
       fun {AddToList Peer L}
@@ -520,16 +522,10 @@ define
       ComLayer = {NewCell {Network.new}}
       {@ComLayer setListener(Self)}
 
-      if {HasFeature Args firstAck} then
-         FirstAck = Args.firstAck
-      end
-
-      if {HasFeature Args maxKey} then
-         MaxKey = Args.maxKey
-      else
-         MaxKey = MAX_KEY
-      end
-      LogMaxKey = {Float.toInt {Float.log {Int.toFloat MaxKey+1}}}
+      Args        = {Utils.addDefaults CallArgs def(firstAck:_ maxKey:MAX_KEY)}
+      FirstAck    = Args.firstAck
+      MaxKey      = Args.maxKey
+      LogMaxKey   = {Float.toInt {Float.log {Int.toFloat MaxKey+1}}}
 
       %% Peer State
       if {HasFeature Args id} then

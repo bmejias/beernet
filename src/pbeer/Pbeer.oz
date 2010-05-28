@@ -52,7 +52,7 @@ export
 define
    
    fun {New Args}
-      %Listener % Component's listener
+      Listener % Component's listener
       Node     % Node implementing the behaviour
       DHT      % DHT functionality
       MsgLayer % Reliable messaging layer
@@ -68,6 +68,8 @@ define
 
       proc {Any Event}
          %% Messages comming from the MsgLayer
+         %% Mainly used by the application.
+         {@Listener Event}
          {Port.send Inbox Event}
       end
 
@@ -133,7 +135,7 @@ define
       %ToMsgLayer  = {DelegatesTo MsgLayer}
 
       Events = events(
-                     %any:              Any
+                     any:              Any
                      broadcast:        Broadcast
                      getFullRef:       ToNode
                      getId:            ToNode
@@ -179,13 +181,9 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
-         %Listener = FullComponent.listener
+         Listener = FullComponent.listener
       end
-      if {HasFeature Args firstAck} then
-         Node     = {NewCell {RelaxedRing.new args(firstAck:Args.firstAck)}} 
-      else
-         Node     = {NewCell {RelaxedRing.new args}}
-      end
+      Node     = {NewCell {RelaxedRing.new args}}
       MsgLayer = {NewCell {TheMsgLayer.new args}}
       Trappist = {NewCell {TransLayer.new args}}
       local
