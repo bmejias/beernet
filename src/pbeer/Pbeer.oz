@@ -38,7 +38,7 @@
 
 functor
 import
-%   System
+   System
    Board          at '../corecomp/Board.ozf'
    Component      at '../corecomp/Component.ozf'
    RelaxedRing    at '../son/relaxed-ring/Node.ozf'
@@ -69,6 +69,7 @@ define
       proc {Any Event}
          %% Messages comming from the MsgLayer
          %% Mainly used by the application.
+         {System.showInfo "Got "#Event#" to be sent to "#Listener}
          {@Listener Event}
          {Port.send Inbox Event}
       end
@@ -183,7 +184,7 @@ define
          Self     = FullComponent.trigger
          Listener = FullComponent.listener
       end
-      Node     = {NewCell {RelaxedRing.new args}}
+      Node     = {NewCell {RelaxedRing.new Args}}
       MsgLayer = {NewCell {TheMsgLayer.new args}}
       Trappist = {NewCell {TransLayer.new args}}
       local
