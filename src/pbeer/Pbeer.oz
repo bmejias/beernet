@@ -69,7 +69,7 @@ define
       proc {Any Event}
          %% Messages comming from the MsgLayer
          %% Mainly used by the application.
-         {System.showInfo "Got "#Event#" to be sent to "#Listener}
+         %{System.showInfo "Got "#Event#" to be sent to "#Listener}
          {@Listener Event}
          {Port.send Inbox Event}
       end

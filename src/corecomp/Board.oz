@@ -79,9 +79,13 @@ define
             TargetSubscribers
          in
             if {HasFeature AnyEvent tag} then
-               TargetSubscribers = {Dictionary.condGet Subscribers
-                                                       AnyEvent.tag
-                                                       nil}
+               SubsToTag = {Dictionary.condGet Subscribers AnyEvent.tag nil}
+            in
+               if SubsToTag == nil then
+                  TargetSubscribers = Subscribers.notag
+               else
+                  TargetSubscribers = SubsToTag
+               end
             else
                TargetSubscribers = Subscribers.notag
             end
