@@ -38,7 +38,6 @@
 
 functor
 import
-   System
    Board          at '../corecomp/Board.ozf'
    Component      at '../corecomp/Component.ozf'
    RelaxedRing    at '../son/relaxed-ring/Node.ozf'

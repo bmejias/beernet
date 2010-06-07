@@ -261,21 +261,21 @@ define
       proc {InitRTM initRTM(leader: TheLeader
                             tid:    TransId
                             client: TheClient
-                            store:  Store
+                            store:  StoreEntries
                             protocol:_
                             hkey:   _
                             tag:    trapp
                             )}
          Tid         = TransId
          Leader      = {NewCell TheLeader}
-         LocalStore  = Store
          Client      = TheClient
-         for I in {Dictionary.items LocalStore} do
-            Votes.(I.key)  := nil
-            Acks.(I.key)   := nil
-            TPs.(I.key)    := nil
-            VotesAcks.(I.key) := nil
-            VotingPolls.(I.key) := open
+         for Key#I in StoreEntries do
+            LocalStore.Key       := I
+            Votes.(I.key)        := nil
+            Acks.(I.key)         := nil
+            TPs.(I.key)          := nil
+            VotesAcks.(I.key)    := nil
+            VotingPolls.(I.key)  := open
          end
          {@MsgLayer dsend(to:@Leader.ref registerRTM(rtm: tm(ref:@NodeRef id:Id)
                                                      tmid:@Leader.id
@@ -330,13 +330,14 @@ define
       * - Propagate decision to TPs
       */
 
-         {@Replica  bulk(to:@NodeRef.id initRTM(leader:  @Leader
-                                                tid:     Tid
-                                                protocol:paxos
-                                                client:  Client
-                                                store:   LocalStore
-                                                tag:     trapp
-                                                ))} 
+         {@Replica bulk(to:@NodeRef.id 
+                        initRTM( leader:  @Leader
+                                 tid:     Tid
+                                 protocol:paxos
+                                 client:  Client
+                                 store:   {Dictionary.entries LocalStore}
+                                 tag:     trapp
+                                 ))} 
       end
 
       proc {Read read(Key ?Val)}
@@ -436,9 +437,9 @@ define
       %AckedItems  = {NewCell nil}
       Done        = {NewCell false}
       Role        = {NewCell Args.role}
+      LocalStore  = {Dictionary.new}
       if @Role == leader then
          Tid         = {Name.new}
-         LocalStore  = {Dictionary.new}
          Leader      = {NewCell noref}
       end
 

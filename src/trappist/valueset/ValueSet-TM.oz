@@ -27,7 +27,6 @@
 
 functor
 import
-   System
    Component      at '../../corecomp/Component.ozf'
    HashedList     at '../../utils/HashedList.ozf'
    Utils          at '../../utils/Misc.ozf'
