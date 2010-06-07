@@ -330,8 +330,8 @@ define
       * - Propagate decision to TPs
       */
 
-         {@Replica bulk(to:@NodeRef.id 
-                        initRTM( leader:  @Leader
+         {@Replica  bulk(to:@NodeRef.id 
+                         initRTM(leader:  @Leader
                                  tid:     Tid
                                  protocol:paxos
                                  client:  Client
