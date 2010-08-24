@@ -330,14 +330,14 @@ define
       * - Propagate decision to TPs
       */
 
-         {@Replica  bulk(to:@NodeRef.id 
-                         initRTM(leader:  @Leader
-                                 tid:     Tid
-                                 protocol:paxos
-                                 client:  Client
-                                 store:   {Dictionary.entries LocalStore}
-                                 tag:     trapp
-                                 ))} 
+         {@Replica  quickBulk(to:@NodeRef.id 
+                              initRTM(leader:  @Leader
+                                      tid:     Tid
+                                      protocol:paxos
+                                      client:  Client
+                                      store:   {Dictionary.entries LocalStore}
+                                      tag:     trapp
+                                      ))} 
       end
 
       proc {Read read(Key ?Val)}

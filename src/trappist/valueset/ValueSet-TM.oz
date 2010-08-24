@@ -463,14 +463,14 @@ define
          Val   = Event.val
          Client= Event.client
          LocalStore.Key := op(key:Key id:{Name.new} op:Op val:Val)
-         {@Replica  bulk(to:@NodeRef.id
-                         initRTM(leader:  @Leader
-                                 tid:     Tid
-                                 protocol:valueset
-                                 client:  Client
-                                 store:   {Dictionary.entries LocalStore}
-                                 tag:     trapp
-                                 ))}
+         {@Replica  quickBulk(to:@NodeRef.id
+                              initRTM(leader:  @Leader
+                                      tid:     Tid
+                                      protocol:valueset
+                                      client:  Client
+                                      store:   {Dictionary.entries LocalStore}
+                                      tag:     trapp
+                                      ))}
       end
 
       proc {ReadSet readSet(key:Key val:Val client:_)}

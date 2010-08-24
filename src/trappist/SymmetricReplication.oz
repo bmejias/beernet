@@ -75,6 +75,8 @@ define
       Factor   % Replication factor
       Gvars
       Gid
+      RSet     % ReplicaSet
+      RSetOK   % True if RSet is ready to be used
       Timeout
 
       fun {NextGid}
@@ -142,6 +144,25 @@ define
 
       %% --- Events ---
 
+      proc {QuickBulk quickBulk(Msg to:Key)}
+         DoBulk
+      in
+         if @RSetOK then 
+            DoBulk = BulkToRSet
+         else
+            DoBulk = Bulk
+         end
+         {DoBulk bulk(Msg to:Key)}
+      end
+
+      %% Optimization to bulk to a more stable replica set
+      proc {BulkToRSet bulk(Msg to:_/*Key*/)}
+         for Replica in @RSet do
+            {@MsgLayer dsend(to:Replica Msg)}
+         end
+      end
+
+      %% Bulk message using overlay's routing (logarithmic)
       proc {Bulk bulk(Msg to:Key)}
          RepKeys
       in
@@ -151,6 +172,10 @@ define
          end
       end
 
+      proc {FindRSet}
+         {Bulk bulk(to:@NodeRef.id giveMeYourRef(src:@NodeRef tag:symrep))}
+      end
+      
       proc {GetFactor getFactor(F)}
          F = @Factor
       end
@@ -185,6 +210,17 @@ define
          {RegisterRead Key Vals major readLocalSet}
       end
 
+      proc {GiveMeYourRef giveMeYourRef(src:Src)}
+         {@MsgLayer dsend(to:Src myRef(ref:@NodeRef))}
+      end
+
+      proc {MyRef myRef(ref:Pbeer)}
+         RSet := Pbeer|@RSet
+         if {List.length @RSet} == @Factor then
+            RSetOK := true
+         end
+      end
+
       proc {Read read(Key id:Gid src:Src hkey:HKey get:GetType tag:symrep)}
          Val
       in
@@ -216,6 +252,9 @@ define
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
          MsgLayer := AMsgLayer
          NodeRef  := {@MsgLayer getRef($)}
+         RSet     := nil
+         RSetOK   := false
+         {FindRSet}
       end
 
       proc {SetTimeout setTimeout(ATime)}
@@ -239,6 +278,9 @@ define
                      getReplicaKeys:GetReplicaKeys
                      getOneSet:     GetOneSet
                      getMajoritySet:GetMajoritySet
+                     giveMeYourRef: GiveMeYourRef
+                     myRef:         MyRef
+                     quickBulk:     QuickBulk
                      read:          Read
                      readBack:      ReadBack
                      setDHT:        SetDHT
@@ -270,6 +312,8 @@ define
       Gvars    = {Dictionary.new}
       Gid      = {NewCell 0}
       NodeRef  = {NewCell noref}
+      RSet     = {NewCell nil}
+      RSetOK   = {NewCell false}
 
       Self 
    end
