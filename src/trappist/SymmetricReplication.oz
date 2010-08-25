@@ -172,7 +172,7 @@ define
          end
       end
 
-      proc {FindRSet}
+      proc {FindRSet findRSet}
          {Bulk bulk(to:@NodeRef.id giveMeYourRef(src:@NodeRef tag:symrep))}
       end
       
@@ -254,7 +254,6 @@ define
          NodeRef  := {@MsgLayer getRef($)}
          RSet     := nil
          RSetOK   := false
-         {FindRSet}
       end
 
       proc {SetTimeout setTimeout(ATime)}
@@ -271,6 +270,7 @@ define
 
       Events = events(
                      bulk:          Bulk
+                     findRSet:      FindRSet
                      getOne:        GetOne
                      getAll:        GetAll
                      getFactor:     GetFactor
