@@ -175,6 +175,7 @@ define
       end
 
       proc {FindRSet findRSet(Flag)}
+         {System.show 'going to bulk to find rset'}
          {Bulk bulk(to:@NodeRef.id giveMeYourRef(src:@NodeRef tag:symrep))}
          RSet     := nil
          RSetOK   := false
