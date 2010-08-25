@@ -81,6 +81,12 @@ define
          skip
       end
 
+      %% Just a forward to runTransaction.
+      %% Keeps backward compatibility
+      proc {ExecuteTransaction executeTransaction(Trans Client Protocol)}
+         {RunTransaction runTransaction(Trans Client Protocol)}
+      end
+
       proc {RunTransaction runTransaction(Trans Client Protocol)}
          TM
       in
@@ -162,6 +168,7 @@ define
       Events = events(
                      %% Trappist's API
                      becomeReader:  BecomeReader
+                     executeTransaction:ExecuteTransaction
                      getLocks:      GetLocks
                      runTransaction:RunTransaction
                      %% Directly to Key/Value-Sets
