@@ -474,6 +474,8 @@ define
          end
       end
 
+      ToFingerTable = {Utils.delegatesTo FingerTable}
+
       Events = events(
                   alive:         Alive
                   any:           Any
@@ -500,6 +502,7 @@ define
                   lookup:        Lookup
                   lookupHash:    LookupHash
                   lookupRequest: LookupRequest
+                  needFinger:    ToFingerTable
                   newSucc:       NewSucc
                   predNoMore:    PredNoMore
                   route:         Route
