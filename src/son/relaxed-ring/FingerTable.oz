@@ -53,6 +53,7 @@ define
       %LogMaxKey   % Frequently used value
       MaxKey      % Maximum value for a key
       Node        % The Node that uses this finger table
+      NodeRef     % Node's reference
       Refresh     % Flag to know if refreshing is finished
       Refreshing  % List of acknowledged ids
 
@@ -110,14 +111,15 @@ define
          Fingers := {CheckNewFinger @IdealIds @Fingers Pbeer}
       end
 
+      proc {NeedFinger needFinger(src:Src key:K)}
+         {@Node dsend(to:Src newFinger(key:K src:@NodeRef))}
+      end
+
       proc {RefreshFingers refreshFingers(Flag)}
-         NodeRef
-      in
          Refreshing  := @IdealIds
          @Refresh    = Flag
-         NodeRef     = {@Node getRef($)}
          for K in @IdealIds do
-            {@Node route(msg:needFinger(src:NodeRef key:K) src:NodeRef to:K)}
+            {@Node route(msg:needFinger(src:@NodeRef key:K) src:@NodeRef to:K)}
          end
       end
 
@@ -158,6 +160,7 @@ define
                   findFingers:   FindFingers
                   getFingers:    GetFingers
                   monitor:       Monitor
+                  needFinger:    NeedFinger
                   refreshFingers:RefreshFingers
                   removeFinger:  RemoveFinger
                   route:         Route
@@ -172,6 +175,7 @@ define
       Node        = {NewCell Args.node}
       MaxKey      = {NewCell {@Node getMaxKey($)}}
       Id          = {NewCell {@Node getId($)}}
+      NodeRef     = {NewCell {@Node getRef($)}}
       IdealIds    = {NewCell {KeyRanges.karyIdFingers @Id @K @MaxKey}}
       Fingers     = {NewCell {RingList.new}}
       %LogMaxKey   = {Float.toInt {Float.log {Int.toFloat @MaxKey+1}}}
