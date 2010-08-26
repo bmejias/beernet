@@ -107,7 +107,6 @@ define
       end
 
       proc {BasicForward Event}
-         {System.show 'running basic forward'}
          case Event
          of route(msg:Msg src:_ to:_) then
             if @Succ \= nil then
@@ -397,6 +396,7 @@ define
       end
 
       proc {LookupRequest lookupRequest(res:Res)}
+         %% TODO: mmm... can we trust distributed variable binding?
          Res = @SelfRef
       end
 

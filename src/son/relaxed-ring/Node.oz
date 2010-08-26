@@ -64,15 +64,9 @@ define
          %Listener = FullComponent.listener
       end
       RlxRingNode = {RlxRing.new Args}
-      local
-         Id MaxKey
-      in
-         MaxKey   = {RlxRingNode getMaxKey($)}
-         Id       = {RlxRingNode getId($)}
-         ComLayer = {RlxRingNode getComLayer($)}
-         FTable   = {FingerTable.new args(maxKey:MaxKey id:Id node:RlxRingNode)}
-         {FTable setComLayer(ComLayer)}
-      end
+      ComLayer = {RlxRingNode getComLayer($)}
+      FTable   = {FingerTable.new args(node:RlxRingNode)}
+      {FTable setComLayer(ComLayer)}
       {RlxRingNode setFingerTable(FTable)}
       Self
    end

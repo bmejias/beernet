@@ -43,7 +43,6 @@ define
 
    %% Default values
    K_DEF    = 4         % Factor k for k-ary fingers
-   MAX_KEY  = 1048576   % 2^20
 
    fun {New Args}
       Self
@@ -53,6 +52,7 @@ define
       K           % Factor k to divide the address space to choose fingers
       %LogMaxKey   % Frequently used value
       MaxKey      % Maximum value for a key
+      Node        % The Node that uses this finger table
       Refresh     % Flag to know if refreshing is finished
       Refreshing  % List of acknowledged ids
 
@@ -111,8 +111,14 @@ define
       end
 
       proc {RefreshFingers refreshFingers(Flag)}
-         Refreshing := @IdealIds
-         @Refresh  = Flag
+         NodeRef
+      in
+         Refreshing  := @IdealIds
+         @Refresh    = Flag
+         NodeRef     = {@Node getRef($)}
+         for K in @IdealIds do
+            {@Node route(msg:needFinger(src:NodeRef key:K) src:NodeRef to:K)}
+         end
       end
 
       proc {RemoveFinger removeFinger(Finger)}
@@ -122,7 +128,6 @@ define
       proc {Route Event}
          route(msg:Msg src:Src to:Target ...) = Event
       in
-         {System.show 'using finger routing'}
          if {Not {Record.label Msg} == join} then
             {Monitor monitor(Src)}
          end
