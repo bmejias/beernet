@@ -1,6 +1,7 @@
 Beernet-0.8
 	- First performance test achieved
-	- Several bug fixes
+	- Symmetric replication layer provides a replication set for quick bulk
+	- Several bug fixed
 
 Beernet-0.7
 	- Trappist provides add/remove/read set operations (alfa)
