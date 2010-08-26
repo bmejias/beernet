@@ -35,6 +35,7 @@
 
 functor
 import
+   System
    Component   at '../corecomp/Component.ozf'
    Timer       at '../timer/Timer.ozf'
    Utils       at '../utils/Misc.ozf'
@@ -71,10 +72,13 @@ define
       TheTimer
 
       Args
-      MaxKey   % Maximum key
+      MaxKey   % Maximum key                       
       Factor   % Replication factor
-      Gvars
-      Gid
+      Gvars                                        
+      Gid                                          
+      RSet     % ReplicaSet
+      RSetOK   % True if RSet is ready to be used
+      RSetFlag % To acknowledge when RSet is ready
       Timeout
 
       fun {NextGid}
@@ -142,6 +146,25 @@ define
 
       %% --- Events ---
 
+      proc {QuickBulk quickBulk(Msg to:Key)}
+         DoBulk
+      in
+         if @RSetOK then 
+            DoBulk = BulkToRSet
+         else
+            DoBulk = Bulk
+         end
+         {DoBulk bulk(Msg to:Key)}
+      end
+
+      %% Optimization to bulk to a more stable replica set
+      proc {BulkToRSet bulk(Msg to:_/*Key*/)}
+         for ref(pbeer:Replica hkey:HKey) in @RSet do
+            {@MsgLayer dsend(to:Replica {Record.adjoinAt Msg hkey HKey})}
+         end
+      end
+
+      %% Bulk message using overlay's routing (logarithmic)
       proc {Bulk bulk(Msg to:Key)}
          RepKeys
       in
@@ -151,6 +174,14 @@ define
          end
       end
 
+      proc {FindRSet findRSet(Flag)}
+         {System.show 'going to bulk to find rset'}
+         {Bulk bulk(to:@NodeRef.id giveMeYourRef(src:@NodeRef tag:symrep))}
+         RSet     := nil
+         RSetOK   := false
+         @RSetFlag = Flag
+      end
+      
       proc {GetFactor getFactor(F)}
          F = @Factor
       end
@@ -185,6 +216,21 @@ define
          {RegisterRead Key Vals major readLocalSet}
       end
 
+      proc {GiveMeYourRef giveMeYourRef(hkey:HKey src:Src tag:symrep)}
+         {System.show @NodeRef.id#'sending back ref'}
+         {@MsgLayer dsend(to:Src myRef(ref:@NodeRef hkey:HKey tag:symrep))}
+      end
+
+      proc {MyRef myRef(ref:Pbeer hkey:HKey tag:symrep)}
+         {System.show @NodeRef.id#'god ref from'#Pbeer.id}
+         RSet := ref(pbeer:Pbeer hkey:HKey)|@RSet
+         if {List.length @RSet} == @Factor then
+            RSetOK      := true
+            @RSetFlag   = unit
+            RSetFlag    := _
+         end
+      end
+
       proc {Read read(Key id:Gid src:Src hkey:HKey get:GetType tag:symrep)}
          Val
       in
@@ -216,6 +262,8 @@ define
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
          MsgLayer := AMsgLayer
          NodeRef  := {@MsgLayer getRef($)}
+         RSet     := nil
+         RSetOK   := false
       end
 
       proc {SetTimeout setTimeout(ATime)}
@@ -232,6 +280,7 @@ define
 
       Events = events(
                      bulk:          Bulk
+                     findRSet:      FindRSet
                      getOne:        GetOne
                      getAll:        GetAll
                      getFactor:     GetFactor
@@ -239,6 +288,9 @@ define
                      getReplicaKeys:GetReplicaKeys
                      getOneSet:     GetOneSet
                      getMajoritySet:GetMajoritySet
+                     giveMeYourRef: GiveMeYourRef
+                     myRef:         MyRef
+                     quickBulk:     QuickBulk
                      read:          Read
                      readBack:      ReadBack
                      setDHT:        SetDHT
@@ -270,6 +322,9 @@ define
       Gvars    = {Dictionary.new}
       Gid      = {NewCell 0}
       NodeRef  = {NewCell noref}
+      RSet     = {NewCell nil}
+      RSetOK   = {NewCell false}
+      RSetFlag = {NewCell _}
 
       Self 
    end

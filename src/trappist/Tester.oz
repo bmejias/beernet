@@ -101,6 +101,42 @@ define
       {MasterOfPuppets delete(Key)}
    end
 
+   proc {Write Pairs Client Protocol Action}
+      proc {Trans TM}
+         for Key#Value in Pairs do
+            {TM write(Key Value)}
+         end
+         {TM Action}
+      end
+   in
+      {MasterOfPuppets runTransaction(Trans Client Protocol)}
+   end
+
+   fun {WaitStream Str N}
+      fun {WaitLoop S I}
+         {Wait S.1}
+         if I == N then
+            S.1
+         else
+            {WaitLoop S.2 I+1}
+         end
+      end
+   in
+      {WaitLoop Str 1}
+   end
+
+   proc {FullGetKeys L}
+      for Key in L do
+         {GetOne Key}
+      end
+      for Key in L do
+         {GetMajority Key}
+      end
+      for Key in L do
+         {GetAll Key}
+      end
+   end
+
 in
 
    {Property.put 'print.width' 1000}
@@ -158,5 +194,40 @@ in
    {Delay 500}
    {Get foo}
    {GetOne foo}
+   local
+      P S RSetFlag
+   in
+      P = {NewPort S}
+      {System.show '----- Trying out transactions -----'}
+      {System.show '-----------------------------------'}
+      {System.show ''}
+      {System.show ' writing: do/c re/d mi/e fa/f sol/g'}
+      {Write ['do'#c re#d mi#e fa#f sol#g] P paxos commit}
+      {System.show ' outcome: '#{WaitStream S 1}}
+      {System.show ' Reading one, majority and all'}
+      {FullGetKeys ['do' re mi fa sol]}
+      {System.show '---------------------------------'}
+      {System.show ' aborting writes '}
+      {Write ['do'#dodo re#rere mi#mimi fa#fafa sol#solsol] P paxos abort}
+      {System.show ' outcome: '#{WaitStream S 2}}
+      {System.show ' Reading one, majority and all'}
+      {FullGetKeys ['do' re mi fa sol]}
+      {System.show '---------------------------------'}
+      {System.show ' committing writes '}
+      {Write ['do'#dodo re#rere mi#mimi fa#fafa sol#solsol] P paxos commit}
+      {System.show ' outcome: '#{WaitStream S 3}}
+      {System.show ' Reading one, majority and all'}
+      {FullGetKeys ['do' re mi fa sol]}
+      {System.show '---------------------------------'}
+      {System.show ' testing the rset '}
+      {MasterOfPuppets findRSet(RSetFlag)}
+      {Wait RSetFlag}
+      {System.show ' RSet ready'}
+      {System.show ' going to write values'}
+      {Write [norte#north sur#south este#east oeste#west] P paxos commit}
+      {System.show ' outcome: '#{WaitStream S 4}}
+      {System.show ' Reading one, majority and all'}
+      {FullGetKeys [norte sur este oeste]}
+   end
    {Application.exit 0}
 end

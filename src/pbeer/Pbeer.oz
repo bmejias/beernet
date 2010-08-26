@@ -162,11 +162,13 @@ define
                      singleReadSet:    SingleReadSet
                      %% Replication events
                      bulk:             ToReplica
+                     findRSet:         ToReplica
                      getOne:           ToReplica
                      getAll:           ToReplica
                      getMajority:      ToReplica
                      %% Trappist Transactional layer
                      becomeReader:     ToTrappist
+                     executeTransaction:ToTrappist
                      getLocks:         ToTrappist
                      runTransaction:   ToTrappist
                      add:              ToTrappist
