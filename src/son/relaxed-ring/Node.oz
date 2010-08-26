@@ -70,7 +70,7 @@ define
          MaxKey   = {RlxRingNode getMaxKey($)}
          Id       = {RlxRingNode getId($)}
          ComLayer = {RlxRingNode getComLayer($)}
-         FTable   = {FingerTable.new args(maxKey:MaxKey id:Id)}
+         FTable   = {FingerTable.new args(maxKey:MaxKey id:Id node:RlxRingNode)}
          {FTable setComLayer(ComLayer)}
       end
       {RlxRingNode setFingerTable(FTable)}

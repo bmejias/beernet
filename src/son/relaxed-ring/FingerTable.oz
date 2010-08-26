@@ -33,6 +33,7 @@
 
 functor
 import
+   System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'
    RingList    at '../../utils/RingList.ozf'
@@ -52,6 +53,8 @@ define
       K           % Factor k to divide the address space to choose fingers
       %LogMaxKey   % Frequently used value
       MaxKey      % Maximum value for a key
+      Refresh     % Flag to know if refreshing is finished
+      Refreshing  % List of acknowledged ids
 
       ComLayer    % Communication Layer, to send messages.
 
@@ -88,19 +91,6 @@ define
          {RingList.getBefore Key @Fingers @Id @MaxKey}
       end
 
-      proc {SetVars Args}
-         if {HasFeature Args id} then
-            Id := Args.id
-         end
-         if {HasFeature Args k} then
-            K := Args.k 
-         end
-         if {HasFeature Args maxKey} then
-            MaxKey := Args.maxKey
-         end
-         IdealIds := {KeyRanges.karyIdFingers @Id @K @MaxKey}
-      end
-
       %% --- Events --- 
       proc {AddFinger addFinger(Pbeer)}
          Fingers := {CheckNewFinger @IdealIds @Fingers Pbeer}
@@ -120,6 +110,11 @@ define
          Fingers := {CheckNewFinger @IdealIds @Fingers Pbeer}
       end
 
+      proc {RefreshFingers refreshFingers(Flag)}
+         Refreshing := @IdealIds
+         @Refresh  = Flag
+      end
+
       proc {RemoveFinger removeFinger(Finger)}
          Fingers := {RingList.remove Finger @Fingers}
       end
@@ -127,18 +122,13 @@ define
       proc {Route Event}
          route(msg:Msg src:Src to:Target ...) = Event
       in
+         {System.show 'using finger routing'}
          if {Not {Record.label Msg} == join} then
             {Monitor monitor(Src)}
          end
          {@ComLayer sendTo({ClosestPrecedingFinger Target} Event)}
       end
 
-      proc {Reset Event}
-         reset(...) = Event
-      in
-         {SetVars Event}
-      end
-         
       proc {SetComLayer setComLayer(NewComLayer)}
          ComLayer := NewComLayer
       end
@@ -163,9 +153,9 @@ define
                   findFingers:   FindFingers
                   getFingers:    GetFingers
                   monitor:       Monitor
+                  refreshFingers:RefreshFingers
                   removeFinger:  RemoveFinger
                   route:         Route
-                  reset:         Reset
                   setComLayer:   SetComLayer
                   setId:         SetId
                   setMaxKey:     SetMaxKey
@@ -173,11 +163,11 @@ define
                   )
    in %% --- New starts ---
       Self        = {Component.newTrigger Events}
-      Id          = {NewCell 0}
       K           = {NewCell K_DEF}
-      MaxKey      = {NewCell MAX_KEY}
-      IdealIds    = {NewCell nil}
-      {SetVars Args} % SetVars initialize IdealIds 
+      Node        = {NewCell Args.node}
+      MaxKey      = {NewCell {@Node getMaxKey($)}}
+      Id          = {NewCell {@Node getId($)}}
+      IdealIds    = {NewCell {KeyRanges.karyIdFingers @Id @K @MaxKey}}
       Fingers     = {NewCell {RingList.new}}
       %LogMaxKey   = {Float.toInt {Float.log {Int.toFloat @MaxKey+1}}}
       ComLayer    = {NewCell Component.dummy}
