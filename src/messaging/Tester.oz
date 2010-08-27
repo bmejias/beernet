@@ -80,5 +80,17 @@ in
       {SendAMsg 'msg '#I}
    end
    {Delay 1000}
+   local
+      Flag
+   in
+      {MasterOfPuppets refreshFingers(Flag)}
+      {System.show 'waiting for fingers refreshing'}
+      {Wait Flag}
+   end
+   for I in 1..10 do
+      {Delay 333}
+      {SendAMsg 'msg '#I}
+   end
+   {Delay 1000}
    {Application.exit 0}
 end

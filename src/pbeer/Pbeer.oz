@@ -151,6 +151,7 @@ define
                      lookup:           ToNode
                      lookupHash:       ToNode
                      receive:          ReceiveTagged
+                     refreshFingers:   ToNode
                      send:             SendTagged
                      setLogger:        ToNode
                      %% DHT events

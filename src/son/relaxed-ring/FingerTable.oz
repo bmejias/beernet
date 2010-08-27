@@ -33,16 +33,17 @@
 
 functor
 import
+   System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'
    RingList    at '../../utils/RingList.ozf'
+   Utils       at '../../utils/Misc.ozf'
 export
    New
 define
 
    %% Default values
    K_DEF    = 4         % Factor k for k-ary fingers
-   MAX_KEY  = 1048576   % 2^20
 
    fun {New Args}
       Self
@@ -52,6 +53,10 @@ define
       K           % Factor k to divide the address space to choose fingers
       %LogMaxKey   % Frequently used value
       MaxKey      % Maximum value for a key
+      Node        % The Node that uses this finger table
+      NodeRef     % Node's reference
+      Refresh     % Flag to know if refreshing is finished
+      Refreshing  % List of acknowledged ids
 
       ComLayer    % Communication Layer, to send messages.
 
@@ -88,19 +93,6 @@ define
          {RingList.getBefore Key @Fingers @Id @MaxKey}
       end
 
-      proc {SetVars Args}
-         if {HasFeature Args id} then
-            Id := Args.id
-         end
-         if {HasFeature Args k} then
-            K := Args.k 
-         end
-         if {HasFeature Args maxKey} then
-            MaxKey := Args.maxKey
-         end
-         IdealIds := {KeyRanges.karyIdFingers @Id @K @MaxKey}
-      end
-
       %% --- Events --- 
       proc {AddFinger addFinger(Pbeer)}
          Fingers := {CheckNewFinger @IdealIds @Fingers Pbeer}
@@ -120,6 +112,27 @@ define
          Fingers := {CheckNewFinger @IdealIds @Fingers Pbeer}
       end
 
+      proc {NeedFinger needFinger(src:Src key:K)}
+         {@Node dsend(to:Src newFinger(key:K src:@NodeRef))}
+      end
+
+      proc {NewFinger newFinger(key:K src:Pbeer)}
+         Fingers     := {CheckNewFinger @IdealIds @Fingers Pbeer}
+         Refreshing  := {Utils.deleteFromList K @Refreshing} 
+         if @Refreshing == nil then %% Got all refreshing fingers answers
+            @Refresh = unit
+         end
+      end
+
+      proc {RefreshFingers refreshFingers(Flag)}
+         Refreshing  := @IdealIds
+         @Refresh    = Flag
+         {System.show 'going to multicast the need for fingers'}
+         for K in @IdealIds do
+            {@Node route(msg:needFinger(src:@NodeRef key:K) src:@NodeRef to:K)}
+         end
+      end
+
       proc {RemoveFinger removeFinger(Finger)}
          Fingers := {RingList.remove Finger @Fingers}
       end
@@ -133,12 +146,6 @@ define
          {@ComLayer sendTo({ClosestPrecedingFinger Target} Event)}
       end
 
-      proc {Reset Event}
-         reset(...) = Event
-      in
-         {SetVars Event}
-      end
-         
       proc {SetComLayer setComLayer(NewComLayer)}
          ComLayer := NewComLayer
       end
@@ -163,9 +170,11 @@ define
                   findFingers:   FindFingers
                   getFingers:    GetFingers
                   monitor:       Monitor
+                  needFinger:    NeedFinger
+                  newFinger:     NewFinger
+                  refreshFingers:RefreshFingers
                   removeFinger:  RemoveFinger
                   route:         Route
-                  reset:         Reset
                   setComLayer:   SetComLayer
                   setId:         SetId
                   setMaxKey:     SetMaxKey
@@ -173,12 +182,15 @@ define
                   )
    in %% --- New starts ---
       Self        = {Component.newTrigger Events}
-      Id          = {NewCell 0}
       K           = {NewCell K_DEF}
-      MaxKey      = {NewCell MAX_KEY}
-      IdealIds    = {NewCell nil}
-      {SetVars Args} % SetVars initialize IdealIds 
+      Node        = {NewCell Args.node}
+      MaxKey      = {NewCell {@Node getMaxKey($)}}
+      Id          = {NewCell {@Node getId($)}}
+      NodeRef     = {NewCell {@Node getRef($)}}
+      IdealIds    = {NewCell {KeyRanges.karyIdFingers @Id @K @MaxKey}}
       Fingers     = {NewCell {RingList.new}}
+      Refreshing  = {NewCell nil}
+      Refresh     = {NewCell _}
       %LogMaxKey   = {Float.toInt {Float.log {Int.toFloat @MaxKey+1}}}
       ComLayer    = {NewCell Component.dummy}
       Self

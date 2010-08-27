@@ -396,6 +396,7 @@ define
       end
 
       proc {LookupRequest lookupRequest(res:Res)}
+         %% TODO: mmm... can we trust distributed variable binding?
          Res = @SelfRef
       end
 
@@ -473,6 +474,8 @@ define
          end
       end
 
+      ToFingerTable = {Utils.delegatesTo FingerTable}
+
       Events = events(
                   alive:         Alive
                   any:           Any
@@ -499,9 +502,12 @@ define
                   lookup:        Lookup
                   lookupHash:    LookupHash
                   lookupRequest: LookupRequest
+                  needFinger:    ToFingerTable
+                  newFinger:     ToFingerTable
                   newSucc:       NewSucc
                   predNoMore:    PredNoMore
                   route:         Route
+                  refreshFingers:ToFingerTable
                   setFingerTable:SetFingerTable
                   setLogger:     SetLogger
                   startJoin:     StartJoin
