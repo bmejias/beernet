@@ -8,8 +8,9 @@
  */
 
 Beernet-0.8
-	- First performance test achieved
 	- Symmetric replication layer provides a replication set for quick bulk
+	- Finger table can be explicitly refreshed
+	- First performance test achieved
 	- Several bug fixed
 
 Beernet-0.7
