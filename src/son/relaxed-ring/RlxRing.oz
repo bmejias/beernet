@@ -503,9 +503,11 @@ define
                   lookupHash:    LookupHash
                   lookupRequest: LookupRequest
                   needFinger:    ToFingerTable
+                  newFinger:     ToFingerTable
                   newSucc:       NewSucc
                   predNoMore:    PredNoMore
                   route:         Route
+                  refreshFingers:ToFingerTable
                   setFingerTable:SetFingerTable
                   setLogger:     SetLogger
                   startJoin:     StartJoin

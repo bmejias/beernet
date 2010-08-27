@@ -37,6 +37,7 @@ import
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'
    RingList    at '../../utils/RingList.ozf'
+   Utils       at '../../utils/Misc.ozf'
 export
    New
 define
@@ -115,9 +116,18 @@ define
          {@Node dsend(to:Src newFinger(key:K src:@NodeRef))}
       end
 
+      proc {NewFinger newFinger(key:K src:Pbeer)}
+         Fingers     := {CheckNewFinger @IdealIds @Fingers Pbeer}
+         Refreshing  := {Utils.deleteFromList K @Refreshing} 
+         if @Refreshing == nil then %% Got all refreshing fingers answers
+            @Refresh = unit
+         end
+      end
+
       proc {RefreshFingers refreshFingers(Flag)}
          Refreshing  := @IdealIds
          @Refresh    = Flag
+         {System.show 'going to multicast the need for fingers'}
          for K in @IdealIds do
             {@Node route(msg:needFinger(src:@NodeRef key:K) src:@NodeRef to:K)}
          end
@@ -161,6 +171,7 @@ define
                   getFingers:    GetFingers
                   monitor:       Monitor
                   needFinger:    NeedFinger
+                  newFinger:     NewFinger
                   refreshFingers:RefreshFingers
                   removeFinger:  RemoveFinger
                   route:         Route
@@ -178,6 +189,8 @@ define
       NodeRef     = {NewCell {@Node getRef($)}}
       IdealIds    = {NewCell {KeyRanges.karyIdFingers @Id @K @MaxKey}}
       Fingers     = {NewCell {RingList.new}}
+      Refreshing  = {NewCell nil}
+      Refresh     = {NewCell _}
       %LogMaxKey   = {Float.toInt {Float.log {Int.toFloat @MaxKey+1}}}
       ComLayer    = {NewCell Component.dummy}
       Self

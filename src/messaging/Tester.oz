@@ -84,6 +84,7 @@ in
       Flag
    in
       {MasterOfPuppets refreshFingers(Flag)}
+      {System.show 'waiting for fingers refreshing'}
       {Wait Flag}
    end
    for I in 1..10 do

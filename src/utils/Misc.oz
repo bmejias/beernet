@@ -25,6 +25,7 @@ import
 export
    AddDefaults
    DelegatesTo
+   DeleteFromList
    Hash
 define
 
@@ -65,6 +66,15 @@ define
       end
    in
       {Loop 0 5381}
+   end
+
+   %%--- Delete an element from a list, returning the new list ---
+   fun {DeleteFromList E L}
+      case L
+      of !E|T then T
+      [] H|T then H|{DeleteFromList E T}
+      [] nil then nil
+      end
    end
 
    %%--- Make Delegators ---
