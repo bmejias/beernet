@@ -35,7 +35,6 @@
 
 functor
 import
-   System
    Component   at '../corecomp/Component.ozf'
    Timer       at '../timer/Timer.ozf'
    Utils       at '../utils/Misc.ozf'
@@ -175,7 +174,6 @@ define
       end
 
       proc {FindRSet findRSet(Flag)}
-         %{System.show 'going to bulk to find rset'}
          {Bulk bulk(to:@NodeRef.id giveMeYourRef(src:@NodeRef tag:symrep))}
          RSet     := nil
          RSetOK   := false
@@ -217,12 +215,10 @@ define
       end
 
       proc {GiveMeYourRef giveMeYourRef(hkey:HKey src:Src tag:symrep)}
-         {System.show @NodeRef.id#'sending back ref'}
          {@MsgLayer dsend(to:Src myRef(ref:@NodeRef hkey:HKey tag:symrep))}
       end
 
       proc {MyRef myRef(ref:Pbeer hkey:HKey tag:symrep)}
-         {System.show @NodeRef.id#'god ref from'#Pbeer.id}
          RSet := ref(pbeer:Pbeer hkey:HKey)|@RSet
          if {List.length @RSet} == @Factor then
             RSetOK      := true

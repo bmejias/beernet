@@ -33,7 +33,6 @@
 
 functor
 import
-   System
    Component   at '../../corecomp/Component.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'
    RingList    at '../../utils/RingList.ozf'
@@ -127,7 +126,6 @@ define
       proc {RefreshFingers refreshFingers(Flag)}
          Refreshing  := @IdealIds
          @Refresh    = Flag
-         {System.show 'going to multicast the need for fingers'}
          for K in @IdealIds do
             {@Node route(msg:needFinger(src:@NodeRef key:K) src:@NodeRef to:K)}
          end
