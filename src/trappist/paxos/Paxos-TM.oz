@@ -285,7 +285,7 @@ define
 
       proc {RegisterRTM registerRTM(rtm:NewRTM tmid:_ tid:_ tag:trapp)}
          RTMs := NewRTM|@RTMs
-         if {List.length @RTMs} == @RepFactor then %% Should be RepFactor - 1
+         if {List.length @RTMs} == @RepFactor then %% Should be RepFactor - 1?
             %% We are done with initialization. We start with validation
             {StartValidation}
          end

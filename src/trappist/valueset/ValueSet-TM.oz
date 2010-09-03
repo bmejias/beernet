@@ -27,6 +27,7 @@
 
 functor
 import
+   System
    Component      at '../../corecomp/Component.ozf'
    HashedList     at '../../utils/HashedList.ozf'
    Utils          at '../../utils/Misc.ozf'
@@ -375,6 +376,7 @@ define
             VotesAcks.(I.key) := nil
             VotingPolls.(I.key) := open
          end
+         {System.show @NodeRef.id#'wanna be rTM.... submitting registration'}
          {@MsgLayer dsend(to:@Leader.ref registerRTM(rtm: tm(ref:@NodeRef id:Id)
                                                      tmid:@Leader.id
                                                      tid: Tid
@@ -382,8 +384,17 @@ define
       end
 
       proc {RegisterRTM registerRTM(rtm:NewRTM tmid:_ tid:_ tag:trapp)}
-         RTMs := NewRTM|@RTMs
-         if {List.length @RTMs} == @RepFactor then %% Should be RepFactor - 1
+         RTMsize
+         Majority
+      in
+         RTMsize  = {List.length @RTMs}
+         Majority = (@RepFactor div 2) + 1 
+         {System.show @NodeRef.id#' getting subscription'#RTMsize#Majority}
+         if RTMsize =< Majority then
+            RTMs := NewRTM|@RTMs
+         end
+         if RTMsize+1 == Majority then
+            {System.show 'got majority... going to validate'}
             %% We are done with initialization. We start with validation
             {StartValidation}
          end
@@ -463,6 +474,7 @@ define
          Val   = Event.val
          Client= Event.client
          LocalStore.Key := op(key:Key id:{Name.new} op:Op val:Val)
+         {System.show 'got the operation... going to bulk'}
          {@Replica  quickBulk(to:@NodeRef.id
                               initRTM(leader:  @Leader
                                       tid:     Tid
@@ -498,6 +510,7 @@ define
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
          MsgLayer := AMsgLayer
          NodeRef  := {@MsgLayer getRef($)}
+         {Wait @NodeRef}
          if @Role == leader then
             Leader := tm(ref:@NodeRef id:Id)
          end
