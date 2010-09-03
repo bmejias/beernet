@@ -137,6 +137,7 @@ define
       Events = events(
                      any:              Any
                      broadcast:        Broadcast
+                     dsend:            SendTagged
                      getFullRef:       ToNode
                      getId:            ToNode
                      getMaxKey:        ToNode
