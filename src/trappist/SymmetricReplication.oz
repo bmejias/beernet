@@ -35,9 +35,11 @@
 
 functor
 import
+   System
    Component   at '../corecomp/Component.ozf'
    Timer       at '../timer/Timer.ozf'
    Utils       at '../utils/Misc.ozf'
+   PbeerList   at '../utils/PbeerList.ozf'
 export
    New
 define
@@ -158,8 +160,10 @@ define
 
       %% Optimization to bulk to a more stable replica set
       proc {BulkToRSet bulk(Msg to:_/*Key*/)}
-         for ref(pbeer:Replica hkey:HKey) in @RSet do
-            {@MsgLayer dsend(to:Replica {Record.adjoinAt Msg hkey HKey})}
+         for pbeer(id:RepId port:RepPort hkey:HKey) in @RSet do
+%            {System.show @NodeRef.id#'sending to'#RepId}
+            {@MsgLayer dsend(to:pbeer(id:RepId port:RepPort)
+                             {Record.adjoinAt Msg hkey HKey})}
          end
       end
 
@@ -169,13 +173,14 @@ define
       in
          RepKeys = {MakeSymReplicas Key @MaxKey @Factor}
          for K in RepKeys do
+%            {System.show @NodeRef.id#'going to bulk to'#K}
             {@MsgLayer send({Record.adjoinAt Msg hkey K} to:K)}
          end
       end
 
       proc {FindRSet findRSet(Flag)}
          {Bulk bulk(to:@NodeRef.id giveMeYourRef(src:@NodeRef tag:symrep))}
-         RSet     := nil
+         RSet     := {PbeerList.new}
          RSetOK   := false
          @RSetFlag = Flag
       end
@@ -219,7 +224,7 @@ define
       end
 
       proc {MyRef myRef(ref:Pbeer hkey:HKey tag:symrep)}
-         RSet := ref(pbeer:Pbeer hkey:HKey)|@RSet
+         RSet := {PbeerList.add {Record.adjoinAt Pbeer hkey HKey} @RSet}
          if {List.length @RSet} == @Factor then
             RSetOK      := true
             @RSetFlag   = unit
@@ -258,7 +263,7 @@ define
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
          MsgLayer := AMsgLayer
          NodeRef  := {@MsgLayer getRef($)}
-         RSet     := nil
+         RSet     := {PbeerList.new}
          RSetOK   := false
       end
 
@@ -318,7 +323,7 @@ define
       Gvars    = {Dictionary.new}
       Gid      = {NewCell 0}
       NodeRef  = {NewCell noref}
-      RSet     = {NewCell nil}
+      RSet     = {NewCell {PbeerList.new}}
       RSetOK   = {NewCell false}
       RSetFlag = {NewCell _}
 
