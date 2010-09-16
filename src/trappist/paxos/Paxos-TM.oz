@@ -76,6 +76,9 @@ define
                end
             [] nil then
                Newest
+            [] 'NOT_FOUND' then
+               %% TODO: Check this case. There should be always a list
+               Newest
             end
          end
       in
