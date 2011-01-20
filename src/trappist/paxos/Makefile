@@ -1,7 +1,18 @@
-MAKE=make
-SRCS=Paxos-TM Paxos-TP
+MAKE = make
+INSTALL = install
+INSTALL_FUNCTOR = $(INSTALL) -m 644
+DESTDIR = ../../lib/trappist/paxos/
+SRCS = Paxos-TM Paxos-TP
 
 all: $(foreach source, $(SRCS), src_$(source))
+
+install: check_destdir $(foreach source, $(SRCS), install_$(source))
+
+check_destdir:
+	if ! test -d $(DESTDIR); then mkdir $(DESTDIR); fi
+
+install_%:
+	$(INSTALL_FUNCTOR) $(subst install_,,$@).ozf $(DESTDIR)
 
 src_%:
 	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf

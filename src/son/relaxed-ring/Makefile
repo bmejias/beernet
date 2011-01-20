@@ -1,7 +1,18 @@
-MAKE=make
-SRCS=FingerTable Node RlxRing
+MAKE = make
+INSTALL = install
+INSTALL_FUNCTOR = $(INSTALL) -m 644
+DESTDIR = ../../lib/son/relaxed-ring
+SRCS = FingerTable Node RlxRing
 
 all: $(foreach source, $(SRCS), src_$(source))
+
+install: check_destdir $(foreach source, $(SRCS), install_$(source))
+
+check_destdir:
+	if ! test -d $(DESTDIR); then mkdir $(DESTDIR); fi
+
+install_%:
+	$(INSTALL_FUNCTOR) $(subst install_,,$@).ozf $(DESTDIR)
 
 src_%:
 	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf
