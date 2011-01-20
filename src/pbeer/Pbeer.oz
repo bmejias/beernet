@@ -2,7 +2,7 @@
  *
  * Pbeer.oz
  *
- *    Global API to create a Beernet Peer.
+ *    Global API to create a Beernet Peer from an Oz program.
  *
  * LICENSE
  *
@@ -22,17 +22,6 @@
  *    described on the general API connecting with the other components that
  *    implements each behaviour.
  *
- * EVENTS
- *
- *    Accepts: eventName(arg1 argN) - Events that can be triggered on this
- *    component to request a service.
- *
- *    Confirmation: eventName(arg1 argN) - Events used by a component to
- *    confirm the completion of a request.
- *
- *    Indication: eventName(arg1 argN) - Events used by a given component to
- *    deliver information to another component
- *    
  *-------------------------------------------------------------------------
  */
 
