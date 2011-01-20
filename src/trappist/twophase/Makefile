@@ -1,7 +1,7 @@
 MAKE = make
 INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
-DESTDIR = ../../lib/trappist/twophase/
+DESTDIR = ../../../lib/trappist/twophase/
 SRCS = TwoPhase-TM TwoPhase-TP
 
 all: $(foreach source, $(SRCS), src_$(source))

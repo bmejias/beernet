@@ -1,13 +1,16 @@
 MAKE = make
-
+DESTDIR = ../../lib/
 SUBDIRS = corecomp dht logger messaging network pbeer son timer trappist utils
 
 all: sublibs
 
-install: installlibs
+install: check_destdir installlibs
 
 clean: cleanlibs
 	rm -rf *ozf
+
+check_destdir:
+	if ! test -d $(DESTDIR); then mkdir $(DESTDIR); fi
 
 sublibs:$(foreach subdir, $(SUBDIRS), sub_$(subdir))
 

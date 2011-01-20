@@ -1,7 +1,7 @@
 MAKE = make
 INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
-DESTDIR = ../../lib/trappist/eagerpaxos/
+DESTDIR = ../../../lib/trappist/eagerpaxos/
 SRCS = Participant Manager
 
 all: $(foreach source, $(SRCS), src_$(source))

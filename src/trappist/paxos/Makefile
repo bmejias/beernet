@@ -1,7 +1,7 @@
 MAKE = make
 INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
-DESTDIR = ../../lib/trappist/paxos/
+DESTDIR = ../../../lib/trappist/paxos/
 SRCS = Paxos-TM Paxos-TP
 
 all: $(foreach source, $(SRCS), src_$(source))

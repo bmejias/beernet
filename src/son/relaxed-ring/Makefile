@@ -1,7 +1,7 @@
 MAKE = make
 INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
-DESTDIR = ../../lib/son/relaxed-ring
+DESTDIR = ../../../lib/son/relaxed-ring
 SRCS = FingerTable Node RlxRing
 
 all: $(foreach source, $(SRCS), src_$(source))

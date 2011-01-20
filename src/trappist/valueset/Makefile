@@ -1,7 +1,7 @@
 MAKE = make
 INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
-DESTDIR = ../../lib/trappist/valueset/
+DESTDIR = ../../../lib/trappist/valueset/
 SRCS = ValueSet-TM ValueSet-TP
 
 all: $(foreach source, $(SRCS), src_$(source))

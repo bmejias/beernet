@@ -1,16 +1,19 @@
 MAKE=make
-
+DESTDIR = ../../lib/son/
 SUBDIRS=relaxed-ring
 
 all: sublibs
 
-install: installlibs
+install: check_destdir installlibs
 
 sublibs:$(foreach subdir, $(SUBDIRS), sub_$(subdir))
 
 installlibs:$(foreach subdir, $(SUBDIRS), subinstall_$(subdir))
 
 cleanlibs:$(foreach subdir, $(SUBDIRS), subclean_$(subdir))
+
+check_destdir:
+	if ! test -d $(DESTDIR); then mkdir $(DESTDIR); fi
 
 src_%:
 	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf
