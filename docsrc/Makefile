@@ -1,14 +1,19 @@
 MAKE = make
-DEST = ../doc/
+INSTALL = install
+INSTALL_DATA = $(INSTALL) -m 644
+DESTDIR = ../doc/
 DOCS = changelog
 
 all:
 	@echo "Nothing to do. Documentation ready to be installed"	
 
-install: $(foreach doc, $(DOCS), copy_$(doc)) 
+install: check_destdir $(foreach doc, $(DOCS), install_$(doc))
 
-copy_%:
-	@cp -f $(subst copy_,,$@) $(DEST)
+check_destdir:
+	if ! test -d $(DESTDIR); then mkdir $(DESTDIR); fi
+
+install_%:
+	$(INSTALL_DATA) $(subst install_,,$@) $(DESTDIR)
 
 clean:
 	@echo "Documentation sources clean"
