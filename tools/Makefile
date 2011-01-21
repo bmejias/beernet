@@ -3,7 +3,7 @@ INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
 DESTDIR = ../bin/
 DESTDIR_FUNCTOR = ../lib/tools/
-SRCS = BaseArgs Clansman
+SRCS = BaseArgs Clansman TokenPassing
 EXECS = beernet pbeer
 
 all: $(foreach source, $(SRCS), src_$(source)) $(EXECS)
@@ -35,6 +35,8 @@ src_%:
 
 clean:
 	rm -rf *ozf
+	rm -f beernet
+	rm -f pbeer
 
 .PHONY: all clean
 

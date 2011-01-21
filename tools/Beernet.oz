@@ -62,8 +62,8 @@ define
    proc {CreateScript Name Call}
       Flag Script
    in
-      Script = {New CiFile.textFile init(name:Name
-                                        flags:[write create truncate text])}
+      Script = {New TextFile.textFile init(name:Name
+                                           flags:[write create truncate text])}
       {Script putS("#!/bin/sh\n")}
       {Script putS("cd "#Args.nodepath)}
       {Script putS("scp "#Args.storesite#":~/"#Args.storepath#Args.store#" .")}
@@ -142,7 +142,7 @@ define
    in
       {CreateScript Args.scrpfirst MasterCall}
       {CreateScript Args.scrpany NodeCall}
-      AllNodes = {CiFile.read LoginData.(Args.dist).nodes}
+      AllNodes = {TextFile.read LoginData.(Args.dist).nodes}
       {Loop AllNodes 1}
    end
 
