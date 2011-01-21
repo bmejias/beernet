@@ -1,9 +1,10 @@
 /*-------------------------------------------------------------------------
  *
- * Pbeer.oz
+ * Note.oz
  *
- *    Source of the command line utility pbeer. It execute the correspondent
- *    program given on the arguments.
+ *    This program launches a beernet peer, and it allows to kill it. It is
+ *    rarely used manually. It is mostly called from programs beernet and
+ *    pbeer.
  *
  * LICENSE
  *
@@ -17,20 +18,15 @@
  *
  *    $Date$
  *
- * NOTES
- *    
- *    This is NOT a beernet component. It is a utility to connect to a running
- *    pbeer in a given network to executes some operations.
- *    
  *-------------------------------------------------------------------------
  */
 
 functor
 import
-Application
-Property
-BaseArgs    at '../lib/tools/BaseArgs.ozf'
-Clansman    at '../lib/tools/Clansman.ozf'
+   Application
+   Property
+   BaseArgs    at '../lib/tools/BaseArgs.ozf'
+   Clansman    at '../lib/tools/Clansman.ozf'
 define
 
    Args
@@ -46,5 +42,13 @@ in
    {Property.put 'print.depth' 1000}
 
    Args = {BaseArgs.getArgs DefArgs}
+
+   %% Help message
+   if Args.help then
+      {BaseArgs.helpMessage Help}
+      {Application.exit 0}
+   end
+
+   {Clansman.run Args}
 
 end

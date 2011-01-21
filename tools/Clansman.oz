@@ -27,7 +27,6 @@ import
    Pickle
    System
    ThePbeer       at '../pbeer/Pbeer.ozf'
-   Random         at '../utils/Random.ozf'
    TokenPassing   at 'TokenPassing.ozf'
 export
    Run
@@ -96,7 +95,6 @@ define
       PbeerToken
       Pbeer
       Store
-      Logger
       JoinAck
    in
       Pbeer    = {ThePbeer.new args(firstAck:JoinAck)}

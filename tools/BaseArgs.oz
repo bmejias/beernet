@@ -49,10 +49,6 @@ define
    DEF_SITES   = 1
    SCRP_FIRST  = firstPbeer
    SCRP_ANY    = anyPbeer
-   SETS_MIN    = 2
-   SETS_MAX    = 10
-   SETS_STEP   = 2
-   SETS_ROUNDS = 10
    STORE_PATH  = './'
    STORE_TKET  = 'mordor.tket'
    STORE_SITE  = 'localhost'

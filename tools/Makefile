@@ -3,8 +3,8 @@ INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
 DESTDIR = ../bin/
 DESTDIR_FUNCTOR = ../lib/tools/
-SRCS = BaseArgs Clansman TokenPassing
-EXECS = beernet pbeer
+SRCS = BaseArgs Bootstrap Clansman TokenPassing
+EXECS = beernet node pbeer
 
 all: $(foreach source, $(SRCS), src_$(source)) $(EXECS)
 
@@ -27,16 +27,23 @@ check_destdir:
 beernet: Beernet.oz
 	ozc -x Beernet.oz -o $@
 
+node: Node.oz
+	ozc -x Node.oz -o $@
+
+mordor: Mordor.oz
+	ozc -x Mordor.oz -o $@
+
 pbeer: Pbeer.oz
 	ozc -x Pbeer.oz -o $@
 
 src_%:
 	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf
 
-clean:
+clean: $(foreach bin, $(EXECS), clean_$(bin))
 	rm -rf *ozf
-	rm -f beernet
-	rm -f pbeer
+
+clean_%:
+	rm -f $(subst clean_,,$@)
 
 .PHONY: all clean
 

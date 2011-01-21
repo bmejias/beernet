@@ -19,7 +19,8 @@
  *
  * NOTES
  *    
- *    This is a simple utility that allows bootstraping beernet rings.
+ *    This is a simple utility that allows bootstraping and inspecting beernet
+ *    rings. It provides bootstrap, list, add and kill.
  *    
  *-------------------------------------------------------------------------
  */
@@ -43,7 +44,11 @@ define
    AllNodes
    Stop
    StopS
-
+   DefArgs = record(
+                     distuser(single   type:atom   default:DIST_USER)
+                     distnodes(single  type:atom   default:DIST_NODES)
+                   )
+                  
    fun {NodeCall}
       '#'("./node --ring " Args.ring
                 " --protocol " Args.protocol
@@ -74,10 +79,6 @@ define
       {Wait Flag}
    end
 
-   LoginData   = data(tuetue: data(user:tchorix          nodes:tuetue_nodes)
-                      caixa:  data(user:'boriss.mejias'  nodes:caixa_nodes)
-                      manekenk: data(user:tchorix        nodes:manekenk_nodes)
-                     )
    NodeScript
    RunScript
 
@@ -163,7 +164,7 @@ in
    {Property.put 'print.depth' 1000}
 
    %% Defining input arguments
-   Args = {BaseArgs.getArgs record}
+   Args = {BaseArgs.getArgs DefArgs}
 
    %% Help message
    if Args.help then
