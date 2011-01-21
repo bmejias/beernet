@@ -3,7 +3,7 @@ INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
 DESTDIR = ../bin/
 DESTDIR_FUNCTOR = ../lib/tools/
-SRCS =
+SRCS = BaseArgs Clansman
 EXECS = beernet pbeer
 
 all: $(foreach source, $(SRCS), src_$(source)) $(EXECS)
