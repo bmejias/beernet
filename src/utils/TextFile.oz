@@ -80,7 +80,7 @@ define
       FN
    in
       try
-         FN = {New TextFile init(name:FileName)}
+         FN = {Object.new TextFile init(name:FileName)}
          fun {Loop}
             if {FN atEnd($)} then
                thread
