@@ -78,11 +78,11 @@ define
             {Data.done}
          else
             %% execute and pass the token if count is > 0
-            {Data.'proc' Pbeer}
             if Data.c > 0 then
                Succ
                NewData
             in
+               {Data.'proc' Pbeer}
                Succ = {Pbeer getSucc($)}
                NewData = data('proc':Data.'proc' done:Data.done c:Data.c-1)
                {Pbeer send(passExecCount(TripId#TripToken#NewData tag:tokken) 
@@ -154,16 +154,22 @@ define
       end
 
       proc {StartPassExecCount startPassExecCount(Proc Done Count tag:tokken)}
-         ThisToken ThisTripId ThisPbeerId Msg
+         ThisToken ThisTripId Msg
       in
          ThisTripId  = {Name.new}
          ThisToken   = {Name.new}
          Trips.ThisTripId := ThisToken
-         ThisPbeerId = {Pbeer getId($)}
-         Msg = passExecCount('#'(ThisTripId
-                                 ThisToken
-                                 data('proc':Proc done:Done c:Count)))
-         {Pbeer send(Msg to:ThisPbeerId)}
+         if Count > 0 then
+            Succ
+         in
+            {Proc Pbeer}
+            Succ  = {Pbeer getSucc($)}
+            Msg   = passExecCount('#'(ThisTripId
+                                      ThisToken
+                                      data('proc':Proc done:Done c:Count-1))
+                                      tag:tokken)
+            {Pbeer send(Msg to:Succ.id)}
+         end
       end
 
       proc {DoNothing _}
@@ -180,7 +186,7 @@ define
                      ringTripExec:  RingTripExec
                      ringTripExecCount:RingTripExecCount
                      ringTripExecProb:RingTripExecProb
-                     startExecCount:StartPassExecCount  
+                     startPassExecCount:StartPassExecCount  
                      )
    in
       %% Creating the component and collaborators

@@ -69,8 +69,11 @@ define
             {Say Pid}
          [] done(Key) then
             if Key == DoneKey then
-               {Say "No more pbeers to be shown"}
-               {Application.exit 0}
+               thread
+                  {Delay 500}
+                  {Say "No more pbeers to be shown"}
+                  {Application.exit 0}
+               end
             end
          end
          {LoopLog MoreMsgs}
@@ -85,7 +88,7 @@ define
    proc {Run Args}
       Mordor
       Pbeer
-      StartPb
+      First
       DoneKey
       Logger
       proc {SendId CurrentPbeer}
@@ -107,8 +110,9 @@ define
       Logger   = {NewLogger DoneKey}
       Mordor   = {Connection.take {Pickle.load Args.store}}
       Pbeer    = {Send Mordor getPbeer(Args.ring $)}
-      StartPb  = {Pbeer lookupHash(hkey:Args.fromkey res:$)}
-      {StartPb send(startPassExecCount(SendId SendDone Args.max tag:tokken))} 
+      First    = {Pbeer lookupHash(hkey:Args.fromkey res:$)}
+      {Pbeer send(startPassExecCount(SendId SendDone Args.max tag:tokken)
+                  to:First.id)}
    end
 
 end

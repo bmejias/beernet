@@ -28,7 +28,7 @@ import
    Pickle
    Property
    System
-   Random   at '../beernet/utils/Random.ozf'
+   Random   at '../lib/utils/Random.ozf'
 define
 
    MORDOR_TKET = 'mordor.tket'
