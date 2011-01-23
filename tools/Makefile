@@ -3,8 +3,8 @@ INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
 DESTDIR = ../bin/
 DESTDIR_FUNCTOR = ../lib/tools/
-SRCS = BaseArgs Bootstrap Clansman TokenPassing
-EXECS = beernet node pbeer
+SRCS = BaseArgs Bootstrap Clansman ListPbeers ListService TokenPassing
+EXECS = beernet node pbeer mordor
 
 all: $(foreach source, $(SRCS), src_$(source)) $(EXECS)
 

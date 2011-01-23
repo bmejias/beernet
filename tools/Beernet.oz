@@ -28,15 +28,11 @@
 functor
 import
    Application
-   Connection
-   OS
-   Pickle
    Property
    System
    BaseArgs    at '../lib/tools/BaseArgs.ozf'
    Bootstrap   at '../lib/tools/Bootstrap.ozf'
-   Clansman    at '../lib/tools/Clansman.ozf'
-   TextFile    at '../lib/utils/TextFile.ozf'
+   ListPbeers  at '../lib/tools/ListPbeers.ozf'
 define
 
    Say = System.showInfo
@@ -49,8 +45,9 @@ define
                "for help on a specific subcommand.")}
       {Say ""}
       {Say "Available subcommands:"}
-      {Say "   bootstrap"}
-      {Say "   help"}
+      for SubCmd in {Record.arity Subcommands} do
+         {Say "   "#SubCmd}
+      end
       {Say ""}
    end
 
@@ -66,8 +63,10 @@ define
       {Application.exit 0}
    end
 
-   Subcommands = subcmds(bootstrap:Bootstrap
-                         help:rec(run:ThisHelpRun))
+   Subcommands = subcmds(bootstrap: Bootstrap
+                         list:      ListPbeers
+                         help:      rec(defArgs:nil
+                                        run:ThisHelpRun))
 in
 
    {Property.put 'print.width' 1000}
