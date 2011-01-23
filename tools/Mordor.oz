@@ -42,6 +42,32 @@ define
    Gate
    Stream
 
+   fun {RetrievePbeer Dict Key Id}
+      Elems Max Val 
+      fun {Find Id Items}
+         case Items
+         of Item|MoreItems then
+            ItemId = {Item getId($)}
+         in
+            if ItemId == Id then
+               Item
+            else
+               {Find Id MoreItems}
+            end
+         [] nil then
+            none
+         end
+      end
+   in
+      Val = {Dictionary.condGet Dict Key empty}
+      if Val == empty then
+         none
+      else
+         ring(Elems Max) = Val
+         {Find Id {Dictionary.items Elems}}
+      end
+   end
+
    fun {RetrieveElement Dict Key}
       Elems Max N Val
    in
@@ -98,6 +124,8 @@ define
             MyLogger = Logs.Ring
          [] getPbeer(Ring Ref) then
             Ref = {RetrieveElement Pbeers Ring}
+         [] getPbeer(Ring Id Ref) then
+            Ref = {RetrievePbeer Pbeers Ring Id}
          [] registerPbeer(Ring PbeerRef) then
             {AddElement Pbeers Ring PbeerRef}
          [] theonering then

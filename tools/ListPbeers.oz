@@ -71,7 +71,7 @@ define
             if Key == DoneKey then
                thread
                   {Delay 500}
-                  {Say "No more pbeers to be shown"}
+                  {Say "No more pbeers to show"}
                   {Application.exit 0}
                end
             end

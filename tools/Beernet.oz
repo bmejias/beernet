@@ -41,7 +41,7 @@ define
    proc {HelpMessage}
       {Say "Usage: "#{Property.get 'application.url'}#" <subcommand> [options]"}
       {Say ""}
-      {Say '#'("Type '"#{Property.get 'application.url'}#"' help <subcommand> "
+      {Say '#'("Type '"#{Property.get 'application.url'}#" help <subcommand>' "
                "for help on a specific subcommand.")}
       {Say ""}
       {Say "Available subcommands:"}

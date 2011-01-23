@@ -32,6 +32,7 @@ export
    GetArgs
    GetDefault
    MergeArgs
+   RunSubCommand
 define
 
    ACHEL_TKET  = 'achel.tket'
@@ -174,6 +175,43 @@ define
       {List.toTuple record
                     {List.append {TupleToList Args1} {TupleToList Args2}}}
    end
+   
+   proc {RunSubCommand Args SubCmds ErrorMsg}
+      case Args.1
+      of SubCommand|MoreArgs then
+         case SubCommand
+         of "help" then
+            case MoreArgs
+            of SubCommand|nil then
+               SubCmd = {String.toAtom SubCommand}
+            in
+               try
+                  {SubCmds.SubCmd.run optRec(help:true)}
+               catch _ then
+                  {ErrorMsg "Wrong subcommand."}
+               end
+            else
+               {ErrorMsg "Wrong invocation."}
+            end
+         else
+            SubCmd
+            Run
+         in
+            SubCmd = {String.toAtom SubCommand}
+            Run = try
+                     SubCmds.SubCmd
+                  catch _ then
+                     error(run:proc {$ _}
+                                  {ErrorMsg SubCmd#" is a wrong subcommand."}
+                               end)
+                  end
+            {Run.run Args}
+         end
+      else
+         {ErrorMsg "Wrong invocation."}
+      end
+   end
+
 end
 
 
