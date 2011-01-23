@@ -1,5 +1,7 @@
 MAKE = make
 
+all: doc lib bin
+
 help:
 	@echo "Beernet's main Makefile" 
 	@echo "To build and install Beernet, documentation and tools, run:\n"
@@ -17,8 +19,6 @@ help:
 	@echo "make clean\n"
 	@echo "a beer a day keeps the doctor away"	
 	@echo "Beernet is released under the Beerware License (see file LICENSE)" 
-
-all: doc lib bin
 
 doc: 
 	$(MAKE) -C docsrc all
@@ -45,4 +45,9 @@ clean:
 	$(MAKE) -C src clean
 	$(MAKE) -C tools clean
 
-.PHONY: all clean
+veryclean: clean
+	rm -rf bin/*
+	rm -rf doc/*
+	rm -rf lib/*
+
+.PHONY: all clean doc lib bin
