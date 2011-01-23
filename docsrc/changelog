@@ -11,6 +11,9 @@ Beernet-0.8
 	- Symmetric replication layer provides a replication set for quick bulk
 	- Finger table can be explicitly refreshed
 	- First performance test achieved
+	- Command line tools added: beernet and pbeer
+	- New directory structure from docsrc, src and tools to doc, lib and bin
+	- Better Makefile support with make install
 	- Several bug fixed
 
 Beernet-0.7
