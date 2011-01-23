@@ -37,7 +37,7 @@ install-doc:
 install-lib:
 	$(MAKE) -C src install
 
-install-src:
+install-bin:
 	$(MAKE) -C tools install
 
 clean:
