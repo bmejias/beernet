@@ -28,8 +28,10 @@ import
 export
    BuildDefArgs
    Defaults
-   GetArgs
    HelpMessage
+   GetArgs
+   GetDefault
+   MergeArgs
 define
 
    ACHEL_TKET  = 'achel.tket'
@@ -121,9 +123,9 @@ define
                trans(single      char:&t  type:int    default:N_TRANS)
                help(single       char:[&? &h]         default:false)
                )
-   
+
    fun {BuildDefArgs MoreArgs}
-      {Record.adjoin Defaults MoreArgs}
+      {MergeArgs MoreArgs Defaults}
    end
 
    fun {GetArgs MoreArgs}
@@ -138,6 +140,40 @@ define
       end
    end
 
+   fun {GetDefault Arg}
+      NArgs
+      fun {Loop I}
+         if I =< NArgs then
+            if {Label Defaults.I} == Arg then
+               Defaults.I.default
+            else
+               {Loop I+1}
+            end
+         else
+            none
+         end
+      end
+   in
+      NArgs = {Width Defaults}
+      {Loop 1}
+   end
+
+   fun {TupleToList Tup}
+      fun {Loop I Acc}
+         if I == 0 then
+            Acc
+         else
+            {Loop I-1 Tup.I|Acc}
+         end
+      end
+   in
+      {Loop {Record.width Tup} nil}
+   end
+
+   fun {MergeArgs Args1 Args2}
+      {List.toTuple record
+                    {List.append {TupleToList Args1} {TupleToList Args2}}}
+   end
 end
 
 

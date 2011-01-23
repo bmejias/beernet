@@ -115,17 +115,16 @@ define
          {Pbeer send(MsgLabel(ThisId#Token#MsgValue tag:tokken) to:Succ.id)}
       end
 
-      proc {RingTrip ringTrip(Size)}
-         {BootstrapTrip Size passToken 1}
-      end
-
-      proc {RingTripExec ringTripExec(Proc Flag)}
-         {BootstrapTrip Flag passExec Proc}
-      end
-
-      proc {RingTripExecProb ringTripExecProb(Proc NoProc Max P Flag)}
-         {System.show 'GOING TO LAUNCH A PROBABILISTIC TOKKEN PASSING'}
-         {BootstrapTrip Flag passExecProb data(yes:Proc no:NoProc max:Max p:P)}
+      proc {ListPbeers listPbeers(Count Log)}
+         PbeerId
+         Succ
+      in
+         PbeerId = {Pbeer getId($)}
+         if Count > 0 then
+            {Send Log pbeer(id:PbeerId)}
+            Succ = {Pbeer getSucc($)}
+            {Pbeer send(listPbeers(Count-1 Log tag:listing) to:Succ.id)}
+         end
       end
 
       proc {DoNothing _}
@@ -137,9 +136,6 @@ define
                      passExec:      PassExec  
                      passExecProb:  PassExecProb
                      passToken:     PassToken
-                     ringTrip:      RingTrip
-                     ringTripExec:  RingTripExec
-                     ringTripExecProb:RingTripExecProb
                      )
    in
       %% Creating the component and collaborators

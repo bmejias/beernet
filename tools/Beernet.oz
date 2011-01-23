@@ -63,6 +63,21 @@ define
       {Application.exit 0}
    end
 
+   fun {BuildDefSubCmdArgs Defs}
+      fun {Loop SubCmds Acc}
+         case SubCmds
+         of SubCmd|MoreCmds then
+            NewAcc = {BaseArgs.mergeArgs Defs.SubCmd.defArgs Acc}
+         in
+            {Loop MoreCmds NewAcc}
+         [] nil then
+            Acc
+         end
+      end
+   in
+      {Loop {Record.arity Defs} nil}
+   end
+
    Subcommands = subcmds(bootstrap: Bootstrap
                          list:      ListPbeers
                          help:      rec(defArgs:nil
@@ -73,7 +88,7 @@ in
    {Property.put 'print.depth' 1000}
 
    %% Defining input arguments
-   Args = {BaseArgs.getArgs Bootstrap.defArgs}
+   Args = {BaseArgs.getArgs {BuildDefSubCmdArgs Subcommands}}
 
    %% Help message
    if Args.help then
@@ -99,12 +114,16 @@ in
          end
       else
          SubCommand = {String.toAtom Subcmd}
+         Run
       in
-         try
-            {Subcommands.SubCommand.run Args}
-         catch _ then
-            {ErrorMsg "Wrong subcommand."}
-         end
+         Run = try
+                  Subcommands.SubCommand
+               catch _ then
+                  error(run:proc {$ _}
+                               {ErrorMsg SubCommand#" is a wrong subcommand."}
+                            end)
+               end
+         {Run.run Args}
       end
    else
       {ErrorMsg "Wrong invocation."}

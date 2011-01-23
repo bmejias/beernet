@@ -69,6 +69,30 @@ define
          end
       end
 
+      proc {PassExecCount passExecCount(TripId#TripToken#Data tag:tokken)}
+         MyToken
+      in
+         MyToken = {Dictionary.condGet Trips TripId noToken}
+         if MyToken == TripToken then
+            %% we made a round trip
+            {Data.done}
+         else
+            %% execute and pass the token if count is > 0
+            {Data.'proc' Pbeer}
+            if Data.c > 0 then
+               Succ
+               NewData
+            in
+               Succ = {Pbeer getSucc($)}
+               NewData = data('proc':Data.'proc' done:Data.done c:Data.c-1)
+               {Pbeer send(passExecCount(TripId#TripToken#NewData tag:tokken) 
+                           to:Succ.id)}
+            else
+               {Data.done}
+            end
+         end
+      end
+
       proc {PassExecProb passExecProb(TheTripId#TheToken#Data tag:tokken)}
          if Token == TheToken then
             %% we made a round trip
@@ -120,9 +144,26 @@ define
          {BootstrapTrip Flag passExec Proc}
       end
 
+      proc {RingTripExecCount ringTripExecCount(Proc Done Count)}
+         {BootstrapTrip _ passExecCount data('proc':Proc done:Done c:Count)}
+      end
+
       proc {RingTripExecProb ringTripExecProb(Proc NoProc Max P Flag)}
          {System.show 'GOING TO LAUNCH A PROBABILISTIC TOKKEN PASSING'}
          {BootstrapTrip Flag passExecProb data(yes:Proc no:NoProc max:Max p:P)}
+      end
+
+      proc {StartPassExecCount startPassExecCount(Proc Done Count tag:tokken)}
+         ThisToken ThisTripId ThisPbeerId Msg
+      in
+         ThisTripId  = {Name.new}
+         ThisToken   = {Name.new}
+         Trips.ThisTripId := ThisToken
+         ThisPbeerId = {Pbeer getId($)}
+         Msg = passExecCount('#'(ThisTripId
+                                 ThisToken
+                                 data('proc':Proc done:Done c:Count)))
+         {Pbeer send(Msg to:ThisPbeerId)}
       end
 
       proc {DoNothing _}
@@ -132,11 +173,14 @@ define
       Events = events(
                      any:           DoNothing
                      passExec:      PassExec  
+                     passExecCount: PassExecCount  
                      passExecProb:  PassExecProb
                      passToken:     PassToken
                      ringTrip:      RingTrip
                      ringTripExec:  RingTripExec
+                     ringTripExecCount:RingTripExecCount
                      ringTripExecProb:RingTripExecProb
+                     startExecCount:StartPassExecCount  
                      )
    in
       %% Creating the component and collaborators
