@@ -6,7 +6,7 @@
  *    successor link. It misses nodes in branches. It stops when the counter
  *    reaches 0, or when a full round trip is done. Everytime a pbeer is
  *    visited, is sends a message to a port where information of the node will
- *    be printed.
+ *    be printed. The service is based on the TokkenPassing component.
  *
  * LICENSE
  *
