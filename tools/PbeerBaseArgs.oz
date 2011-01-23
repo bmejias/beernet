@@ -40,7 +40,7 @@ define
    KEY         = key
    VALUE       = value
    HASH_KEY    = 666
-   CAP_FILE    = 'capability.cap'
+   CAP_FILE    = nocap
 
    Say         = System.showInfo
 

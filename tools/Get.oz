@@ -32,14 +32,15 @@ define
    DefArgs = nil
 
    proc {Run Args}
-      Pbeer Result
+      Pbeer Result Key
    in
       if Args.help then
          {PbeerBaseArgs.helpMessage [key value cap ring store] nil get}
          {Application.exit 0}
       end
       Pbeer    = {PbeerCommon.getPbeer Args.store Args.ring}
-      Result   = {Pbeer get(Args.key $)}
+      Key#_    = {PbeerCommon.getCapOrKey Args.cap Args.key}
+      Result   = {Pbeer get(Key $)}
       {Wait Result}
       {System.show Result}
       {Application.exit 0}

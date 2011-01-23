@@ -33,15 +33,18 @@ define
 
    proc {Run Args}
       Pbeer
+      Key
+      PrintKey
    in
       if Args.help then
          {PbeerBaseArgs.helpMessage [key value cap ring store] nil put}
          {Application.exit 0}
       end
       Pbeer = {PbeerCommon.getPbeer Args.store Args.ring}
-      {Pbeer put(Args.key Args.value)}
+      Key#PrintKey = {PbeerCommon.capOrKey Args.cap Args.key}
+      {Pbeer put(Key Args.value)}
       {Delay 100}
-      {System.showInfo "Operation put("#Args.key#" "#Args.value#") sent."}
+      {System.showInfo "Operation put("#PrintKey#" "#Args.value#") sent."}
       {Application.exit 0}
    end
 end

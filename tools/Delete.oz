@@ -33,15 +33,18 @@ define
 
    proc {Run Args}
       Pbeer
+      Key
+      PrintKey
    in
       if Args.help then
          {PbeerBaseArgs.helpMessage [key cap ring store] nil delete}
          {Application.exit 0}
       end
       Pbeer = {PbeerCommon.getPbeer Args.store Args.ring}
-      {Pbeer delete(Args.key)}
+      Key#PrintKey = {PbeerCommon.getCapOrKey Args.cap Args.key}
+      {Pbeer delete(Key)}
       {Delay 100}
-      {System.showInfo "Operation delete("#Args.key#") sent."}
+      {System.showInfo "Operation delete("#PrintKey#") sent."}
       {Application.exit 0}
    end
 end
