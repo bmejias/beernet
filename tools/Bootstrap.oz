@@ -203,7 +203,13 @@ define
    proc {Run Args}
       %% Help message
       if Args.help then
-         {BaseArgs.helpMessage nil}
+         HelpMsg = ['#'("      Options for the distribution mode 'cluster'")
+                    '#'("      --distuser  User name to connect to cluster "
+                        "(default: " DIST_USER ")")
+                    '#'("      --distnodes File with list of cluster node "
+                        "names (default: " DIST_NODES ")")]
+      in
+         {BaseArgs.helpMessage HelpMsg}
          {Application.exit 0}
       end
       %% Launch stop service on ticke Args.achel
