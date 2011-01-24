@@ -5,7 +5,7 @@ DESTDIR = ../bin/
 DESTDIR_FUNCTOR = ../lib/tools/
 SRCS = BaseArgs Bootstrap Clansman ListPbeers PbeerBaseArgs TokenPassing \
 		 Delete Get Put Lookup LookupHash PbeerCommon SetsCommon \
-		 Add Remove ReadSet Write Read
+		 Add Remove ReadSet Write Read Kill
 EXECS = beernet node pbeer mordor
 
 all: $(foreach source, $(SRCS), src_$(source)) $(EXECS)

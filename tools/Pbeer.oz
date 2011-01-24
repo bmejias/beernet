@@ -41,6 +41,9 @@
  *       lookup
  *       lookupHash
  *
+ *    Killing a pbeer
+ *       kill
+ *
  *-------------------------------------------------------------------------
  */
 
@@ -65,6 +68,8 @@ import
    %% transactions - read/write operations with replication
    Write          at '../lib/tools/Write.ozf'
    Read           at '../lib/tools/Read.ozf'
+   %% killing pbeers
+   Kill           at '../lib/tools/Kill.ozf'
 define
 
    Say = System.showInfo
@@ -134,6 +139,8 @@ define
                          %% Transactions
                          write:     Write
                          read:      Read
+                         %% Killing pbeers
+                         kill:      Kill
                          %% global help
                          help:      rec(defArgs:nil
                                         run:ThisHelpRun))
