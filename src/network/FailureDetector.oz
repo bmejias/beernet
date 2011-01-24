@@ -46,7 +46,7 @@ export
 define
 
    DELTA       = 500    % Granularity to tune the failure detector
-   TIMEOUT     = 10000   % Initial Timeout value
+   TIMEOUT     = 500   % Initial Timeout value
    MAX_TIMEOUT = 2000   % Timeout must not go beyond this value
    
    fun {New}

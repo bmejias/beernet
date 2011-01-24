@@ -200,8 +200,8 @@ define
       end
 
       proc {Crash crash(Pbeer)}
-         {System.showInfo '#'("Peer " Pbeer.id " has crashed. Detected by "
-                              @SelfRef.id)}
+         %{System.showInfo '#'("Peer " Pbeer.id " has crashed. Detected by "
+         %                     @SelfRef.id)}
          Crashed  := {PbeerList.add Pbeer @Crashed}
          SuccList := {RingList.remove Pbeer @SuccList}
          PredList := {RingList.remove Pbeer @PredList}
@@ -251,7 +251,7 @@ define
             %{Zend Src predFound(pred:Src last:true) Self}
             {Monitor Src}
          else
-            {System.show 'GGGGGGGGGGRRRRRRRRRRRAAAAAAAAAA'#@SelfRef.id}
+            %{System.show 'GGGGGGGGGGRRRRRRRRRRRAAAAAAAAAA'#@SelfRef.id}
             %% Just keep it in a branch
             %{RlxRoute predFound(pred:Src last:true) Src.id Self}
             skip

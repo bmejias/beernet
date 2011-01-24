@@ -35,7 +35,7 @@
 
 functor
 import
-   System
+%   System
    Component   at '../corecomp/Component.ozf'
    Timer       at '../timer/Timer.ozf'
    Utils       at '../utils/Misc.ozf'
