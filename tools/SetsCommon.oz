@@ -62,6 +62,7 @@ define
             {System.show Result.I}
          end
       else
+         %% TODO: check the issue with reusing a cap for sets
          Key#_ = {PbeerCommon.capOrKey Args.cap Args.key}
          {Pbeer Op(Key Args.value MyPort)}
          {System.showInfo MyStream.1}
