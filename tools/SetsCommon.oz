@@ -3,8 +3,7 @@
  * SetsCommon.oz
  *
  *    Common run procedure for the three operations associated to key/value
- *    sets, presented as pbeer subcommands. Support for capabilities does not
- *    work correctly.
+ *    sets, presented as pbeer subcommands. 
  *
  * LICENSE
  *
@@ -29,9 +28,27 @@ import
    PbeerCommon    at 'PbeerCommon.ozf'
 export
    DefArgs
+   CapOrKey
+   GetCapOrKey
+   GetPbeer
    Run
 define
-   DefArgs = nil
+   DefArgs  = nil
+   GetPbeer = PbeerCommon.getPbeer
+
+   fun {GetCapOrKey CapFile Key}
+      TheKey
+   in
+      TheKey#_/*PrintKey*/ = {PbeerCommon.getCapOrKey CapFile Key}
+      TheKey
+   end
+
+   fun {CapOrKey CapFile Key}
+      TheKey
+   in
+      TheKey#_/*PrintKey*/ = {PbeerCommon.capOrKey CapFile Key}
+      TheKey
+   end
 
    proc {Run Args Op}
       Pbeer
@@ -55,15 +72,14 @@ define
       if Op == readSet then
          Result
       in
-         Key#_ = {PbeerCommon.getCapOrKey Args.cap Args.key}
-         {Pbeer readSet(Key Result _)}
+         Key = {GetCapOrKey Args.cap Args.key}
+         {Pbeer readSet(Key Result)}
          for I in 1..{Record.width Result} do
             {Wait Result.I}
             {System.show Result.I}
          end
       else
-         %% TODO: check the issue with reusing a cap for sets
-         Key#_ = {PbeerCommon.capOrKey Args.cap Args.key}
+         Key = {CapOrKey Args.cap Args.key}
          {Pbeer Op(Key Args.value MyPort)}
          {System.showInfo MyStream.1}
       end

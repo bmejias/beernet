@@ -49,7 +49,9 @@ import
    Application
    Property
    System
-   SetsCommon     at '../lib/tools/SetsCommon.ozf'
+   Add            at '../lib/tools/Add.ozf'
+   Remove         at '../lib/tools/Remove.ozf'
+   ReadSet        at '../lib/tools/ReadSet.ozf'
    BaseArgs       at '../lib/tools/BaseArgs.ozf'
    Delete         at '../lib/tools/Delete.ozf'
    Get            at '../lib/tools/Get.ozf'
@@ -102,10 +104,14 @@ define
       {Application.exit 0}
    end
 
+   /*
+    * Use these lines if you want to use the SetsCommon functor to parametrize
+    * these three oprations
    %% Key/Value-Set operations
    Add    = rec(defArgs:nil run:proc {$ Args} {SetsCommon.run Args add} end)
    Remove = rec(defArgs:nil run:proc {$ Args} {SetsCommon.run Args remove} end)
    ReadSet= rec(defArgs:nil run:proc {$ Args} {SetsCommon.run Args readSet} end)
+   */
 
    Subcommands = subcmds(
                          %% Key/Value sets

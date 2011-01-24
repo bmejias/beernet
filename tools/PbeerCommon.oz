@@ -39,9 +39,14 @@ define
 
    fun {CapOrKey CapFile Key}
       if CapFile \= {PbeerBaseArgs.getDefault cap} then
-         Cap = {Name.new}
+         Cap
       in
-         {Pickle.save Cap CapFile}
+         try
+            Cap = {Pickle.load CapFile}
+         catch _ then %% The CapFile does not exist. Create new cap
+            Cap = {Name.new}
+            {Pickle.save Cap CapFile}
+         end
          Cap#("<"#CapFile#">")
       else
          Key#Key
