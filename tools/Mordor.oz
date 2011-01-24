@@ -35,6 +35,7 @@ define
 
    Args
    Say      = System.showInfo
+   SayNothing = proc {$ _} skip end
    AccPts   = {Dictionary.new}
    Pbeers   = {Dictionary.new}
    Flags    = {Dictionary.new}
@@ -77,12 +78,12 @@ define
       else
          ring(Elems Max) = Val
          N = {Random.urandInt 1 Max}
-         {Say "Some one requested an access point for ring "#Key}
+         %{Say "Some one requested an access point for ring "#Key}
          Elems.N
       end
    end
 
-   proc {AddElement Dict Key Elem}
+   proc {AddElement Dict Key Elem Out}
       Elems Max Val
    in
       Val = {Dictionary.condGet Dict Key empty}
@@ -92,12 +93,12 @@ define
          RingDict = {Dictionary.new}
          RingDict.1 := Elem
          Dict.Key := ring(RingDict 1)
-         {Say "New ring "#Key#" created"}
+         {Out "New ring "#Key#" created"}
       else
          ring(Elems Max) = Val
          Elems.(Max+1) := Elem 
          Dict.Key := ring(Elems Max+1)
-         {Say "New element stored for ring "#Key}
+         %{Out "New element stored for ring "#Key}
       end
    end
 
@@ -108,7 +109,7 @@ define
          of getAccessPoint(Ring Ref) then
             Ref = {RetrieveElement AccPts Ring}
          [] registerAccessPoint(Ring PbeerRef) then
-            {AddElement AccPts Ring PbeerRef}
+            {AddElement AccPts Ring PbeerRef SayNothing}
          [] installFlag(Ring Flag) then
             Flags.Ring  := Flag
          [] retrieveFlag(Ring MyFlag) then
@@ -127,7 +128,7 @@ define
          [] getPbeer(Ring Id Ref) then
             Ref = {RetrievePbeer Pbeers Ring Id}
          [] registerPbeer(Ring PbeerRef) then
-            {AddElement Pbeers Ring PbeerRef}
+            {AddElement Pbeers Ring PbeerRef Say}
          [] theonering then
             {Say "Destroying Mordor"}
             {Application.exit 0}

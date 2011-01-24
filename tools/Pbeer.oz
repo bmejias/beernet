@@ -49,6 +49,7 @@ import
    Application
    Property
    System
+   SetsCommon     at '../lib/tools/SetsCommon.ozf'
    BaseArgs       at '../lib/tools/BaseArgs.ozf'
    Delete         at '../lib/tools/Delete.ozf'
    Get            at '../lib/tools/Get.ozf'
@@ -101,12 +102,24 @@ define
       {Application.exit 0}
    end
 
+   %% Key/Value-Set operations
+   Add    = rec(defArgs:nil run:proc {$ Args} {SetsCommon.run Args add} end)
+   Remove = rec(defArgs:nil run:proc {$ Args} {SetsCommon.run Args remove} end)
+   ReadSet= rec(defArgs:nil run:proc {$ Args} {SetsCommon.run Args readSet} end)
+
    Subcommands = subcmds(
+                         %% Key/Value sets
+                         add:       Add
+                         remove:    Remove
+                         readSet:   ReadSet
+                         %% Basic DHT
                          delete:    Delete
                          put:       Put
                          get:       Get
+                         %% Lookup operations
                          lookup:    Lookup
                          lookupHash:LookupHash
+                         %% global help
                          help:      rec(defArgs:nil
                                         run:ThisHelpRun))
 in

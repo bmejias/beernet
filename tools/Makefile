@@ -4,7 +4,7 @@ INSTALL_FUNCTOR = $(INSTALL) -m 644
 DESTDIR = ../bin/
 DESTDIR_FUNCTOR = ../lib/tools/
 SRCS = BaseArgs Bootstrap Clansman ListPbeers PbeerBaseArgs TokenPassing \
-		 Delete Get Put Lookup LookupHash PbeerCommon
+		 Delete Get Put Lookup LookupHash PbeerCommon SetsCommon
 EXECS = beernet node pbeer mordor
 
 all: $(foreach source, $(SRCS), src_$(source)) $(EXECS)
