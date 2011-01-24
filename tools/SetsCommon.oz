@@ -3,7 +3,8 @@
  * SetsCommon.oz
  *
  *    Common run procedure for the three operations associated to key/value
- *    sets, presented as pbeer subcommands.
+ *    sets, presented as pbeer subcommands. Support for capabilities does not
+ *    work correctly.
  *
  * LICENSE
  *
@@ -13,9 +14,9 @@
  *
  *    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
  *
- *    Last change: $Revision: 274 $ $Author: boriss $
+ *    Last change: $Revision$ $Author$
  *
- *    $Date: 2011-01-23 23:55:13 +0100 (Sun, 23 Jan 2011) $
+ *    $Date$
  *
  *-------------------------------------------------------------------------
  */
