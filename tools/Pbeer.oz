@@ -49,16 +49,22 @@ import
    Application
    Property
    System
+   BaseArgs       at '../lib/tools/BaseArgs.ozf'
+   PbeerBaseArgs  at '../lib/tools/PbeerBaseArgs.ozf'
+   %% for key/value-set operations
    Add            at '../lib/tools/Add.ozf'
    Remove         at '../lib/tools/Remove.ozf'
    ReadSet        at '../lib/tools/ReadSet.ozf'
-   BaseArgs       at '../lib/tools/BaseArgs.ozf'
+   %% for kay/value pairs operations
    Delete         at '../lib/tools/Delete.ozf'
    Get            at '../lib/tools/Get.ozf'
+   Put            at '../lib/tools/Put.ozf'
+   %% lookup operations
    Lookup         at '../lib/tools/Lookup.ozf'
    LookupHash     at '../lib/tools/LookupHash.ozf'
-   PbeerBaseArgs  at '../lib/tools/PbeerBaseArgs.ozf'
-   Put            at '../lib/tools/Put.ozf'
+   %% transactions - read/write operations with replication
+   Write          at '../lib/tools/Write.ozf'
+   Read           at '../lib/tools/Read.ozf'
 define
 
    Say = System.showInfo
@@ -125,6 +131,9 @@ define
                          %% Lookup operations
                          lookup:    Lookup
                          lookupHash:LookupHash
+                         %% Transactions
+                         write:     Write
+                         read:      Read
                          %% global help
                          help:      rec(defArgs:nil
                                         run:ThisHelpRun))
