@@ -79,7 +79,7 @@ define
       proc {Leave Event}
          leave = Event
       in
-         skip
+         {@Node injectPermFail}
       end
       
       proc {ReceiveTagged receive(Msg)}
