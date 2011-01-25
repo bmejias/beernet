@@ -1,12 +1,13 @@
 MAKE = make
 
-all: doc lib bin
+all: lib bin
 
 help:
 	@echo "Beernet's main Makefile" 
-	@echo "To build and install Beernet, documentation and tools, run:\n"
+	@echo "To build and install Beernet and its tools, run:\n"
 	@echo "make"
 	@echo "make install\n"
+	@echo "Warning: documentation needs to be build and installed separately."
 	@echo "To build each part independently run:\n"
 	@echo "make doc\tto build documentation"
 	@echo "make lib\tto build Beernet components"
@@ -29,7 +30,7 @@ lib:
 bin: 
 	$(MAKE) -C tools all
 
-install: install-doc install-lib install-bin
+install: install-lib install-bin
 
 install-doc:
 	$(MAKE) -C docsrc install
