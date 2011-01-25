@@ -1,8 +1,39 @@
-% Copyright (c) 2010 Boriss Mejias Candia.
-% Released under Creative Commons Attribution Non-Commercial 3.0
+%%-------------------------------------------------------------------------
+ %
+ % api.tex
+ %
+ %    API of a pbeer. It documents the available events of a pbeer
+ %
+ % LICENSE
+ %
+ %    Beernet is released under the Beerware License (see file LICENSE) 
+ % 
+ % IDENTIFICATION 
+ %
+ %    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
+ %
+ %    Last change: $Revision$ $Author$
+ %
+ %    $Date$
+ %
+%%-------------------------------------------------------------------------
+ 
 
-\chapter{Beernet's API}
-\label{apx:beernet}
+\documentclass[11pt]{article}
+
+\input{commands}
+
+\title{Beernet's API}
+
+\author{Boris Mej\'{i}as}
+
+\date{December 3, 2010}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
 
 Beernet is provided as a Mozart-Oz\footnote{The Mozart Programming System,
 \url{http://www.mozart-oz.org}} library. To use it, the program needs to
@@ -109,12 +140,14 @@ key \code{Key}.
  
 \item \code{dsend(Msg to:PeerRef)}\\ Sends a direct message \code{Msg} to a
 peer using \code{PeerRef}.
- 
+
+\ignore{ 
 \item \code{broadcast(Msg range:Range)}\\ Sends message \code{Msg} to all
 peers on the range \code{Range}, which can be \code{all}, sending to the whole
 ring, \code{butMe}, sending to all ring except for the sender, and
 \code{From#To}, which sends to all peers having an identifier within keys
 \code{From} and \code{To}, so it can be used as a multicast.
+}
 
 \item \code{receive(?Msg)}\\ Binds \code{Msg} to the next message received by
 the peer, and that it has not been handled by any of Beernet's layer. It
@@ -247,3 +280,5 @@ to key \code{Key}.
 elements from the set associated to key \code{Key}. 
 
 \end{itemize}
+
+\end{document}
