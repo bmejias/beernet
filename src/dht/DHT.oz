@@ -60,7 +60,9 @@ import
 export
    New
 define
-   
+
+   NO_VALUE = SimpleDB.noValue
+
    fun {New CallArgs}
       Self
       %Listener
@@ -118,7 +120,7 @@ define
          end
          Elements
       in
-         if Val == SimpleDB.noValue orelse Val == nil then
+         if Val == NO_VALUE orelse Val == nil then
             ClientVar = empty
          else
             Elements = {GetValues Val}
@@ -142,11 +144,19 @@ define
          {SendNeedItem Key Val pair}
       end
 
-      proc {Put put(Key Val)}
+      proc {Put put(s:Secret k:Key v:Val r:Result)}
          HKey
       in
-         HKey = {Utils.hash Key @MaxKey}
-         {@MsgLayer send(putItem(HKey Key Val tag:dht) to:HKey)}
+         HKey     = {Utils.hash Key @MaxKey}
+         NewGid   = {NextGid}
+         Gvars.NewGid := data(var:Val type:Type)
+         {@MsgLayer send(putItem(hk:HKey
+                                 k:Key
+                                 v:Val
+                                 s:Secret
+                                 src:@NodeRef
+                                 gid:NewGid
+                                 tag:dht) to:HKey)}
       end
 
       %% --- Key/Value-Set API for applications -----------------------------
@@ -190,7 +200,7 @@ define
       end
 
       proc {PutItem Event}
-         putItem(HKey Key Val ...) = Event
+         putItem(hk:HKey k:Key v:Val s:Secret gid:Gid src:Src ...) = Event
       in
          {@DB put(HKey Key Val)}
       end
@@ -202,7 +212,7 @@ define
       in
          Set   = {@DB get(HKey Key $)}
          HVal  = {Utils.hash Val @MaxKey}
-         if Set == SimpleDB.noValue then
+         if Set == NO_VALUE then
             {@DB put(HKey Key [v(value:Val hash:HVal)])}
          else
             {@DB put(HKey Key {HashedList.add Set Val HVal})}
@@ -216,7 +226,7 @@ define
       in
          Set   = {@DB get(HKey Key $)}
          HVal  = {Utils.hash Val @MaxKey}
-         if Set \= SimpleDB.noValue then
+         if Set \= NO_VALUE then
             {@DB put(HKey Key {HashedList.remove Set Val HVal})}
          end
       end
