@@ -43,8 +43,14 @@ define
    NO_VALUE = 'NOT_FOUND'  % To be used inside the component as constant
    SUCCESS  = success      % Correct secret, or new item created 
    ERROR    = error(bad_secret) % Incorrect secret
-   NoValue  = NO_VALUE     % Nicer name for the export
    
+   NoValue  = NO_VALUE     % Nicer name for the export
+
+  
+   %%To use tuples instead of records
+   SECRET   = 1
+   VALUE    = 2
+
    fun {New}
       DB
       Self
@@ -57,16 +63,16 @@ define
             Item = {Dictionary.condGet KeyDict Key2 unit}
          in
             if Item \= unit then
-               if Item.s == Secret then 
+               if Item.SECRET == Secret then 
                   {Dictionary.remove KeyDict Key2}
                   Result = SUCCESS
                else
                   Result = ERROR
                end
-            else %% No item using Key1/Key2
+            else %% No item using Key1/Key2. Nothing to be done.
                Result = SUCCESS
             end
-         else %% No key using Key1
+         else %% No key using Key1. Nothing to be done.
             Result = SUCCESS
          end
       end
@@ -78,9 +84,10 @@ define
          if KeyDict == unit then
             Result = NO_VALUE
          else
-            Item = {Dictionary.condGet KeyDict Key2 item(s:unit v:NO_VALUE)}
+            Item = {Dictionary.condGet KeyDict Key2 item(SECRET:unit
+                                                         VALUE:NO_VALUE)}
          in
-            Result = Item.v
+            Result = Item.VALUE
          end
       end
 
@@ -93,20 +100,20 @@ define
          in
             if Item \= unit then
                if Item.s == Secret then 
-                  {Dictionary.put KeyDict Key2 item(s:Secret v:Val)}
+                  {Dictionary.put KeyDict Key2 item(SECRET:Secret VALUE:Val)}
                   Result = SUCCESS
                else
                   Result = ERROR
                end
             else %% New item, first used of Key1/Key2
-               {Dictionary.put KeyDict Key2 item(s:Secret v:Val)}
+               {Dictionary.put KeyDict Key2 item(SECRET:Secret VALUE:Val)}
                Result = SUCCESS
             end
          else %% New item, first used of Key1
             NewDict = {Dictionary.new}
          in
             {Dictionary.put DB Key1 NewDict}
-            {Dictionary.put NewDict Key2 item(s:Secret v:Val)}
+            {Dictionary.put NewDict Key2 item(SECRET:Secret VALUE:Val)}
             Result = SUCCESS
          end
       end

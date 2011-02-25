@@ -145,11 +145,11 @@ define
       end
 
       proc {Put put(s:Secret k:Key v:Val r:Result)}
-         HKey
+         HKey NewGid
       in
          HKey     = {Utils.hash Key @MaxKey}
          NewGid   = {NextGid}
-         Gvars.NewGid := data(var:Val type:Type)
+         Gvars.NewGid := data(var:Result type:put)
          {@MsgLayer send(putItem(hk:HKey
                                  k:Key
                                  v:Val
