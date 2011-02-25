@@ -27,6 +27,7 @@
 
 functor
 import
+   System
    Board          at '../corecomp/Board.ozf'
    Component      at '../corecomp/Component.ozf'
    RelaxedRing    at '../son/relaxed-ring/Node.ozf'
@@ -38,7 +39,11 @@ import
 export
    New
 define
-   
+
+   NO_SECRET   = public
+
+   Say = System.showInfo
+
    fun {New Args}
       Listener % Component's listener
       Node     % Node implementing the behaviour
@@ -102,7 +107,67 @@ define
       %in
          {@MsgLayer Event}
       end
-     
+    
+      %% --- Masking DHT operations put/get/delete for value type mixing ----
+      proc {PrePut Event}
+         case Event
+         of put(Key Val) then
+            {@DHT put(s:NO_SECRET k:Key v:Val r:_)}
+         [] put(k:Key v:Val r:Result) then
+            {@DHT put(s:NO_SECRET k:Key v:Val r:Result)}
+         [] put(s:Secret k:Key v:Val r:Result) then
+            {@DHT put(s:Secret k:Key v:Val r:Result)}
+         else
+            raise
+               error(wrong_invocation(event:put
+                                      found:Event
+                                      mustbe:put(s:secret
+                                                 k:key
+                                                 v:value
+                                                 r:result)))
+            end
+         end
+      end
+
+      proc {PreGet Event}
+         case Event
+         of get(Key Result) then
+            {@DHT get(k:Key r:Result)}
+         [] get(k:Key r:Result) then
+            {@DHT get(k:Key r:Result)}
+         [] get(s:_ k:Key r:Result) then
+            {Say "DHT Warning: secrets are not used for reading"}
+            {@DHT get(k:Key r:Result)}
+         else
+            raise
+               error(wrong_invocation(event:get
+                                      found:Event
+                                      mustbe:get(k:key r:result)))
+            end
+         end
+      end
+
+      proc {PreDelete Event}
+         case Event
+         of delete(Key) then
+            {@DHT delete(s:NO_SECRET k:Key r:_)}
+         [] delete(k:Key r:Result) then
+            {@DHT delete(s:NO_SECRET k:Key r:Result)}
+         [] delete(s:Secret k:Key r:Result) then
+            {@DHT delete(s:Secret k:Key r:Result)}
+         else
+            raise
+               error(wrong_invocation(event:delete
+                                      found:Event
+                                      mustbe:delete(s:secret
+                                                    k:key
+                                                    r:result)))
+            end
+         end
+         skip
+      end
+      %% --- End of Masking -------------------------------------------------
+
       %% --- Forwarding to DHT with different event name --------------------
       proc {SingleAdd Event}
          {@DHT {Record.adjoinList add {Record.toListInd Event}}}
@@ -118,7 +183,7 @@ define
       %% --- end forward to DHT with different event name -------------------
 
       ToNode      = {Utils.delegatesTo Node}
-      ToDHT       = {Utils.delegatesTo DHT}
+      %ToDHT       = {Utils.delegatesTo DHT}
       ToReplica   = {Utils.delegatesTo Replica}
       ToTrappist  = {Utils.delegatesTo Trappist}
       %ToMsgLayer  = {DelegatesTo MsgLayer}
@@ -145,9 +210,9 @@ define
                      send:             SendTagged
                      setLogger:        ToNode
                      %% DHT events
-                     delete:           ToDHT
-                     get:              ToDHT
-                     put:              ToDHT
+                     delete:           PreDelete
+                     get:              PreGet
+                     put:              PrePut
                      singleAdd:        SingleAdd
                      singleRemove:     SingleRemove
                      singleReadSet:    SingleReadSet
