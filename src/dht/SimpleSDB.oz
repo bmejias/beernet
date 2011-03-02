@@ -38,6 +38,8 @@ import
 export
    New
    NoValue
+   Success
+   BadSecret
 define
 
    NO_VALUE = 'NOT_FOUND'  % To be used inside the component as constant
@@ -45,6 +47,8 @@ define
    ERROR    = error(bad_secret) % Incorrect secret
    
    NoValue  = NO_VALUE     % Nicer name for the export
+   Success  = SUCCESS
+   BadSecret= ERROR
 
   
    %%To use tuples instead of records
@@ -70,10 +74,10 @@ define
                   Result = ERROR
                end
             else %% No item using Key1/Key2. Nothing to be done.
-               Result = SUCCESS
+               Result = NO_VALUE
             end
          else %% No key using Key1. Nothing to be done.
-            Result = SUCCESS
+            Result = NO_VALUE
          end
       end
 
@@ -99,7 +103,7 @@ define
             Item = {Dictionary.condGet KeyDict Key2 unit}
          in
             if Item \= unit then
-               if Item.s == Secret then 
+               if Item.SECRET == Secret then 
                   {Dictionary.put KeyDict Key2 item(SECRET:Secret VALUE:Val)}
                   Result = SUCCESS
                else

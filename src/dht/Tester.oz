@@ -28,9 +28,9 @@ define
 
    proc {FinalMsg Flag}
       if Flag then
-         {Say "PASSED"}
+         {Say "\nPASSED"}
       else
-         {Say "FAILED: Some tests did not pass. Check above for details"}
+         {Say "\nFAILED: Some tests did not pass. Check above for details"}
       end
    end
 
