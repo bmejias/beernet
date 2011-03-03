@@ -163,8 +163,37 @@ define
    end
 
    fun {WrongKeysOnDelete SDB}
+      K1 K2 V S
+   in
+      K1 = {Name.new}
+      K2 = {Name.new}
+      V  = {Name.new}
+      S  = {Name.new}
       {Wisper "wrong keys on delete : "}
-      true
+      {SDB put(K1 K2 V S Success)}
+      %% testing wrong K1
+      {SDB delete({Name.new} K2 S NoValue)}
+      if {SDB get(K1 K2 $)} == V then
+         %% testing wrong K2
+         {SDB delete(K1 {Name.new} S NoValue)}
+         if {SDB get(K1 K2 $)} == V then
+            %% testing worng secret
+            {SDB delete(K1 K2 {Name.new} BadSecret)}
+            if {SDB get(K1 K2 $)} == V then
+               {Say "PASSED"}
+               true
+            else
+               {Say "FAILED: deleted item event with the wrong secret"}
+               false
+            end
+         else
+            {Say "FAILED: deleted value only with K1 and S but wrong K2"}
+            false
+         end
+      else
+         {Say "FAILED: deleted value only with K2 and S but wrong K1"}
+         false
+      end
    end
 
    fun {Run _/*Args*/}
