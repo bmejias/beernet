@@ -15,6 +15,8 @@
  *
  *    Author: Boriss Mejias <boriss.mejias@uclouvain.be>
  *
+ *    Contributors: Xavier de Coster, Matthieu Ghilain.
+ *
  *    Last change: $Revision: -1 $ $Author: $
  *
  *    $Date: $
