@@ -5,8 +5,8 @@ public class Client {
 
 	int portNumber;
 	Socket theSocket;
-	ObjectOutputStream out;
- 	ObjectInputStream in;
+	PrintWriter out;
+ 	BufferedReader in;
 	String inMsg;
 
 	public Client(int aPort) {
@@ -16,34 +16,32 @@ public class Client {
 	public void run() {
 		try {
 			theSocket = new Socket("localhost", portNumber);
-			out = new ObjectOutputStream(theSocket.getOutputStream());
+			out = new PrintWriter(theSocket.getOutputStream(), true);
 			out.flush();
-			in = new ObjectInputStream(theSocket.getInputStream());
-
+			in = new BufferedReader(
+					new InputStreamReader(theSocket.getInputStream()));
 			try {
 				sendMessage("<start>This is a test from Java<end>");
 				say("message sent");
-				inMsg = (String)in.readObject();
+				inMsg = in.readLine();
 				say("got: "+inMsg);
 			}
-			catch (ClassNotFoundException classNot) {
-				System.err.println("data received in unknown format");
+			catch (IOException e) {
+				System.err.println("read failed");
 			}
 		}
-		catch(UnknownHostException unknownHost){
-			System.err.println("You are trying to connect to an unknown host!");
-		}
-		catch(IOException ioException){
-			ioException.printStackTrace();
+		catch (IOException e) {
+			System.err.println("creation of socket failed");
 		}
 		finally{
-			try{
+			try {
 				in.close();
 				out.close();
 				theSocket.close();
+				System.exit(0);
 			}
-			catch(IOException ioException){
-				ioException.printStackTrace();
+			catch (IOException e) {
+				System.err.println("closing socket failed");
 			}
 		}
 	}
@@ -52,20 +50,14 @@ public class Client {
 		System.out.println(aText);
 	}
 
-	private void send(String aMsg) {
-		try{
-			out.writeObject(aMsg);
-			out.flush();
-		}
-		catch(IOException ioException){
-			ioException.printStackTrace();
-		}
+	private void sendMessage(String aMsg) {
+		out.println(aMsg);
+		out.flush();
 	}
 
 	public static void main(String[] args) {
-		say(args[0]);
-		say(args[1]);
-		Client aClient = new Client(args[1]);
-		client.run();
+		System.out.println("going to connect to the socket server");
+		Client aClient = new Client(Integer.parseInt(args[0]));
+		aClient.run();
 	}
 }

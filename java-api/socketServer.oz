@@ -34,7 +34,7 @@ define
             {Blabla "Got a put message"}
          [] error(E) then
             {Blabla E}
-            {self write(vs:"Please, avoid sendig rubish!\n")}
+            {self write(vs:"Please, avoid sending rubish!\n")}
          end
       end
    end
