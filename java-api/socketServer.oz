@@ -10,11 +10,14 @@ functor
 import
    Application
    Open
+   OS
    Property
    System
    AdhocParser at 'adhocParser.ozf'
 define
    DEFAULTPORT = 91530
+   PUT = rec(success(0) error(1))
+   GET = rec(any_value 'NOT_FOUND')
 
    Parse  = AdhocParser.parse %% To parse strings that arrived on the socket
    Say    = System.showInfo %% For feedback to the standard output
@@ -24,17 +27,33 @@ define
  
    %% Behaviour of the socket server is defined here
    class Accepted from Open.socket 
+
       meth report(H P)
          TheMsg
       in
          {self read(list:TheMsg)}
          {Blabla "Got "#TheMsg}
          case {Parse TheMsg}
-         of put(k:_/*Key*/ v:_/*Val*/ s:_/*Secret*/ r:_/*Result*/) then 
-            {Blabla "Got a put message"}
+         of put(k:_/*Key*/ v:_/*Val*/ s:_/*Secret*/) then 
+            {self randomReply(put)}
+         [] get(k:_/*Key*/) then 
+            {self randomReply(get)}
          [] error(E) then
             {Blabla E}
             {self write(vs:"Please, avoid sending rubish!\n")}
+         end
+      end
+
+      meth randomReply(Kind)
+         Choice
+      in
+         Choice = 1 + {OS.rand} mod 2
+         {Blabla "Got a correct "#Kind#" message"}
+         case Kind
+         of put then
+            {self write(vs:PUT.Choice)}
+         [] get then
+            {self read(vs:GET.Choice)}
          end
       end
    end

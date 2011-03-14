@@ -31,24 +31,28 @@ define
             nil
          end
       end
+      fun {Retrieve Char In Type Next}
+         Str
+      in
+         Str = {LoopUntil Char In Next}
+         {StringToValue Str Type}
+      end
    in
       case Str
       of &p|&u|&t|&(|T then
-         KeyString ValueString Key Val
-         NuStr 
+         Key Val Secret
+         NextStr LastStr 
       in
-         %% Matching put messages: put(Key,Value)
-         KeyString = {LoopUntil &, T NuStr}
-         ValueString = {LoopUntil &) NuStr _}
-         Key = {StringToValue KeyString atom}
-         Val = {StringToValue ValueString string}
-         put(key:Key value:Val)
+         %% Matching get messages: put(Key,Val,Secret)
+         Key = {Retrieve &, T atom NextStr}
+         Val = {Retrieve &, NextStr string LastStr}
+         Secret = {Retrieve &) LastStr atom _} 
+         put(k:Key v:Val s:Secret)
       [] &g|&e|&t|&(|T then
-         KeyString Key
+         Key
       in
          %% Matching get messages: get(Key)
-         KeyString = {LoopUntil &) T _}
-         Key = {StringToValue KeyString atom}
+         Key = {Retrieve &) T atom _}
          get(key:Key)         
       [] &s|&i|&g|&n|&i|&n|&(|T then
          UserString PasswdString User Passwd
