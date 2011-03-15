@@ -9,6 +9,7 @@
 functor
 import
    Application
+   Browser
    Open
    OS
    Property
@@ -21,7 +22,9 @@ define
 
    Parse  = AdhocParser.parse %% To parse strings that arrived on the socket
    Say    = System.showInfo %% For feedback to the standard output
+   Browse = Browser.browse
    Blabla %% For verbose feedback
+   Bla    %% For verbose feedback without newline
    Args   %% Application arguments
    Server %% THIS socket connection for listening other programs
 
@@ -35,16 +38,16 @@ define
       meth report(H P)
          TheMsg
       in
-         {Blabla "going to read"}
          {self read(list:TheMsg)}
-         {Blabla "Got "#TheMsg}
+         {Browse TheMsg}
+         {Bla "Got "#TheMsg}
          case {Parse TheMsg}
          of put(k:_/*Key*/ v:_/*Val*/ s:_/*Secret*/) then 
             {self randomReply(put)}
          [] get(k:_/*Key*/) then 
             {self randomReply(get)}
          [] error(E) then
-            {Blabla E}
+            {Bla E}
             {self toSocket("Please, avoid sending rubish!")}
          end
       end
@@ -102,9 +105,11 @@ in
 
    %% Defining verbose feedback
    %if Args.verbose then
-      Blabla = Say
+      Blabla   = Say
+      Bla      = System.printInfo
    %else
-   %   Blabla = proc {$ _} skip end
+   %   Blabla   = proc {$ _} skip end
+   %   Bla      = proc {$ _} skip end
    %end
    
    %% Let there be a socket connection

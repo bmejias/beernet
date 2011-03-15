@@ -17,7 +17,7 @@ public class Client {
 		try {
 			theSocket = new Socket("localhost", portNumber);
 			out = new PrintWriter(theSocket.getOutputStream(), true);
-			out.flush();
+			//out.flush();
 			in = new BufferedReader(
 					new InputStreamReader(theSocket.getInputStream()));
 			try {
