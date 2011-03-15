@@ -21,10 +21,26 @@ public class Client {
 			in = new BufferedReader(
 					new InputStreamReader(theSocket.getInputStream()));
 			try {
-				sendMessage("<start>This is a test from Java<end>");
+				//sendMessage("This is a test from Java");
+				//sendMessage("put(foo,bar,public)");
+				sendMessage("get(foo)");
 				say("message sent");
 				inMsg = in.readLine();
 				say("got: "+inMsg);
+				sendMessage("Second test with rubish");
+				say("message sent");
+				inMsg = in.readLine();
+				say("got: "+inMsg);
+				for (int i = 0; i < 3; i++) {
+					say("Testing put message");
+					sendMessage("put(foo,"+i+",public)");
+					say("got: "+in.readLine());
+				}
+				for (int i = 0; i < 3; i++) {
+					say("Testing get message");
+					sendMessage("get("+i+")");
+					say("got: "+in.readLine());
+				}
 			}
 			catch (IOException e) {
 				System.err.println("read failed");
@@ -52,7 +68,7 @@ public class Client {
 
 	private void sendMessage(String aMsg) {
 		out.println(aMsg);
-		out.flush();
+		//out.flush();
 	}
 
 	public static void main(String[] args) {

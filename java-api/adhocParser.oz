@@ -53,7 +53,7 @@ define
       in
          %% Matching get messages: get(Key)
          Key = {Retrieve &) T atom _}
-         get(key:Key)         
+         get(k:Key)         
       [] &s|&i|&g|&n|&i|&n|&(|T then
          UserString PasswdString User Passwd
          NuStr

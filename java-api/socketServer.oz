@@ -24,13 +24,18 @@ define
    Blabla %% For verbose feedback
    Args   %% Application arguments
    Server %% THIS socket connection for listening other programs
- 
+
+   fun {GetVS Set Field}
+      {Value.toVirtualString Set.Field 100 100}
+   end
+
    %% Behaviour of the socket server is defined here
    class Accepted from Open.socket 
 
       meth report(H P)
          TheMsg
       in
+         {Blabla "going to read"}
          {self read(list:TheMsg)}
          {Blabla "Got "#TheMsg}
          case {Parse TheMsg}
@@ -40,7 +45,7 @@ define
             {self randomReply(get)}
          [] error(E) then
             {Blabla E}
-            {self write(vs:"Please, avoid sending rubish!\n")}
+            {self toSocket("Please, avoid sending rubish!")}
          end
       end
 
@@ -51,10 +56,16 @@ define
          {Blabla "Got a correct "#Kind#" message"}
          case Kind
          of put then
-            {self write(vs:PUT.Choice)}
+            {Blabla "going to reply "#{GetVS PUT Choice}} 
+            {self toSocket({GetVS PUT Choice})}
          [] get then
-            {self read(vs:GET.Choice)}
+            {Blabla "going to reply "#{GetVS GET Choice}}
+            {self toSocket({GetVS GET Choice})}
          end
+      end
+
+      meth toSocket(VS)
+         {self write(vs:VS#"\n")}
       end
    end
    
