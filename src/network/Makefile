@@ -17,9 +17,6 @@ install_%:
 src_%:
 	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf
 
-src_%:
-	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf
-
 alltests: tester testerdist testerfaildetector
 
 tester: Tester.oz TestPlayers.oz
