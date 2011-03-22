@@ -16,17 +16,18 @@ import
    System
    AdhocParser at 'adhocParser.ozf'
 define
-   DEFAULTPORT = 91530
+   DEFAULTPORT = 6666
    PUT = rec(success(0) error(1))
    GET = rec(any_value 'NOT_FOUND')
 
-   Parse  = AdhocParser.parse %% To parse strings that arrived on the socket
-   Say    = System.showInfo %% For feedback to the standard output
-   Browse = Browser.browse
-   Blabla %% For verbose feedback
-   Bla    %% For verbose feedback without newline
-   Args   %% Application arguments
-   Server %% THIS socket connection for listening other programs
+   Parse    = AdhocParser.parse %% To parse strings that arrived on the socket
+   Say      = System.showInfo %% For feedback to the standard output
+   Browse   = Browser.browse
+   Pbeer    %% Part of the network. Used to run the requests
+   Blabla   %% For verbose feedback
+   Bla      %% For verbose feedback without newline
+   Args     %% Application arguments
+   Server   %% THIS socket connection for listening other programs
 
    fun {GetVS Set Field}
       {Value.toVirtualString Set.Field 100 100}
@@ -35,20 +36,30 @@ define
    %% Behaviour of the socket server is defined here
    class Accepted from Open.socket 
 
-      meth report(H P)
+      meth readLoop
          TheMsg
+         Request
       in
-         {self read(list:TheMsg)}
-         {Browse TheMsg}
-         {Bla "Got "#TheMsg}
-         case {Parse TheMsg}
-         of put(k:_/*Key*/ v:_/*Val*/ s:_/*Secret*/) then 
-            {self randomReply(put)}
-         [] get(k:_/*Key*/) then 
-            {self randomReply(get)}
-         [] error(E) then
-            {Bla E}
-            {self toSocket("Please, avoid sending rubish!")}
+         try
+            {self flush}
+            {self read(list:TheMsg)}
+            {Browse TheMsg}
+            {Bla "Got "#TheMsg}
+            Request = {Parse TheMsg}
+            case Request
+            of error(E) then
+               {Bla E}
+               {self toSocket("Please, avoid sending rubish!")}
+            else
+               Result
+            in
+               {Pbeer {Record.adjoinAt Request r Result}}
+               {Wait Result}
+               {self toSocket({Value.toVirtualString Result 100 100})}
+            end
+            {self readLoop}
+         catch _ then
+            {Blabla "the socket is closed. Client is gone"}
          end
       end
 
@@ -68,17 +79,23 @@ define
       end
 
       meth toSocket(VS)
-         {self write(vs:VS#"\n")}
+         try
+            %{self write(vs:{Value.toVirtualString VS 100 100}#"\n")}
+            {self write(vs:VS#"\n")}
+         catch _ then
+            {Blabla "Apparently the client run away!"}
+            {self close}
+         end
       end
    end
    
    %% Loop for reading every input to the socket
    proc {Accept}
-      H P A
+      Obj
    in 
-      {Server accept(acceptClass:Accepted host:?H port:?P accepted:?A)}
+      {Server accept(acceptClass:Accepted host:_ port:_ accepted:?Obj)}
       thread
-         {A report(H P)}  
+         {Obj readLoop}  
       end 
       {Accept}
    end 
@@ -111,7 +128,12 @@ in
    %   Blabla   = proc {$ _} skip end
    %   Bla      = proc {$ _} skip end
    %end
-   
+  
+   %% This part has to change to call the real pbeer
+   proc {Pbeer Rec}
+      Rec.r = foo(bla bla bla)
+   end
+
    %% Let there be a socket connection
    try P in
       Server={New Open.socket init}

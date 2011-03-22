@@ -17,13 +17,11 @@ public class Client {
 		try {
 			theSocket = new Socket("localhost", portNumber);
 			out = new PrintWriter(theSocket.getOutputStream(), true);
-			//out.flush();
+			out.flush();
 			in = new BufferedReader(
 					new InputStreamReader(theSocket.getInputStream()));
 			try {
-				//sendMessage("This is a test from Java");
-				//sendMessage("put(foo,bar,public)");
-				sendMessage("get(foo)");
+				sendMessage("This is a test from Java");
 				say("message sent");
 				inMsg = in.readLine();
 				say("got: "+inMsg);
@@ -68,7 +66,7 @@ public class Client {
 
 	private void sendMessage(String aMsg) {
 		out.println(aMsg);
-		//out.flush();
+		out.flush();
 	}
 
 	public static void main(String[] args) {
