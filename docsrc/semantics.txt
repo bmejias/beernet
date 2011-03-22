@@ -8,7 +8,7 @@ compatible with the previous versions of Beernet.
 
 Basic DHT operations: put/get/delete
 Transactional operations: write/read/destroy
-Set operations: create/add/remove/destroy
+Set operations: createSet/add/remove/readSet/destroySet
 
 The development is being carried on the branch clear-semantics. What has to be
 done is the following:
