@@ -140,7 +140,7 @@ define
          {@MsgLayer send(deleteItem(HKey Key tag:dht) to:HKey)}
       end
    
-      proc {Get get(Key ?Val)}
+      proc {Get get(k:Key v:?Val)}
          {SendNeedItem Key Val pair}
       end
 

@@ -2,12 +2,12 @@
 
 functor
 import
-   Application
    Property
    System
    Network        at '../network/Network.ozf'
    PbeerMaker     at '../pbeer/Pbeer.ozf'
    Utils          at '../utils/Misc.ozf'
+   SimpleSDB      at 'SimpleSDB.ozf'
 export
    Run
 define
@@ -20,6 +20,14 @@ define
    MaxKey
    Pbeers
    NetRef
+
+   %% For feedback
+   Say    = System.showInfo
+   Wisper   = System.printInfo
+
+   NoValue  = SimpleSDB.noValue
+   Success  = SimpleSDB.success
+   BadSecret= SimpleSDB.badSecret
 
    proc {CreateNetwork}
       %{System.show 'first line'}
@@ -59,46 +67,6 @@ define
       end
    end
 
-   proc {Put Key Val}
-      {System.show 'Going to put'#Val#'with Key'#Key}
-      {MasterOfPuppets put(Key Val)}
-   end
-
-   proc {Get Key}
-      Val
-   in
-      {MasterOfPuppets get(Key Val)}
-      {Wait Val}
-      {System.show 'Getting'#Key#'we obtained'#Val}
-   end
-
-   proc {Delete Key}
-      {System.show 'Deleting'#Key}
-      {MasterOfPuppets delete(Key)}
-   end
-
-   proc {Add Key Val}
-      {System.show 'Going to add'#Val#'to set'#Key}
-      {MasterOfPuppets singleAdd(Key Val)}
-   end
-
-   proc {Remove Key Val}
-      {System.show 'Going to remove'#Val#'from set'#Key}
-      {MasterOfPuppets singleRemove(Key Val)}
-   end
-
-   proc {ReadSet Key}
-      Val
-   in
-      {MasterOfPuppets singleReadSet(Key Val)}
-      {Wait Val}
-      {System.show 'Set'#Key#'is:'#Val}
-   end
-
-   %% For feedback
-   Show   = System.show
-   Say    = System.showInfo
-   
    proc {HelpMessage}
       {Say "Usage: "#{Property.get 'application.url'}#" <test> [option]"}
       {Say ""}
@@ -116,24 +84,191 @@ define
       MaxKey = {MasterOfPuppets getMaxKey($)}
    end
 
-   proc {TestPairs}
-      {Show 'network created. Going to put, get and delete values'}
-      {Put foo bar}
-      {Put beer net}
-      {Put bink beer(name:adelardus style:dubbel alc:7)}
-      {Show 'waiting a bit'}
-      {Delay 1000}
-      {Get foo}
-      {Get beer}
-      {Get bink}
-      {Put foo flets}
-      {Get foo}
-      {Show '---- testing some message sending ----'}
+   %% --------------------------------------------------------------------
+   %% Here come every test
+
+   fun {PutAndGet Pbeer}
+      R1 R2 K V S
+   in
+      K = {Name.new}
+      V = {Name.new}
+      S = {Name.new}
+      {Wisper "put and get: "} 
+      {Pbeer put(s:S k:K v:V r:R1)}
+      if R1 == Success then
+         {Pbeer get(k:K r:R2)}
+         if R2 == V then
+            {Say "PASSED"}
+            true
+         else
+            {Say "FAILED - could not retrieve stored value"}
+            false
+         end
+      else
+         {Say "FAILED - Single put did not work"}
+         false
+      end
+   end
+   
+   fun {GetNoValue Pbeer}
+      {Wisper "get no value: "}
+      if {Pbeer get(k:{Name.new} $)} == NoValue then
+         {Say "PASSED"}
+         true
+      else
+         {Say "FAILED: Creation out of nothing"}
+         false
+      end
+   end
+
+   fun {Delete Pbeer}
+      R1 R2 K V S
+   in
+      K = {Name.new}
+      V = {Name.new}
+      S = {Name.new}
+      {Wisper "delete : "}
+      {Pbeer delete(k:{Name.new} s:{Name.new} r:R1)}
+      if R1 == NoValue then
+         {Pbeer put(k:K v:V s:S Success)}
+         if {Pbeer get(k:K v:$)} == V then
+            {Pbeer delete(k:K s:S r:R2)}
+            if R2 == Success andthen {Pbeer get(k:K v:$)} == NoValue then
+               {Say "PASSED"}
+               true
+            else
+               {Say "FAILED: deleting existing item did not work"}
+               false
+            end
+         else
+            {Say "FAILED: putting did not work.... VERY STRANGE"}
+            false
+         end   
+      else
+         {Say "FAILED: Deleting unexisting element did not work"}
+         false
+      end
+   end
+
+   fun {WrongKeysOnPut Pbeer}
+      R K V S
+   in
+      K = {Name.new}
+      V = {Name.new}
+      S = {Name.new}
+      {Wisper "wrong keys on put : "}
+      {Pbeer put(k:K v:{Name.new} s:S r:Success)}
+      {Pbeer put(k:K v:V s:S r:Success)}
+      if {Pbeer get(k:K v:$)} == V then
+         %% testing wrong secret
+         {Pbeer put(k:K v:{Name.new} s:{Name.new} r:R)}
+         if R == BadSecret then
+            %% testing wrong key
+            {Pbeer put(k:{Name.new} v:{Name.new} s:S r:Success)}
+            if {Pbeer get(k:K v:$)} == V then
+               %% testing wrong K1 and Secret 
+               {Pbeer put(k:{Name.new} v:{Name.new} s:{NewName} r:Success)}
+               if {Pbeer get(k:K v:$)} == V then
+                  {Say "PASSED"}
+                  true
+               else
+                  {Say "FAILED: on wrong K and Secret"}
+                  false
+               end
+            else
+               {Say "FAILED: on wrong K1"}
+               false
+            end
+         else
+            {Say "FAILED: on wrong secret"}
+         end
+      else
+         {Say "FAILED: on basic put. VERY STRANGE!"}
+         false
+      end
+   end
+
+   fun {WrongKeysOnGet SDB}
+      K1 K2 V S
+   in
+      K1 = {Name.new}
+      K2 = {Name.new}
+      V  = {Name.new}
+      S  = {Name.new}
+      {Wisper "wrong keys on get : "}
+      {SDB put(K1 K2 V S Success)}
+      if {SDB get(K1 K2 $)} == V then
+         %% testing wrong K2
+         if {SDB get(K1 {Name.new} $)} == NoValue then
+            %% testing wrong K1
+            if {SDB get({Name.new} K2 $)} == NoValue then
+               %% testing wrong K1 and K2
+               if {SDB get(K2 K1 $)} == NoValue then
+                  {Say "PASSED"}
+                  true
+               else
+                  {Say "FAILED: on wrong K1 and K2"}
+                  false
+               end
+            else
+               {Say "FAILED: on wrong K1"}
+               false
+            end
+         else
+            {Say "FAILED: on wring K2"}
+            false
+         end
+      else
+         {Say "FAILED: on basic put/get. VERY STRANGE!"}
+      end
+   end
+
+   fun {WrongKeysOnDelete Pbeer}
+      K V S
+   in
+      K = {Name.new}
+      V = {Name.new}
+      S = {Name.new}
+      {Wisper "wrong keys on delete : "}
+      {Pbeer put(k:K v:V s:S r:Success)}
+      %% testing wrong K
+      {Pbeer delete(k:{Name.new} s:S NoValue)}
+      if {Pbeer get(k:K v:$)} == V then
+         %% testing worng secret
+         {Pbeer delete(k:K s:{Name.new} r:BadSecret)}
+         if {Pbeer get(k:K v:$)} == V then
+            {Say "PASSED"}
+            true
+         else
+            {Say "FAILED: deleted item event with the wrong secret"}
+            false
+         end
+      else
+         {Say "FAILED: deleted value only with K2 and S but wrong K1"}
+         false
+      end
+   end
+
+   %% -------------------------------------------------------------------
+   %% End of individual tests - going to global organization of tests 
+   %% -------------------------------------------------------------------
+
+   fun {TestPairs}
+      Results = {NewCell nil}
+      proc {AddTest Test}
+         Results := {Test MasterOfPuppets}|@Results
+      end
+   in
+      {AddTest PutAndGet} 
+      {AddTest GetNoValue} 
+      {AddTest Delete}
+      {AddTest WrongKeysOnPut}
+      {AddTest WrongKeysOnGet}
+      {AddTest WrongKeysOnDelete}
       {MasterOfPuppets send(msg(text:'hello nurse' src:foo)
                             to:{Utils.hash foo MaxKey})}
       {MasterOfPuppets send(msg(text:bla src:foo) 
                             to:{Utils.hash ina MaxKey})}
-      {Delay 1000}
       {System.show 'TESTING DIRECT ACCESS TO THE STORE OF A PEER'}
       local
          Pbeer
@@ -142,7 +277,6 @@ define
          {MasterOfPuppets send(put(foo bla) to:Pbeer.id)}
       end
       {Delay 1000}
-      {Get foo}
       local
          Pbeer HKey
       in
@@ -150,50 +284,15 @@ define
          {MasterOfPuppets lookupHash(hkey:HKey res:Pbeer)}
          {MasterOfPuppets send(putItem(HKey foo tetete tag:dht) to:Pbeer.id)}
       end
-      {Delay 1000}
-      {Get foo}
-      {Delete nada}
-      {Delay 1000}
-      {Delete foo}
-      {Delay 500}
-      {Get foo}
+      {List.foldL @Results Bool.and true}
    end
 
-   proc {TestSets}
-      {Show '-------------------------------------------------------------'}
-      {Show '------- testing sets -----'}
-      {Add chicos foo}
-      {Add chicos flets}
-      {Add chicos ina}
-      {ReadSet chicos}
-      {ReadSet chicas}
-      {Remove chicos foo}
-      {Remove chicos nada}
-      {Remove chicas foo}
-      {ReadSet chicos}
-      {ReadSet chicas}
-      {Add chicos gatos(foo flets)}
-      {Add chicos ina}
-      {ReadSet chicos}
-      {Add chicos foo}
-      {ReadSet chicos}
-      {Remove chicos gatos(foo flets)}
-      {Remove chicos ina}
-      {Remove chicos foo}
-      {Remove chicos flets}
-      {ReadSet chicos}
-      {Add chicos foo}
-      {Add chicos flets}
-      {ReadSet chicos}
-      {Get chicos}
-      {Put chicos nil}
-      {Get chicos}
-      {ReadSet chicos}
+   fun {TestSets}
+      true
    end
 
-   proc {TestAll}
-      {TestPairs}
-      {TestSets}
+   fun {TestAll}
+      {Bool.and {TestPairs} {TestSets}}
    end
    
    fun {Run Args}
@@ -204,34 +303,35 @@ define
       %% Help message
       if Args.help then
          {HelpMessage}
-         {Application.exit 0}
-      end
-      
-      case Args.1
-      of "dht"|Subcommand|nil then
-         case Subcommand
-         of "all" then
+         false
+      else 
+         case Args.1
+         of "dht"|Subcommand|nil then
+            case Subcommand
+            of "all" then
+               {Bootstrap}
+               {TestAll}
+            [] "pairs" then
+               {Bootstrap}
+               {TestPairs}
+            [] "sets" then
+               {Bootstrap}
+               {TestSets}
+            else
+               {Say "ERROR: Invalid invocation\n"}
+               {HelpMessage}
+               error("invalid invocation")
+            end
+         [] nil then
+            {Say "Running all threads"}
             {Bootstrap}
             {TestAll}
-         [] "pairs" then
-            {Bootstrap}
-            {TestPairs}
-         [] "sets" then
-            {Bootstrap}
-            {TestSets}
          else
             {Say "ERROR: Invalid invocation\n"}
             {HelpMessage}
+            false
          end
-      [] nil then
-         {Say "Running all threads"}
-         {Bootstrap}
-         {TestAll}
-      else
-         {Say "ERROR: Invalid invocation\n"}
-         {HelpMessage}
       end
-      true
    end
 
 end
