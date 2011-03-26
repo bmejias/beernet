@@ -96,7 +96,7 @@ define
       {Wisper "put and get: "} 
       {Pbeer put(s:S k:K v:V r:R1)}
       if R1 == Success then
-         {Pbeer get(k:K r:R2)}
+         {Pbeer get(k:K v:R2)}
          if R2 == V then
             {Say "PASSED"}
             true
@@ -112,7 +112,7 @@ define
    
    fun {GetNoValue Pbeer}
       {Wisper "get no value: "}
-      if {Pbeer get(k:{Name.new} $)} == NoValue then
+      if {Pbeer get(k:{Name.new} v:$)} == NoValue then
          {Say "PASSED"}
          true
       else
@@ -130,7 +130,7 @@ define
       {Wisper "delete : "}
       {Pbeer delete(k:{Name.new} s:{Name.new} r:R1)}
       if R1 == NoValue then
-         {Pbeer put(k:K v:V s:S Success)}
+         {Pbeer put(k:K v:V s:S r:Success)}
          if {Pbeer get(k:K v:$)} == V then
             {Pbeer delete(k:K s:S r:R2)}
             if R2 == Success andthen {Pbeer get(k:K v:$)} == NoValue then
@@ -188,34 +188,20 @@ define
       end
    end
 
-   fun {WrongKeysOnGet SDB}
-      K1 K2 V S
+   fun {WrongKeysOnGet Pbeer}
+      K V S
    in
-      K1 = {Name.new}
-      K2 = {Name.new}
-      V  = {Name.new}
-      S  = {Name.new}
+      K = {Name.new}
+      V = {Name.new}
+      S = {Name.new}
       {Wisper "wrong keys on get : "}
-      {SDB put(K1 K2 V S Success)}
-      if {SDB get(K1 K2 $)} == V then
-         %% testing wrong K2
-         if {SDB get(K1 {Name.new} $)} == NoValue then
-            %% testing wrong K1
-            if {SDB get({Name.new} K2 $)} == NoValue then
-               %% testing wrong K1 and K2
-               if {SDB get(K2 K1 $)} == NoValue then
-                  {Say "PASSED"}
-                  true
-               else
-                  {Say "FAILED: on wrong K1 and K2"}
-                  false
-               end
-            else
-               {Say "FAILED: on wrong K1"}
-               false
-            end
+      {Pbeer put(k:K v:V s:S r:Success)}
+      if {Pbeer get(k:K v:$)} == V then
+         if {Pbeer get(k:{Name.new} v:$)} == NoValue then
+            {Say "PASSED"}
+            true
          else
-            {Say "FAILED: on wring K2"}
+            {Say "FAILED: on wrong K"}
             false
          end
       else
@@ -232,7 +218,7 @@ define
       {Wisper "wrong keys on delete : "}
       {Pbeer put(k:K v:V s:S r:Success)}
       %% testing wrong K
-      {Pbeer delete(k:{Name.new} s:S NoValue)}
+      {Pbeer delete(k:{Name.new} s:S r:NoValue)}
       if {Pbeer get(k:K v:$)} == V then
          %% testing worng secret
          {Pbeer delete(k:K s:{Name.new} r:BadSecret)}
@@ -319,8 +305,9 @@ define
                {TestSets}
             else
                {Say "ERROR: Invalid invocation\n"}
+               {Say {Value.toVirtualString Args 100 100}}
                {HelpMessage}
-               error("invalid invocation")
+               false
             end
          [] nil then
             {Say "Running all threads"}
@@ -328,6 +315,7 @@ define
             {TestAll}
          else
             {Say "ERROR: Invalid invocation\n"}
+            {Say {Value.toVirtualString Args 100 100}}
             {HelpMessage}
             false
          end

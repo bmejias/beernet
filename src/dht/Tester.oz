@@ -58,7 +58,7 @@ in
    end
    
    case Args.1
-   of Command|nil then
+   of Command|_ then
       case Command
       of "dht" then
          {FinalMsg {TestDHT.run Args}}
@@ -66,10 +66,12 @@ in
          {FinalMsg {TestSDB.run Args}}
       else
          {Say "ERROR: Invalid invocation\n"}
+         {Say {Value.toVirtualString Args 100 100}}
          {HelpMessage}
       end
    else
       {Say "ERROR: Invalid invocation\n"}
+      {Say {Value.toVirtualString Args 100 100}}
       {HelpMessage}
    end
 
