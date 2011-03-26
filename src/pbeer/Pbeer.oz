@@ -132,17 +132,17 @@ define
       proc {PreGet Event}
          case Event
          of get(Key Result) then
-            {@DHT get(k:Key r:Result)}
-         [] get(k:Key r:Result) then
-            {@DHT get(k:Key r:Result)}
-         [] get(s:_ k:Key r:Result) then
+            {@DHT get(k:Key v:Result)}
+         [] get(k:Key v:Result) then
+            {@DHT get(k:Key v:Result)}
+         [] get(s:_ k:Key v:Result) then
             {Say "DHT Warning: secrets are not used for reading"}
-            {@DHT get(k:Key r:Result)}
+            {@DHT get(k:Key v:Result)}
          else
             raise
                error(wrong_invocation(event:get
                                       found:Event
-                                      mustbe:get(k:key r:result)))
+                                      mustbe:get(k:key v:result)))
             end
          end
       end
