@@ -180,8 +180,9 @@ define
          of Node|MoreNodes then
             if I =< Args.sites then
                {OS.system '#'("ssh -t -l " Args.distuser " " Node 
-                              " sh killall -9 emulator.exe &") _}
-               {KillSites I+1 MoreNodes}
+                              " killall -9 emulator.exe &") _}
+                              %" sh /usr/bin/killall -9 emulator.exe &") _}
+               {KillSites MoreNodes I+1}
             end
          [] nil then
             {KillSites AllSites I}
@@ -191,18 +192,26 @@ define
       thread
          Mordor
       in
-         %% Waits for the stop message
-         {Wait StopStream.1} 
-         {Say "Going to kill everything in 3 seconds..."}
-         {Delay 3000}
-         if Args.dist == cluster then
-            AllSites = {TextFile.read Args.distnodes}
-            {KillSites AllSites 1}
+         for Msg in StopStream do
+            %% Waits for the stop message
+            case Msg
+            of stop(Ack) then
+               MyAck
+            in
+               Ack = unit
+               {Say "Going to kill everything in 3 seconds..."}
+               {Delay 3000}
+               if Args.dist == cluster then
+                  AllSites = {TextFile.read Args.distnodes}
+                  {KillSites AllSites 1}
+               end
+               Mordor = {Connection.take
+                           {Pickle.load Args.storepath#'/'#Args.store}}
+               {Send Mordor theonering(MyAck)}
+               {Wait MyAck}
+               {Application.exit 0}
+            end
          end
-         Mordor = {Connection.take {Pickle.load Args.storepath#'/'#Args.store}}
-         {Send Mordor theonering}
-         {Delay 1000}
-         {Application.exit 0}
       end
       %% Return the stop port
       {NewPort StopStream}
@@ -221,7 +230,7 @@ define
          {Application.exit 0}
       end
       %% Launch stop service on ticke Args.achel
-      {Pickle.save {Connection.offerUnlimited {StopService Args}} Args.store}
+      {Pickle.save {Connection.offerUnlimited {StopService Args}} Args.achel}
 
       {Say "Lauching Mordor Store"}
       {OS.system '#'("linux32 ./mordor --ticket " Args.storepath '/' 

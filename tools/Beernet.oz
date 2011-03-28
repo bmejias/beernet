@@ -33,6 +33,7 @@ import
    BaseArgs    at '../lib/tools/BaseArgs.ozf'
    Bootstrap   at '../lib/tools/Bootstrap.ozf'
    ListPbeers  at '../lib/tools/ListPbeers.ozf'
+   StopNetwork at '../lib/tools/StopNetwork.ozf'
 define
 
    Say = System.showInfo
@@ -80,6 +81,7 @@ define
 
    Subcommands = subcmds(bootstrap: Bootstrap
                          list:      ListPbeers
+                         stop:      StopNetwork
                          help:      rec(defArgs:nil
                                         run:ThisHelpRun))
 in

@@ -3,7 +3,8 @@ INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
 DESTDIR = ../bin/
 DESTDIR_FUNCTOR = ../lib/tools/
-SRCS = BaseArgs Bootstrap Clansman ListPbeers PbeerBaseArgs TokenPassing \
+SRCS = BaseArgs Bootstrap Clansman ListPbeers PbeerBaseArgs StopNetwork \
+		 TokenPassing \
 		 Delete Get Put Lookup LookupHash PbeerCommon SetsCommon \
 		 Add Remove ReadSet Write Read Kill
 EXECS = beernet node pbeer mordor
