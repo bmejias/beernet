@@ -67,10 +67,17 @@ define
       Script = {New TextFile.textFile init(name:Name
                                            flags:[write create truncate text])}
       {Script putS("#!/bin/sh\n")}
+      if Args.ozpath \= {BaseArgs.getDefault ozpath} then
+         {Script putS("export PATH="#Args.ozpath#":$PATH")}
+      end
       {Script putS("cd "#Args.nodepath)}
-      {Script putS("scp "#Args.storesite#":~/"#Args.storepath#Args.store#" .")}
-      {Script putS("scp "#Args.logsite#":~/"#Args.logpath#Args.logger#" .")}
-      {Script putS("linux32 "#{Call})}
+      if Args.dist == internet then
+         {Script putS('#'("scp " Args.distuser "@" Args.storesite ":"
+                           Args.storepath Args.store " ."))}
+         {Script putS('#'("scp " Args.distuser "@" Args.logsite ":"
+                           Args.logpath Args.logger " ."))}
+      end
+      {Script putS("linux32 "#{Call Args})}
       {Script close}
       {OS.system "chmod +x "#Name Flag}
       {Wait Flag}
@@ -114,6 +121,7 @@ define
          {LaunchRemoteScript Site User}
          %% And switch to any pbeer for the next calls
          RunScript   := LaunchRemoteScript
+         NodeScript  := Args.scrpany
          {Delay 1666}
       end
       proc {LaunchRemoteScript Site User}
@@ -129,7 +137,7 @@ define
          if I =< Args.size then 
             case Nodes
             of Node|MoreNodes then
-               {@RunScript Node Args.distuser Args.scrpany}
+               {@RunScript Node Args.distuser}
                if I mod Args.sites == 0 then
                   {Loop AllSites I+1}
                else
@@ -172,8 +180,9 @@ define
          of Node|MoreNodes then
             if I =< Args.sites then
                {OS.system '#'("ssh -t -l " Args.distuser " " Node 
-                              " sh killall -9 emulator.exe &") _}
-               {KillSites I+1 MoreNodes}
+                              " killall -9 emulator.exe &") _}
+                              %" sh /usr/bin/killall -9 emulator.exe &") _}
+               {KillSites MoreNodes I+1}
             end
          [] nil then
             {KillSites AllSites I}
@@ -183,18 +192,26 @@ define
       thread
          Mordor
       in
-         %% Waits for the stop message
-         {Wait StopStream.1} 
-         {Say "Going to kill everything in 3 seconds..."}
-         {Delay 3000}
-         if Args.dist == cluster then
-            AllSites = {TextFile.read Args.distnodes}
-            {KillSites AllSites 1}
+         for Msg in StopStream do
+            %% Waits for the stop message
+            case Msg
+            of stop(Ack) then
+               MyAck
+            in
+               Ack = unit
+               {Say "Going to kill everything in 3 seconds..."}
+               {Delay 3000}
+               if Args.dist == cluster then
+                  AllSites = {TextFile.read Args.distnodes}
+                  {KillSites AllSites 1}
+               end
+               Mordor = {Connection.take
+                           {Pickle.load Args.storepath#'/'#Args.store}}
+               {Send Mordor theonering(MyAck)}
+               {Wait MyAck}
+               {Application.exit 0}
+            end
          end
-         Mordor = {Connection.take {Pickle.load Args.store}}
-         {Send Mordor theonering}
-         {Delay 1000}
-         {Application.exit 0}
       end
       %% Return the stop port
       {NewPort StopStream}
@@ -216,7 +233,8 @@ define
       {Pickle.save {Connection.offerUnlimited {StopService Args}} Args.achel}
 
       {Say "Lauching Mordor Store"}
-      {OS.system "linux32 ./mordor --ticket "#Args.storepath#Args.store#" &" _}
+      {OS.system '#'("linux32 ./mordor --ticket " Args.storepath '/' 
+                      Args.store " &") _}
       {Delay 1666}
 
       case Args.dist

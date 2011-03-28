@@ -129,7 +129,8 @@ define
             Ref = {RetrievePbeer Pbeers Ring Id}
          [] registerPbeer(Ring PbeerRef) then
             {AddElement Pbeers Ring PbeerRef Say}
-         [] theonering then
+         [] theonering(Ack) then
+            Ack = unit
             {Say "Destroying Mordor"}
             {Application.exit 0}
 

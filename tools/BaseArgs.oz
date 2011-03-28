@@ -23,6 +23,7 @@
 functor
 import
    Application
+   OS
    Property
    System
 export
@@ -37,14 +38,15 @@ define
 
    ACHEL_TKET  = 'achel.tket'
    LOG_FILE    = 'usetime'
-   LOG_PATH    = './'
+   LOG_PATH    = {OS.getEnv 'PWD'}
    LOG_TKET    = 'logger.tket'
    LOG_SITE    = 'localhost'
-   NODE_PATH   = './'
+   NODE_PATH   = {OS.getEnv 'PWD'}
    DIST_MODE   = localhost
    TRANS_PROT  = paxos
    N_TRANS     = 10
    N_READS     = 100
+   OZ_PATH     = default
    READ_BUFF   = 20
    READ_ONLY   = all
    RING_NAME   = eldorado
@@ -52,7 +54,7 @@ define
    DEF_SITES   = 1
    SCRP_FIRST  = firstPbeer
    SCRP_ANY    = anyPbeer
-   STORE_PATH  = './'
+   STORE_PATH  = {OS.getEnv 'PWD'}
    STORE_TKET  = 'mordor.tket'
    STORE_SITE  = 'localhost'
 
@@ -90,7 +92,8 @@ define
       {Say "      --logpath\tPath to logger's ticket (default: "#LOG_PATH#")"}
       {Say "      --logsite\tLogger's site (default: "#LOG_SITE#")"}
       {Say "      --logfile\tFile to log stats (default uses current time)"}
-      {Say "      --nodepath\tPath to node's scripts (default: "#NODE_PATH#")"}
+      {Say "      --nodepath Path to node's scripts (default: "#NODE_PATH#")"}
+      {Say "      --ozpath\tPath to ozengine (default: "#OZ_PATH#")"}
       {Say "  -d, --dist\tDistributed mode (default: "#DIST_MODE#")"}
       {Say "  -a, --achel\tStop notification point (default: "#ACHEL_TKET#")"}
       {Say ""}
@@ -109,6 +112,7 @@ define
                logpath(single             type:atom   default:LOG_PATH)
                logsite(single             type:atom   default:LOG_SITE)
                nodepath(single            type:atom   default:NODE_PATH)
+               ozpath(single              type:atom   default:OZ_PATH)
                protocol(single   char:&p  type:atom   default:TRANS_PROT)
                reads(single               type:int    default:N_READS)
                readbuff(single            type:int    default:READ_BUFF)
