@@ -199,7 +199,7 @@ define
             AllSites = {TextFile.read Args.distnodes}
             {KillSites AllSites 1}
          end
-         Mordor = {Connection.take {Pickle.load Args.store}}
+         Mordor = {Connection.take {Pickle.load Args.storepath#'/'#Args.store}}
          {Send Mordor theonering}
          {Delay 1000}
          {Application.exit 0}
@@ -221,10 +221,11 @@ define
          {Application.exit 0}
       end
       %% Launch stop service on ticke Args.achel
-      {Pickle.save {Connection.offerUnlimited {StopService Args}} Args.achel}
+      {Pickle.save {Connection.offerUnlimited {StopService Args}} Args.store}
 
       {Say "Lauching Mordor Store"}
-      {OS.system "linux32 ./mordor --ticket "#Args.storepath#Args.store#" &" _}
+      {OS.system '#'("linux32 ./mordor --ticket " Args.storepath '/' 
+                      Args.store " &") _}
       {Delay 1666}
 
       case Args.dist
