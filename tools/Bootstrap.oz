@@ -67,6 +67,9 @@ define
       Script = {New TextFile.textFile init(name:Name
                                            flags:[write create truncate text])}
       {Script putS("#!/bin/sh\n")}
+      if Args.ozpath \= {BaseArgs.getDefault ozpath} then
+         {Script putS("export PATH="#Args.ozpath#":$PATH")}
+      end
       {Script putS("cd "#Args.nodepath)}
       if Args.dist == internet then
          {Script putS('#'("scp " Args.distuser "@" Args.storesite ":"
@@ -123,8 +126,7 @@ define
       end
       proc {LaunchRemoteScript Site User}
          SshCall = '#'("ssh -t -l " User " " Site " sh "
-                        Args.nodepath "/" theecho)
-                        %Args.nodepath "/" @NodeScript)
+                        Args.nodepath "/" @NodeScript)
          Flag
       in
          {OS.system SshCall#" || echo \"failed\" &" Flag}
