@@ -228,7 +228,7 @@ define
       end
 
       proc {AddToSet Event}
-         addToSet(HKey Key Val ...) = Event
+         addToSet(hk:HKey k:Key v:Val ...) = Event
          Set
          HVal
       in
