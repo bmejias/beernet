@@ -68,9 +68,13 @@ define
                                            flags:[write create truncate text])}
       {Script putS("#!/bin/sh\n")}
       {Script putS("cd "#Args.nodepath)}
-      {Script putS("scp "#Args.storesite#":~/"#Args.storepath#Args.store#" .")}
-      {Script putS("scp "#Args.logsite#":~/"#Args.logpath#Args.logger#" .")}
-      {Script putS("linux32 "#{Call})}
+      if Args.dist == internet then
+         {Script putS('#'("scp " Args.distuser "@" Args.storesite ":"
+                           Args.storepath Args.store " ."))}
+         {Script putS('#'("scp " Args.distuser "@" Args.logsite ":"
+                           Args.logpath Args.logger " ."))}
+      end
+      {Script putS("linux32 "#{Call Args})}
       {Script close}
       {OS.system "chmod +x "#Name Flag}
       {Wait Flag}
@@ -114,11 +118,13 @@ define
          {LaunchRemoteScript Site User}
          %% And switch to any pbeer for the next calls
          RunScript   := LaunchRemoteScript
+         NodeScript  := Args.scrpany
          {Delay 1666}
       end
       proc {LaunchRemoteScript Site User}
          SshCall = '#'("ssh -t -l " User " " Site " sh "
-                        Args.nodepath "/" @NodeScript)
+                        Args.nodepath "/" theecho)
+                        %Args.nodepath "/" @NodeScript)
          Flag
       in
          {OS.system SshCall#" || echo \"failed\" &" Flag}
@@ -129,7 +135,7 @@ define
          if I =< Args.size then 
             case Nodes
             of Node|MoreNodes then
-               {@RunScript Node Args.distuser Args.scrpany}
+               {@RunScript Node Args.distuser}
                if I mod Args.sites == 0 then
                   {Loop AllSites I+1}
                else

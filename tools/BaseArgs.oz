@@ -23,6 +23,7 @@
 functor
 import
    Application
+   OS
    Property
    System
 export
@@ -37,10 +38,10 @@ define
 
    ACHEL_TKET  = 'achel.tket'
    LOG_FILE    = 'usetime'
-   LOG_PATH    = './'
+   LOG_PATH    = {OS.getEnv 'PWD'}
    LOG_TKET    = 'logger.tket'
    LOG_SITE    = 'localhost'
-   NODE_PATH   = './'
+   NODE_PATH   = {OS.getEnv 'PWD'}
    DIST_MODE   = localhost
    TRANS_PROT  = paxos
    N_TRANS     = 10
@@ -52,7 +53,7 @@ define
    DEF_SITES   = 1
    SCRP_FIRST  = firstPbeer
    SCRP_ANY    = anyPbeer
-   STORE_PATH  = './'
+   STORE_PATH  = {OS.getEnv 'PWD'}
    STORE_TKET  = 'mordor.tket'
    STORE_SITE  = 'localhost'
 
@@ -90,7 +91,7 @@ define
       {Say "      --logpath\tPath to logger's ticket (default: "#LOG_PATH#")"}
       {Say "      --logsite\tLogger's site (default: "#LOG_SITE#")"}
       {Say "      --logfile\tFile to log stats (default uses current time)"}
-      {Say "      --nodepath\tPath to node's scripts (default: "#NODE_PATH#")"}
+      {Say "      --nodepath Path to node's scripts (default: "#NODE_PATH#")"}
       {Say "  -d, --dist\tDistributed mode (default: "#DIST_MODE#")"}
       {Say "  -a, --achel\tStop notification point (default: "#ACHEL_TKET#")"}
       {Say ""}
