@@ -38,6 +38,7 @@ define
 
    fun {New Args}
       Self
+      Suicide
       %Listener
       MsgLayer
       Replica
@@ -415,7 +416,7 @@ define
       proc {Abort abort}
          {Port.send Client abort}
          Done := true
-         {Self signalDestroy}
+         {Suicide}
       end
 
       proc {Commit commit}
@@ -557,6 +558,7 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
+         Suicide  = FullComponent.killer
          %Listener = FullComponent.listener
       end
       MsgLayer    = {NewCell Component.dummy}

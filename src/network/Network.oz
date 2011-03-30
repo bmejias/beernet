@@ -59,6 +59,7 @@ define
       FailDetector   % Failure Detector
       Listener       % Component where the deliver messages will be triggered
       Self           % Full Component
+      Suicide        % Stop reciving message => Kill itself
 
       %%--- Events ---
 
@@ -74,7 +75,7 @@ define
       proc {SignalDestroy signalDestroy}
          {ComLayer signalDestroy}
          {FailDetector signalDestroy}
-         {Wait _}
+         {Suicide}
       end
 
       Events = events(
@@ -94,6 +95,7 @@ define
       FailDetector   = {FailureDetector.new}
       Self           = {Component.new Events}
       Listener       = Self.listener
+      Suicide        = Self.killer
       {FailDetector setComLayer(ComLayer)}
       local
          ThisBoard Subscriber
