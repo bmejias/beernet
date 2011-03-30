@@ -62,7 +62,7 @@ export
    New
 define
 
-   NO_VALUE = SimpleSDB.noValue
+   NO_VALUE    = SimpleSDB.noValue
 
    fun {New CallArgs}
       Self
@@ -121,8 +121,10 @@ define
          end
          Elements
       in
+         %% This part will have to change. A no value is not the same
+         %% as an empty set
          if Val == NO_VALUE orelse Val == nil then
-            ClientVar = empty
+            ClientVar = empty 
          else
             Elements = {GetValues Val}
             ClientVar= {List.toTuple set Elements}
