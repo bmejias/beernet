@@ -7,6 +7,10 @@
  *-------------------------------------------------------------------------
  */
 
+Beernet-0.9
+	- Adding subcommand stop to beernet tool
+	- In beernet --dist=cluster fixed 
+
 Beernet-0.8
 	- Symmetric replication layer provides a replication set for quick bulk
 	- Finger table can be explicitly refreshed
