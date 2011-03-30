@@ -30,6 +30,7 @@ import
    System
    Board          at '../corecomp/Board.ozf'
    Component      at '../corecomp/Component.ozf'
+   Constants      at '../trappist/Constants.ozf'
    RelaxedRing    at '../son/relaxed-ring/Node.ozf'
    Replication    at '../trappist/SymmetricReplication.ozf'
    TheDHT         at '../dht/DHT.ozf'
@@ -40,7 +41,7 @@ export
    New
 define
 
-   NO_SECRET   = public
+   NO_SECRET   = Constants.public
 
    Say = System.showInfo
 

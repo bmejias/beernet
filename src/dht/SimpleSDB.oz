@@ -36,23 +36,16 @@
 
 functor
 import
+   Constants   at '../commons/Constants.ozf'
    Component   at '../corecomp/Component.ozf'
 export
    New
-   NoValue
-   Success
-   BadSecret
 define
 
-   NO_VALUE = 'NOT_FOUND'  % To be used inside the component as constant
-   SUCCESS  = success      % Correct secret, or new item created 
-   ERROR    = error(bad_secret) % Incorrect secret
+   NO_VALUE = Constants.noValue  % To be used inside the component as constant
+   SUCCESS  = Constants.success  % Correct secret, or new item created 
+   ERROR    = Constants.badSecret % Incorrect secret
    
-   NoValue  = NO_VALUE     % Nicer name for the export
-   Success  = SUCCESS
-   BadSecret= ERROR
-
-  
    %%To use tuples instead of records
    SECRET   = 1
    VALUE    = 2

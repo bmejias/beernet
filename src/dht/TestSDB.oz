@@ -4,6 +4,7 @@
 functor
 import
    System
+   Constants   at 'Constants.ozf'
    SimpleSDB   at 'SimpleSDB.ozf'
 export
    Run
@@ -12,9 +13,9 @@ define
    Say      = System.showInfo
    Wisper   = System.printInfo
 
-   NoValue  = SimpleSDB.noValue
-   Success  = SimpleSDB.success
-   BadSecret= SimpleSDB.badSecret
+   NoValue  = Constants.noValue
+   Success  = Constants.success
+   BadSecret= Constants.badSecret
 
    fun {PutAndGet SDB}
       R1 R2 K1 K2 V S

@@ -28,11 +28,17 @@
 
 functor
 import
+   System
    Component      at '../../corecomp/Component.ozf'
+   Constants      at '../../commons/Constants.ozf'
    Timer          at '../../timer/Timer.ozf'
 export
    New
 define
+
+   BAD_SECRET  = Constants.badSecret
+   NO_SECRET   = Constants.public
+   Say         = System.showInfo
 
    fun {New Args}
       Self
@@ -84,6 +90,7 @@ define
       in
          MostItems = {@Replica getMajority(Key $)}
          RemoteItem = {GetNewest MostItems item(key:     Key
+                                                secret:  NO_SECRET
                                                 value:   'NOT_FOUND'
                                                 version: 0
                                                 readers: nil)}
@@ -305,9 +312,68 @@ define
          FinalDecision = Decision
       end
 
+      %% --- Masking Transaction operations write/read/destroy ----
+      proc {PreWrite Event}
+         case Event
+         of write(Key Val) then
+            {Write write(s:NO_SECRET k:Key v:Val r:_)}
+         [] write(k:Key v:Val r:Result) then
+            {Write write(s:NO_SECRET k:Key v:Val r:Result)}
+         [] write(s:Secret k:Key v:Val r:Result) then
+            {Write write(s:Secret k:Key v:Val r:Result)}
+         else
+            raise
+               error(wrong_invocation(event:write
+                                      found:Event
+                                      mustbe:write(s:secret
+                                                   k:key
+                                                   v:value
+                                                   r:result)))
+            end
+         end
+      end
+
+      proc {PreRead Event}
+         case Event
+         of read(Key Result) then
+            {Read read(k:Key v:Result)}
+         [] read(k:Key v:Result) then
+            {Read read(k:Key v:Result)}
+         [] read(s:_ k:Key v:Result) then
+            {Say "Transaction Warning: secrets are not used for reading"}
+            {Read read(k:Key v:Result)}
+         else
+            raise
+               error(wrong_invocation(event:read
+                                      found:Event
+                                      mustbe:read(k:key v:result)))
+            end
+         end
+      end
+
+      proc {PreDestroy Event}
+         case Event
+         of destroy(Key) then
+            {Destroy destroy(s:NO_SECRET k:Key r:_)}
+         [] destroy(k:Key r:Result) then
+            {Destroy destroy(s:NO_SECRET k:Key r:Result)}
+         [] destroy(s:Secret k:Key r:Result) then
+            {Destroy destroy(s:Secret k:Key r:Result)}
+         else
+            raise
+               error(wrong_invocation(event:destroy
+                                      found:Event
+                                      mustbe:destroy(s:secret
+                                                     k:key
+                                                     r:result)))
+            end
+         end
+      end
+      %% --- End of Masking -------------------------------------------------
+
       %% --- Operations for the client --------------------------------------
-      proc {Abort abort}
-         {Port.send Client abort}
+      proc {Abort Msg}
+         {Port.send Client Msg}
          Done := true
          {Self signalDestroy}
       end
@@ -343,19 +409,30 @@ define
                                       ))} 
       end
 
-      proc {Read read(Key ?Val)}
+      proc {Destroy destroy(k:Key s:Secret r:Result)}
+         skip
+      end
+
+      proc {Read read(k:Key v:?Val)}
          Val   = {GetItem Key}.value
       end
 
-      proc {Write write(Key Val)}
+      proc {Write write(k:Key v:Val s:Secret r:Result)}
          Item
       in
          Item = {GetItem Key}
-         LocalStore.Key :=  item(key:     Key
-                                 value:   Val 
-                                 version: Item.version+1
-                                 readers: Item.readers 
-                                 op:      write)
+         %% Either creation of item orelse rewrite with correct secret
+         if Item.version == 0 orelse Item.secret == Secret then
+            LocalStore.Key :=  item(key:     Key
+                                    value:   Val 
+                                    secret:  Secret
+                                    version: Item.version+1
+                                    readers: Item.readers 
+                                    op:      write)
+         else %% Attempt rewrite with wrong secret
+            Result = BAD_SECRET
+            {Abort abort(BAD_SECRET)}
+         end
       end
 
       %% --- Various --------------------------------------------------------
@@ -393,8 +470,9 @@ define
                      %% Operations for the client
                      abort:         Abort
                      commit:        Commit
-                     read:          Read
-                     write:         Write
+                     destroy:       PreDestroy
+                     read:          PreRead
+                     write:         PreWrite
                      %% Interaction with rTMs
                      initRTM:       InitRTM
                      registerRTM:   RegisterRTM
