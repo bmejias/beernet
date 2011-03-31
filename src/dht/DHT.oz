@@ -55,6 +55,7 @@
 functor
 import
    Component   at '../corecomp/Component.ozf'
+   Constants   at '../commons/Constants.ozf'
    HashedList  at '../utils/HashedList.ozf'
    Utils       at '../utils/Misc.ozf'
    SimpleSDB    at 'SimpleSDB.ozf'
@@ -62,7 +63,7 @@ export
    New
 define
 
-   NO_VALUE    = SimpleSDB.noValue
+   NO_VALUE    = Constants.noValue
 
    fun {New CallArgs}
       Self

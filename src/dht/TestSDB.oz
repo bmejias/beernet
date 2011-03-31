@@ -4,7 +4,7 @@
 functor
 import
    System
-   Constants   at 'Constants.ozf'
+   Constants   at '../commons/Constants.ozf'
    SimpleSDB   at 'SimpleSDB.ozf'
 export
    Run

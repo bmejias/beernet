@@ -3,6 +3,7 @@
 functor
 import
    System
+   Constants      at '../commons/Constants.ozf'
    Utils          at '../utils/Misc.ozf'
    SimpleSDB      at 'SimpleSDB.ozf'
 export
@@ -12,9 +13,9 @@ define
    Say      = System.showInfo
    Wisper   = System.printInfo
 
-   NoValue  = SimpleSDB.noValue
-   Success  = SimpleSDB.success
-   BadSecret= SimpleSDB.badSecret
+   NoValue  = Constants.noValue
+   Success  = Constants.success
+   BadSecret= Constants.badSecret
 
    MaxKey % Bound after knowning MasterOfPuppets 
 
