@@ -410,7 +410,8 @@ define
                                       ))} 
       end
 
-      proc {Destroy destroy(k:Key s:Secret r:Result)}
+      proc {Destroy destroy(k:_/*Key*/ s:_/*Secret*/ r:_/*Result*/)}
+         %% To be implemented
          skip
       end
 

@@ -28,9 +28,13 @@
 functor
 import
    Component      at '../../corecomp/Component.ozf'
+   Constants      at '../../commons/Constants.ozf'
 export
    New
 define
+
+   NO_ACK      = Constants.noAck
+   NO_SECRET   = Constants.public
 
    fun {New CallArgs}
       Self
@@ -64,6 +68,7 @@ define
          Tmp      = {@DHTman getItem(HKey TrItem.key $)}
          DHTItem  = if Tmp == 'NOT_FOUND' then
                         item(key:      TrItem.key
+                             secret:   NO_SECRET
                              value:    Tmp 
                              version:  0
                              readers:  nil
@@ -74,13 +79,21 @@ define
          %% Brewing vote - tmid needs to be added before sending
          Vote = vote(vote:    _
                      key:     TrItem.key 
+                     secret:  TrItem.secret
                      version: DHTItem.version 
                      tid:     Tid 
                      tp:      tp(id:Id ref:@NodeRef)
                      tag:     trapp)
-         if TrItem.version >= DHTItem.version andthen {Not DHTItem.locked} then
+         if TrItem.version >= DHTItem.version
+            andthen TrItem.secret == DHTItem.secret
+            andthen {Not DHTItem.locked} then
             Vote.vote = brewed
-            {@DHTman putItem(HKey TrItem.key {AdjoinAt DHTItem locked true})}
+            {@DHTman putItem(hk:HKey
+                             k:TrItem.key
+                             s:TrItem.secret
+                             gid:NO_ACK
+                             src:_
+                             v:{AdjoinAt DHTItem locked true})}
          else
             Vote.vote = denied
          end
@@ -95,16 +108,21 @@ define
          DHTItem
       in
          DHTItem = {@DHTman getItem(NewItem.hkey NewItem.item.key $)}
-         {PutItemAndAck NewItem.hkey NewItem.item.key DHTItem}
+         {PutItemAndAck DHTItem}
       end
 
       proc {Commit commit}
-         {PutItemAndAck NewItem.hkey NewItem.item.key NewItem.item}
+         {PutItemAndAck NewItem.item}
       end
 
-      proc {PutItemAndAck HKey Key Item}
-         {@DHTman  putItem(HKey Key {Record.adjoinAt Item locked false})}
-         {@MsgLayer dsend(to:@Leader.ref ack(key: Key
+      proc {PutItemAndAck Item}
+         {@DHTman  putItem(hk:NewItem.hkey
+                           k:Item.key
+                           s:Item.secret
+                           gid:NO_ACK
+                           src:_
+                           v:{Record.adjoinAt Item locked false})}
+         {@MsgLayer dsend(to:@Leader.ref ack(key: Item.key
                                              tid: NewItem.tid
                                              tmid:@Leader.id
                                              tp:  tp(id:Id ref:@NodeRef)

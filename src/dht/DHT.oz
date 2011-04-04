@@ -64,6 +64,7 @@ export
 define
 
    NO_VALUE    = Constants.noValue
+   NO_ACK      = Constants.noAck
 
    fun {New CallArgs}
       Self
@@ -219,7 +220,9 @@ define
          Result
       in
          {@DB put(HKey Key Val Secret Result)}
-         {@MsgLayer dsend(to:Src bindResult(gid:Gid r:Result tag:dht))}
+         if Gid \= NO_ACK then
+            {@MsgLayer dsend(to:Src bindResult(gid:Gid r:Result tag:dht))}
+         end
       end
 
       proc {BindResult bindResult(gid:Gid r:Result tag:dht)}
