@@ -99,18 +99,18 @@ define
 
       %% --- Trappist API for Key/Value-Sets --------------------------------
       %% Slightly different that Run Transaction
+      %% Event can be:
+      %% add(k:SetKey s:SetSecret v:Value sv:ValueSecret c:ClientP)
+      %% remove(k:SetKey s:SetSecret v:Value sv:ValueSecret c:ClientP)
+      %% readSet(k:SetKey v:Value)
       proc {ToValueSet Event}
-         TM OpEvent Op ClientP
+         TM 
       in
          TM = {TMmakers.valueset.new args(role:leader)}
          {TM setMsgLayer(@MsgLayer)}
          {TM setReplica(@Replica)}
          {AddTransObj TMs {TM getTid($)} {TM getId($)} TM}
-         %% Add default client before calling the TM
-         Op       = {Label Event}
-         ClientP  = if {HasFeature Event 3} then Event.3 else {NewPort _} end
-         OpEvent  = Op(key:Event.1 val:Event.2 client:ClientP)
-         {TM OpEvent}
+         {TM Event}
       end
 
       %% --- For the TMs ----------------------------------------------------
@@ -175,6 +175,8 @@ define
                      add:           ToValueSet
                      remove:        ToValueSet
                      readSet:       ToValueSet
+                     createSet:     ToValueSet
+                     destroySet:    ToValueSet
                      %% For the TMs
                      ack:           ForwardToTM
                      initRTM:       InitRTM

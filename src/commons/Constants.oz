@@ -21,6 +21,7 @@
 
 functor
 export
+   Abort
    BadSecret
    NoAck
    NoSecret
@@ -30,11 +31,12 @@ export
    Success
 define
 
+   Abort    = 'ABORT'      % 
    BadSecret= error(bad_secret) % Incorrect secret
    NoAck    = nack         % Used when no remote answer is needed
    NotFound = 'NOT_FOUND'  % To be used inside the component as constant
    Public   = public       % No secret
-   Success  = success      % Correct secret, or new item created
+   Success  = 'SUCCESS'    % Correct secret, or new item created
 
    %% aliases
    NoValue  = NotFound

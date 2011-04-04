@@ -450,31 +450,17 @@ define
                                  ))} 
       end
 
-      proc {Read read(Key ?Val)}
-         Val   = {GetItem Key}.value
-      end
-
-      proc {Write write(Key Val)}
-         Item
-      in
-         Item = {GetItem Key}
-         LocalStore.Key :=  item(key:     Key
-                                 value:   Val 
-                                 version: Item.version+1
-                                 readers: Item.readers 
-                                 op:      write)
-      end
-
       %% --- Single operations --------------------------------------
 
       proc {AddRemove Event}
          Op Key Val
       in
          Op    = {Record.label Event}
-         Key   = Event.key
-         Val   = Event.val
+         Key   = Event.k
+         Val   = Event.v
          Client= Event.client
-         LocalStore.Key := op(key:Key id:{Name.new} op:Op val:Val)
+         LocalStore.Key := op(k:Key id:{Name.new} op:Op v:Val)
+         Item = {Record.adjoinAt RemoteItem op read}
 %         {System.show 'got the operation... going to bulk'}
          {@Replica  quickBulk(to:@NodeRef.id
                               initRTM(leader:  @Leader
@@ -486,11 +472,19 @@ define
                                       ))}
       end
 
-      proc {ReadSet readSet(key:Key val:Val client:_)}
+      proc {ReadSet readSet(k:Key v:Val)}
          Sets
       in
          Sets = {@Replica getMajoritySet(Key $)}
          Val = {MergeSets Sets}
+      end
+
+      proc {CreateSet Event}
+         skip
+      end
+
+      proc {DestroySet Event}
+         skip
       end
 
       %% --- Various --------------------------------------------------------
@@ -526,15 +520,12 @@ define
       end
 
       Events = events(
-                     %% Operations for the client
-                     abort:         Abort
-                     commit:        Commit
-                     read:          Read
-                     write:         Write
                      %% Single transaction operations
                      add:           AddRemove
                      remove:        AddRemove
                      readSet:       ReadSet
+                     createSet:     CreateSet
+                     destroySet:    DestroySet
                      %% Interaction with rTMs
                      initRTM:       InitRTM
                      registerRTM:   RegisterRTM

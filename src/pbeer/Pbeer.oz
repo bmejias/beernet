@@ -167,7 +167,7 @@ define
          end
          skip
       end
-      %% --- End of Masking -------------------------------------------------
+      %% --- End of Masking DHT operations ----------------------------------
 
       %% --- Forwarding to DHT with different event name --------------------
       proc {SingleAdd Event}
@@ -182,6 +182,55 @@ define
          {@DHT {Record.adjoinList readSet {Record.toListInd Event}}}
       end
       %% --- end forward to DHT with different event name -------------------
+
+      %% --- Masking Value-Sets operations ----------------------------------
+      proc {PreAdd Event}
+         {PreAddRemove Event add}
+      end
+
+      proc {PreRemove Event}
+         {PreAddRemove Event remove}
+      end
+
+      proc {PreAddRemove Event Op}
+         case Event
+         of Op(Key Val) then
+            {ToTrappist Op(k:Key s:NO_SECRET v:Val sv:NO_SECRET c:{Port.new _})}
+         [] Op(Key Val Client) then
+            {ToTrappist Op(k:Key s:NO_SECRET v:Val sv:NO_SECRET c:Client)}
+         [] Op(k:Key v:Val sv:SecVal c:Client) then
+            {ToTrappist Op(k:Key s:NO_SECRET v:Val sv:SecVal c:Client)}
+         [] Op(k:_ s:_ v:_ sv:_ c:_) then
+            {ToTrappist Event}
+         else
+            raise
+               error(wrong_invocation(event:Op
+                                      found:Event
+                                      mustbe:Op(s:secret
+                                                k:key
+                                                vs:valuesecret
+                                                v:value
+                                                c:client)))
+            end
+         end
+      end
+
+      proc {PreReadSet Event}
+         case Event
+         of readSet(Key Val) then
+            {ToTrappist readSet(k:Key v:Val)}
+         [] readSet(k:_ v:_) then
+            {ToTrappist Event}
+         else
+            raise
+               error(wrong_invocation(event:readSet
+                                      found:Event
+                                      mustbe:readSet(k:key
+                                                     v:value)))
+            end
+         end
+      end
+      %% --- End of Masking value-sets operations ---------------------------
 
       ToNode      = {Utils.delegatesTo Node}
       %ToDHT       = {Utils.delegatesTo DHT}
@@ -228,9 +277,11 @@ define
                      executeTransaction:ToTrappist
                      getLocks:         ToTrappist
                      runTransaction:   ToTrappist
-                     add:              ToTrappist
-                     remove:           ToTrappist
-                     readSet:          ToTrappist
+                     add:              PreAdd
+                     remove:           PreRemove
+                     readSet:          PreReadSet
+                     createSet:        ToTrappist
+                     destroySet:       ToTrappist
                      )
 
    in
