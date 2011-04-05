@@ -53,6 +53,7 @@ define
    end
 
    proc {ErrorMsg Msg}
+      {Say "----------------------------------------------------"}
       {Say "ERROR: "#Msg}
       {Say ""}
       {HelpMessage}
@@ -128,7 +129,7 @@ in
          {Run.run Args}
       end
    else
-      {ErrorMsg "Wrong invocation."}
+      {ErrorMsg "ERROR: Wrong invocation."}
    end
 
 end

@@ -39,6 +39,7 @@ define
    
    fun {New Args}
       Self
+      Suicide
       ComLayer
       RlxRingNode
       FTable
@@ -47,7 +48,7 @@ define
          {ComLayer signalDestroy}
          {RlxRingNode signalDestroy}
          {FTable signalDestroy}
-         {Wait _}
+         {Suicide}
       end
 
       Events = events(
@@ -61,6 +62,7 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
+         Suicide  = FullComponent.killer
          %Listener = FullComponent.listener
       end
       RlxRingNode = {RlxRing.new Args}

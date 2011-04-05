@@ -1,8 +1,8 @@
 MAKE = make
 INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
-DESTDIR = ../../lib/dht/
-SRCS = DHT SimpleDB SimpleSDB
+DESTDIR = ../../lib/commons/
+SRCS = Constants
 
 all: $(foreach source, $(SRCS), src_$(source))
 
@@ -17,11 +17,7 @@ install_%:
 src_%:
 	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf
 
-tester: Tester.oz TestSDB.oz TestDHT.oz TestPairs.oz TestSets.oz
-	ozc -c TestSDB.oz -o TestSDB.ozf
-	ozc -c TestDHT.oz -o TestDHT.ozf
-	ozc -c TestPairs.oz -o TestPairs.ozf
-	ozc -c TestSets.oz -o TestSets.ozf
+tester: Tester.oz
 	ozc -x Tester.oz -o tester
 
 clean:

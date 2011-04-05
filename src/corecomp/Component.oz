@@ -45,6 +45,7 @@ define
    %% which is equivalent to a regular component. But it also include a field
    %% with the default listener
    fun {New Events}
+      CarryOn        % Status of the object
       CompPort       % Receive events from other components
       CompListener   % Default component to trigger messages
 
@@ -54,9 +55,14 @@ define
          {Port.send CompPort Msg}
       end
 
+      proc {Killer}
+         CarryOn := _
+      end
+
       %% Loop through the EventStream. Every event is handle with the state as
       %% extra parameter and a new state is returned.
       proc {UponEvent EventStream}
+         {Wait @CarryOn}
          case EventStream
          of Event|NewStream then
             EventName = {Label Event}
@@ -70,8 +76,8 @@ define
                of setListener(NewListener) then
                   CompListener := NewListener
                   {UponEvent NewStream} % Loop for new events
-               [] signalDestroy then
-                  skip % Stop looping
+               [] signalDestroy then % Ends the loop
+                  skip
                else
                   %% Use the any event if it is implemented
                   try
@@ -101,10 +107,12 @@ define
             {UponEvent CompStream}
          end
       end
-      CompListener = {NewCell Dummy} 
+      CarryOn     = {NewCell unit}
+      CompListener= {NewCell Dummy} 
 
       component(trigger:Trigger
-                listener:CompListener)
+                listener:CompListener
+                killer:Killer)
    end
 
    %% This is the function to use if you do not want to use the default

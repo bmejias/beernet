@@ -245,6 +245,7 @@ define
       [] sim then
          {LaunchSimNodes Args}
       else
+         {Say " *** WARNING! *** "}
          {Say "Wrong distribution mode. Running as localhost"}
          {LaunchLocalNodes Args}
       end

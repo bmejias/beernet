@@ -27,10 +27,14 @@
 
 functor
 import
+   Constants      at '../../commons/Constants.ozf'
    Component      at '../../corecomp/Component.ozf'
 export
    New
 define
+
+   BAD_SECRET  = Constants.badSecret
+   NO_VALUE    = Constants.noValue
 
    fun {New CallArgs}
       Self
@@ -55,10 +59,14 @@ define
             case Ops
             of Op|MoreOps then
                if Op.val == NewOp.val then
-                  if Op.status == tmp then
-                     Tmp.(Op.op).(NewOp.op)
+                  if Op.sval == NewOp.sval then
+                     if Op.status == tmp then
+                        Tmp.(Op.op).(NewOp.op)
+                     else
+                        {DecisionLoop MoreOps NewOp (State + Ok.(Op.op))}
+                     end
                   else
-                     {DecisionLoop MoreOps NewOp (State + Ok.(Op.op))}
+                     BAD_SECRET
                   end
                else
                   {DecisionLoop MoreOps NewOp State}
@@ -68,8 +76,12 @@ define
             end
          end
       in
-         fun {DecideVote Set NewOp}
-            {DecisionLoop {Record.toList Set} NewOp 0}
+         fun {DecideVote Set SetOps NewOp}
+            if Set == NO_VALUE orelse Set.s == NewOp.sec then
+                  {DecisionLoop {Record.toList SetOps} NewOp 0}
+            else
+               BAD_SECRET
+            end
          end
       end
 
@@ -80,25 +92,32 @@ define
                       leader: TheLeader
                       rtms:   TheRTMs
                       tid:    Tid
-                      item:   op(id:OpId op:Op val:Val key:Key)
+                      item:   Item 
                       protocol:_ 
                       tag:trapp)}
          DHTSet
+         DHTSetOps
          Vote
+         Key
       in 
          RTMs     = TheRTMs
-         NewOp    = op(hkey:HKey id:OpId op:Op val:Val key:Key)
+         NewOp    = {Record.adjoinAt Item hkey HKey}
          Leader   := TheLeader
-         DHTSet   = {@DHTman readLocalSet(HKey Key $)}
+         Key      = Item.key
+         DHTSet   = {@DHTman getItem(HKey Key $)}
+         DHTSetOps= {@DHTman readLocalSet(HKey Key $)}
          %% Brewing vote - tmid needs to be added before sending
-         Vote = vote(vote:    {DecideVote DHTSet NewOp}
+         Vote = vote(vote:    {DecideVote DHTSet DHTSetOps NewOp}
                      key:     Key 
                      version: 0
                      tid:     Tid 
                      tp:      tp(id:Id ref:@NodeRef)
                      tag:     trapp)
          if Vote.vote == brewed then
-            {@DHTman addToSet(HKey Key {AdjoinAt NewOp status tmp})}
+            {@DHTman addToSet(hkey:HKey 
+                              key:Key 
+                              sec:NewOp.sec
+                              val:{AdjoinAt NewOp status tmp})}
          end
          {@MsgLayer dsend(to:@Leader.ref 
                           {Record.adjoinAt Vote tmid @Leader.id})}
@@ -107,20 +126,27 @@ define
          end
       end
 
+      proc {RemoveFromSet}
+         {@DHTman removeFromSet(hkey:NewOp.hkey
+                                key:NewOp.key 
+                                sec:NewOp.sec
+                                val:{AdjoinAt NewOp status tmp})}
+      end
+
       proc {Abort abort}
-         {@DHTman removeFromSet(NewOp.hkey
-                                NewOp.key 
-                                {AdjoinAt NewOp status tmp})}
+         {RemoveFromSet}
       end
 
       proc {Commit commit}
-         {@DHTman removeFromSet(NewOp.hkey
-                                NewOp.key
-                                {AdjoinAt NewOp status tmp})}
-         {@DHTman addToSet(NewOp.hkey NewOp.key op(id:NewOp.id
-                                                   op:NewOp.op
-                                                   val:NewOp.val
-                                                   status:ok))}
+         {RemoveFromSet}
+         {@DHTman addToSet(hkey:NewOp.hkey
+                           key:NewOp.key
+                           sec:NewOp.sec
+                           val:op(id:NewOp.id
+                                  op:NewOp.op
+                                  val:NewOp.val
+                                  sval:NewOp.sval
+                                  status:ok))}
       end
 
       %% --- Various --------------------------------------------------------

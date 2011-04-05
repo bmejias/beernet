@@ -27,8 +27,10 @@
 
 functor
 import
+   System
    Board          at '../corecomp/Board.ozf'
    Component      at '../corecomp/Component.ozf'
+   Constants      at '../commons/Constants.ozf'
    RelaxedRing    at '../son/relaxed-ring/Node.ozf'
    Replication    at '../trappist/SymmetricReplication.ozf'
    TheDHT         at '../dht/DHT.ozf'
@@ -38,7 +40,11 @@ import
 export
    New
 define
-   
+
+   NO_SECRET   = Constants.public
+
+   Say = System.showInfo
+
    fun {New Args}
       Listener % Component's listener
       Node     % Node implementing the behaviour
@@ -102,7 +108,67 @@ define
       %in
          {@MsgLayer Event}
       end
-     
+    
+      %% --- Masking DHT operations put/get/delete for value type mixing ----
+      proc {PrePut Event}
+         case Event
+         of put(Key Val) then
+            {@DHT put(s:NO_SECRET k:Key v:Val r:_)}
+         [] put(k:Key v:Val r:Result) then
+            {@DHT put(s:NO_SECRET k:Key v:Val r:Result)}
+         [] put(s:Secret k:Key v:Val r:Result) then
+            {@DHT put(s:Secret k:Key v:Val r:Result)}
+         else
+            raise
+               error(wrong_invocation(event:put
+                                      found:Event
+                                      mustbe:put(s:secret
+                                                 k:key
+                                                 v:value
+                                                 r:result)))
+            end
+         end
+      end
+
+      proc {PreGet Event}
+         case Event
+         of get(Key Result) then
+            {@DHT get(k:Key v:Result)}
+         [] get(k:Key v:Result) then
+            {@DHT get(k:Key v:Result)}
+         [] get(s:_ k:Key v:Result) then
+            {Say "DHT Warning: secrets are not used for reading"}
+            {@DHT get(k:Key v:Result)}
+         else
+            raise
+               error(wrong_invocation(event:get
+                                      found:Event
+                                      mustbe:get(k:key v:result)))
+            end
+         end
+      end
+
+      proc {PreDelete Event}
+         case Event
+         of delete(Key) then
+            {@DHT delete(s:NO_SECRET k:Key r:_)}
+         [] delete(k:Key r:Result) then
+            {@DHT delete(s:NO_SECRET k:Key r:Result)}
+         [] delete(s:Secret k:Key r:Result) then
+            {@DHT delete(s:Secret k:Key r:Result)}
+         else
+            raise
+               error(wrong_invocation(event:delete
+                                      found:Event
+                                      mustbe:delete(s:secret
+                                                    k:key
+                                                    r:result)))
+            end
+         end
+         skip
+      end
+      %% --- End of Masking DHT operations ----------------------------------
+
       %% --- Forwarding to DHT with different event name --------------------
       proc {SingleAdd Event}
          {@DHT {Record.adjoinList add {Record.toListInd Event}}}
@@ -117,8 +183,57 @@ define
       end
       %% --- end forward to DHT with different event name -------------------
 
+      %% --- Masking Value-Sets operations ----------------------------------
+      proc {PreAdd Event}
+         {PreAddRemove Event add}
+      end
+
+      proc {PreRemove Event}
+         {PreAddRemove Event remove}
+      end
+
+      proc {PreAddRemove Event Op}
+         case Event
+         of Op(Key Val) then
+            {ToTrappist Op(k:Key s:NO_SECRET v:Val sv:NO_SECRET c:{Port.new _})}
+         [] Op(Key Val Client) then
+            {ToTrappist Op(k:Key s:NO_SECRET v:Val sv:NO_SECRET c:Client)}
+         [] Op(k:Key v:Val sv:SecVal c:Client) then
+            {ToTrappist Op(k:Key s:NO_SECRET v:Val sv:SecVal c:Client)}
+         [] Op(k:_ s:_ v:_ sv:_ c:_) then
+            {ToTrappist Event}
+         else
+            raise
+               error(wrong_invocation(event:Op
+                                      found:Event
+                                      mustbe:Op(s:secret
+                                                k:key
+                                                vs:valuesecret
+                                                v:value
+                                                c:client)))
+            end
+         end
+      end
+
+      proc {PreReadSet Event}
+         case Event
+         of readSet(Key Val) then
+            {ToTrappist readSet(k:Key v:Val)}
+         [] readSet(k:_ v:_) then
+            {ToTrappist Event}
+         else
+            raise
+               error(wrong_invocation(event:readSet
+                                      found:Event
+                                      mustbe:readSet(k:key
+                                                     v:value)))
+            end
+         end
+      end
+      %% --- End of Masking value-sets operations ---------------------------
+
       ToNode      = {Utils.delegatesTo Node}
-      ToDHT       = {Utils.delegatesTo DHT}
+      %ToDHT       = {Utils.delegatesTo DHT}
       ToReplica   = {Utils.delegatesTo Replica}
       ToTrappist  = {Utils.delegatesTo Trappist}
       %ToMsgLayer  = {DelegatesTo MsgLayer}
@@ -145,9 +260,9 @@ define
                      send:             SendTagged
                      setLogger:        ToNode
                      %% DHT events
-                     delete:           ToDHT
-                     get:              ToDHT
-                     put:              ToDHT
+                     delete:           PreDelete
+                     get:              PreGet
+                     put:              PrePut
                      singleAdd:        SingleAdd
                      singleRemove:     SingleRemove
                      singleReadSet:    SingleReadSet
@@ -162,9 +277,11 @@ define
                      executeTransaction:ToTrappist
                      getLocks:         ToTrappist
                      runTransaction:   ToTrappist
-                     add:              ToTrappist
-                     remove:           ToTrappist
-                     readSet:          ToTrappist
+                     add:              PreAdd
+                     remove:           PreRemove
+                     readSet:          PreReadSet
+                     createSet:        ToTrappist
+                     destroySet:       ToTrappist
                      )
 
    in

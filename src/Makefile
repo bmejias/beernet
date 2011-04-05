@@ -1,6 +1,7 @@
 MAKE = make
 DESTDIR = ../../lib/
-SUBDIRS = corecomp dht logger messaging network pbeer son timer trappist utils
+SUBDIRS = commons corecomp dht logger messaging network \
+			 pbeer son timer trappist utils
 
 all: sublibs
 

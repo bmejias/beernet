@@ -31,13 +31,12 @@
 functor
 import
    Component   at '../corecomp/Component.ozf'
+   Constants   at '../commons/Constants.ozf'
 export
    New
-   NoValue
 define
 
-   NO_VALUE = 'NOT_FOUND'  % To be used inside the component as constant
-   NoValue  = NO_VALUE     % Nicer name for the export
+   NO_VALUE = Constants.noValue  % To be used inside the component as constant
    
    fun {New}
       DB
