@@ -255,7 +255,7 @@ define
       end
 
       proc {AddToSet Event}
-         addToSet(hk:HKey k:Key s:Secret v:Val ...) = Event
+         addToSet(hkey:HKey key:Key sec:Secret val:Val ...) = Event
          Set
          HVal
       in
@@ -276,7 +276,7 @@ define
       end
 
       proc {RemoveFromSet Event}
-         removeFromSet(hk:HKey k:Key s:Secret v:Val ...) = Event
+         removeFromSet(hkey:HKey key:Key sec:Secret val:Val ...) = Event
          Set
          HVal
       in

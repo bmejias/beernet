@@ -144,8 +144,8 @@ define
                            sec:NewOp.sec
                            val:op(id:NewOp.id
                                   op:NewOp.op
-                                  v:NewOp.val
-                                  sv:NewOp.sval
+                                  val:NewOp.val
+                                  sval:NewOp.sval
                                   status:ok))}
       end
 
