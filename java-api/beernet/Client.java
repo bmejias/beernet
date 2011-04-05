@@ -31,7 +31,7 @@ public class Client {
 				say("got: "+inMsg);
 				for (int i = 0; i < 3; i++) {
 					say("Testing put message");
-					sendMessage("put(foo,"+i+",public)");
+					sendMessage("put(foo&"+i+"&public)");
 					say("got: "+in.readLine());
 				}
 				for (int i = 0; i < 3; i++) {
