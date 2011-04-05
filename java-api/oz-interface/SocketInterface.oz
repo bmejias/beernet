@@ -14,11 +14,14 @@ import
    OS
    Property
    System
-   AdhocParser at 'adhocParser.ozf'
+   AdhocParser at '../lib/tools/AdhocParser.ozf'
+   PbeerCommon at '../lib/tools/PbeerCommon.ozf'
 define
    DEFAULTPORT = 6666
    PUT = rec(success(0) error(1))
    GET = rec(any_value 'NOT_FOUND')
+   RING_NAME   = eldorado
+   STORE_TKET  = 'mordor.tket'
 
    Parse    = AdhocParser.parse %% To parse strings that arrived on the socket
    Say      = System.showInfo %% For feedback to the standard output
@@ -53,7 +56,13 @@ define
             else
                Result
             in
-               {Pbeer {Record.adjoinAt Request r Result}}
+               if {Label Request} == get then
+                  {Pbeer {Record.adjoinAt Request v Result}}
+               elseif {List.member {Label Request} [write delete]} then
+                  skip
+               else
+                  {Pbeer {Record.adjoinAt Request r Result}}
+               end
                {Wait Result}
                {self toSocket({Value.toVirtualString Result 100 100})}
             end
@@ -105,6 +114,8 @@ in
              {Application.getArgs
               record(help(single char:[&? &h] default:false)
                      port(single char:[&p] type:int default:DEFAULTPORT)
+                     ring(single char:&r type:atom default:RING_NAME)
+                     store(single char:&s type:atom default:STORE_TKET)
                     )}
           catch _ then
              {Say 'Unrecognised arguments'}
@@ -116,6 +127,8 @@ in
       {Say "Options:"}
       {Say '#'("  -p, --port NUM\tPort number for the socket (default "
                DEFAULTPORT ")")}
+      {Say "  -r, --ring\tRing name (default: "#RING_NAME#")"}
+      {Say "  -s, --store\tTicket to the store (default: "#STORE_TKET#")"}
       {Say "  -h, -?, --help\tThis help"}
       {Application.exit 0}
    end
@@ -130,8 +143,13 @@ in
    %end
   
    %% This part has to change to call the real pbeer
-   proc {Pbeer Rec}
-      Rec.r = foo(bla bla bla)
+   Pbeer = {PbeerCommon.getPbeer Args.store Args.ring}
+   local
+      R
+   in
+      R = {Pbeer lookup(key:lucifer res:$)}
+      {Wait R}
+      {System.show R}
    end
 
    %% Let there be a socket connection
