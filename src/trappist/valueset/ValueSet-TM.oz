@@ -38,7 +38,6 @@ define
 
    fun {New Args}
       Self
-      Suicide
       %Listener
       MsgLayer
       Replica
@@ -67,36 +66,6 @@ define
       MaxHash        % Just to make list more efficient
 
       %% --- Util functions -------------------------------------------------
-      fun lazy {GetRemote Key}
-         Item
-         RemoteItem
-         MostItems
-         fun {GetNewest L Newest}
-            case L
-            of H|T then
-               if H.version > Newest.version then
-                  {GetNewest T H}
-               else
-                  {GetNewest T Newest}
-               end
-            [] nil then
-               Newest
-            end
-         end
-      in
-         MostItems = {@Replica getMajority(Key $)}
-         RemoteItem = {GetNewest MostItems item(key:     Key
-                                                value:   'NOT_FOUND'
-                                                version: 0
-                                                readers: nil)}
-         Item = {Record.adjoinAt RemoteItem op read}
-         LocalStore.Key := Item 
-         Item
-      end
-
-      fun {GetItem Key}
-         {Dictionary.condGet LocalStore Key {GetRemote Key}}
-      end
 
       %% AnyMajority uses a timer to wait for all TPs instead of claiming
       %% majority as soon as it is reached.
@@ -412,55 +381,20 @@ define
          FinalDecision = Decision
       end
 
-      %% --- Operations for the client --------------------------------------
-      proc {Abort abort}
-         {Port.send Client abort}
-         Done := true
-         {Suicide}
-      end
-
-      proc {Commit commit}
-      /* This procedure only triggers the commit phase, running as follows:
-      *
-      *  --- Initialization ---
-      *
-      *  - GetReplicas of TM to init rTMs sending LocalStore
-      *  - Collect RegisterRTM
-      *
-      *  --- Validation ---
-      *
-      * - Inform every rTM about other rTMs
-      * - Loop over the items, sending 'brew' to the transaction 
-      *   participants of every item including rTMs
-      *
-      * --- Consensus ---
-      *
-      * - Collect responses from TPs (try to collect all before timeout)
-      * - Decide on commit or abort
-      * - Propagate decision to TPs
-      */
-
-         {@Replica  bulk(to:@NodeRef.id
-                         initRTM(leader:  @Leader
-                                 tid:     Tid
-                                 protocol:valueset
-                                 client:  Client
-                                 store:   {Dictionary.entries LocalStore}
-                                 tag:     trapp
-                                 ))} 
-      end
-
       %% --- Single operations --------------------------------------
 
       proc {AddRemove Event}
-         Op Key Val
+         Op Key
       in
          Op    = {Record.label Event}
          Key   = Event.k
-         Val   = Event.v
-         Client= Event.client
-         LocalStore.Key := op(k:Key id:{Name.new} op:Op v:Val)
-         Item = {Record.adjoinAt RemoteItem op read}
+         Client= Event.c
+         LocalStore.Key := op(id:   {Name.new}
+                              op:   Op
+                              key:  Key
+                              sec:  Event.s
+                              val:  Event.v
+                              sval: Event.sv)
 %         {System.show 'got the operation... going to bulk'}
          {@Replica  quickBulk(to:@NodeRef.id
                               initRTM(leader:  @Leader
@@ -549,7 +483,6 @@ define
       in
          FullComponent  = {Component.new Events}
          Self     = FullComponent.trigger
-         Suicide  = FullComponent.killer
          %Listener = FullComponent.listener
       end
       MsgLayer    = {NewCell Component.dummy}

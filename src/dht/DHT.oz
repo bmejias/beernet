@@ -63,8 +63,9 @@ export
    New
 define
 
-   NO_VALUE    = Constants.noValue
    NO_ACK      = Constants.noAck
+   NO_SECRET   = Constants.noSecret
+   NO_VALUE    = Constants.noValue
 
    fun {New CallArgs}
       Self
@@ -106,6 +107,7 @@ define
          {@MsgLayer send(Op(HKey Key Val tag:dht) to:HKey)}
       end
 
+
       %% --- Handling NeedItem back replies ---------------------------------
 
       proc {HandleBind ClientVar Val}
@@ -123,12 +125,12 @@ define
          end
          Elements
       in
-         %% This part will have to change. A no value is not the same
-         %% as an empty set
-         if Val == NO_VALUE orelse Val == nil then
-            ClientVar = empty 
+         if Val == NO_VALUE then
+            ClientVar = Val
+         elseif Val.ops == nil then
+            ClientVar = empty
          else
-            Elements = {GetValues Val}
+            Elements = {GetValues Val.ops}
             ClientVar= {List.toTuple set Elements}
          end
       end
@@ -233,34 +235,67 @@ define
          {Dictionary.remove Gvars Gid}
       end
 
+      %% WARNING: Creation of set with silent failure
+      proc {CreateSet Event}
+         createSet(hk:HKey k:Key s:Secret ms:MasterSecret ...) = Event
+      in
+         if {@DB get(HKey Key $)} == NO_VALUE then
+            {@DB put(HKey Key set(s:Secret ops:nil) MasterSecret _)}
+         end   
+      end
+
+      %% WARNING: Destruction of set with silent failure
+      proc {DestroySet Event}
+         destroySet(hk:HKey k:Key ms:MasterSecret ...) = Event
+      in
+         case {@DB get(HKey Key $)}
+         of set(s:_ ops:_) then
+            {@DB delete(HKey Key MasterSecret _)}
+         end   
+      end
+
       proc {AddToSet Event}
-         addToSet(hk:HKey k:Key v:Val ...) = Event
+         addToSet(hk:HKey k:Key s:Secret v:Val ...) = Event
          Set
          HVal
       in
          Set   = {@DB get(HKey Key $)}
          HVal  = {Utils.hash Val @MaxKey}
          if Set == NO_VALUE then
-            {@DB put(HKey Key [v(value:Val hash:HVal)])}
+            {CreateSet createSet(hk:HKey k:Key s:Secret ms:NO_SECRET)}
+            {AddToSet Event}
          else
-            {@DB put(HKey Key {HashedList.add Set Val HVal})}
+            if Set.s == Secret then
+               {@DB put(HKey 
+                        Key
+                        set(ops:{HashedList.add Set.ops Val HVal} s:Set.s)
+                        NO_SECRET
+                        _)}
+            end
          end
       end
 
       proc {RemoveFromSet Event}
-         removeFromSet(HKey Key Val ...) = Event
+         removeFromSet(hk:HKey k:Key s:Secret v:Val ...) = Event
          Set
          HVal
       in
          Set   = {@DB get(HKey Key $)}
          HVal  = {Utils.hash Val @MaxKey}
-         if Set \= NO_VALUE then
-            {@DB put(HKey Key {HashedList.remove Set Val HVal})}
+         if Set \= NO_VALUE andthen Set.s == Secret then
+            {@DB put(HKey
+                     Key
+                     sets(ops:{HashedList.remove Set.ops Val HVal} s:Set.s)
+                     NO_SECRET
+                     _)}
          end
       end
 
       proc {ReadLocalSet readLocalSet(HKey Key Val)}
-         {ValueHandle.set Val {GetItem getItem(HKey Key $)}}
+         Set
+      in
+         Set = {GetItem getItem(HKey Key $)}
+         {ValueHandle.set Val Set}
       end
 
       %% --- Component Setters ----------------------------------------------
@@ -289,7 +324,9 @@ define
                      %% System protocols
                      addToSet:      AddToSet
                      bindResult:    BindResult
+                     createSet:     CreateSet
                      deleteItem:    DeleteItem
+                     destroySet:    DestroySet
                      getItem:       GetItem
                      needItem:      NeedItem
                      needItemBack:  NeedItemBack

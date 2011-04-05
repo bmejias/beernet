@@ -7,12 +7,15 @@ import
    Application
    Property
    System
+   Constants      at '../../commons/Constants.ozf'
    Network        at '../../network/Network.ozf'
    PbeerMaker     at '../../pbeer/Pbeer.ozf'
    Utils          at '../../utils/Misc.ozf'
 
 define
-   SIZE  = 42
+   SIZE     = 42
+   NO_ACK   = Constants.noAck
+   NO_SECRET= Constants.noSecret
 
    ComLayer
    MasterOfPuppets
@@ -152,7 +155,14 @@ define
       in
          HKey = {Utils.hash foo MaxKey} 
          {MasterOfPuppets lookupHash(hkey:HKey res:Pbeer)}
-         {MasterOfPuppets send(putItem(HKey foo tetete tag:dht) to:Pbeer.id)}
+         {MasterOfPuppets send(putItem(hk:HKey 
+                                       k:foo 
+                                       v:tetete
+                                       s:NO_SECRET
+                                       gid:NO_ACK
+                                       src:_
+                                       tag:dht) 
+                               to:Pbeer.id)}
       end
       {Delay 1000}
       {Get foo}
