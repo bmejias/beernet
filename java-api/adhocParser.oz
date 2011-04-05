@@ -2,6 +2,7 @@ functor
 export
    Parse
 define
+   SEPARATOR = &&  
    %% Translate a String into an Oz entity
    fun {StringToValue Str Default}
       if {String.isFloat Str} then
@@ -20,7 +21,7 @@ define
       Op Args Rest
    in
       {String.token Str &( Op Rest}
-      Args = {String.tokens {String.token Rest &) $ _} &,}
+      Args = {String.tokens {String.token Rest &) $ _} SEPARATOR}
       {List.toTuple {String.toAtom Op} Args}
    end
 
@@ -37,7 +38,7 @@ define
       [] delete(Key Secret) then
          delete(k:{StringToValue Key atom} s:{StringToValue Secret atom})
       %% Transactional items
-      [] write(Key Val Secret) then
+      [] write(Secret Key Val) then
          write(k:{StringToValue Key atom}
                v:{StringToValue Val string}
                s:{StringToValue Secret atom})
@@ -46,14 +47,16 @@ define
       [] destroy(Key Secret) then
          destroy(k:{StringToValue Key atom} s:{StringToValue Secret atom})
       %% Sets
-      [] createSet(Key Secret) then
-         createSet(k:{StringToValue Key atom} s:{StringToValue Secret atom})
-      [] destroySet(Key Secret) then
+      [] createset(MasterSec Secret Key) then
+         createSet(k:{StringToValue Key atom}
+                   ms:{StringToValue MasterSec atom}
+                   s:{StringToValue Secret atom})
+      [] deleteset(Secret Key) then
          destroySet(k:{StringToValue Key atom} s:{StringToValue Secret atom})
-      [] add(Key Val Secret ValSecret) then
+      [] add(Secret Key ValSecret Val) then
          add(k:{StringToValue Key atom} v:{StringToValue Val string}
              s:{StringToValue Secret atom} vs:{StringToValue ValSecret atom})
-      [] remove(Key Val Secret ValSecret) then
+      [] remove(Secret Key ValSecret Val) then
          remove(k:{StringToValue Key atom} v:{StringToValue Val string}
                 s:{StringToValue Secret atom} vs:{StringToValue ValSecret atom})
       %% error("ill formed string")
