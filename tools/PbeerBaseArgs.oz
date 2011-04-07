@@ -41,6 +41,7 @@ define
    VALUE       = value
    HASH_KEY    = 666
    CAP_FILE    = nocap
+   NO_SECRET   = public
 
    Say         = System.showInfo
 
@@ -53,6 +54,10 @@ define
                      "(default: " HASH_KEY ")")
          cap:'#'("  -c, --cap\tFilename to store/retrieve a capability key "
                  "(default: " CAP_FILE ")")
+         secret:'#'("      --secret\tProject updates with secret "
+                 "(default: " NO_SECRET ")")
+         secretval:'#'("       --secretval Project value in a set with secret "
+                 "(default: " NO_SECRET ")")
          protocol:'#'("  -p, --protocol Transactional protocol to be used "
                       "(default: " TRANS_PROT ")")
          store:"  -s, --store\tTicket to the store (default: "#STORE_TKET#")"
@@ -75,6 +80,8 @@ define
                key(single        char:&k  type:atom   default:KEY)
                protocol(single   char:&p  type:atom   default:TRANS_PROT)
                ring(single       char:&r  type:atom   default:RING_NAME)
+               secret(single              type:atom   default:NO_SECRET)
+               secretval(single           type:atom   default:NO_SECRET)
                store(single      char:&s  type:atom   default:STORE_TKET)
                value(single      char:&v  type:atom   default:VALUE)
                help(single       char:[&? &h]         default:false)
