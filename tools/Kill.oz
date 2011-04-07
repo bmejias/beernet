@@ -36,7 +36,7 @@ define
       Pbeer
    in
       if Args.help then
-         {PbeerBaseArgs.helpMessage [hashkey ring store] nil lookup}
+         {PbeerBaseArgs.helpMessage [hashkey ring store] nil kill}
          {Application.exit 0}
       end
       Pbeer    = {PbeerCommon.getPbeer Args.store Args.ring}
