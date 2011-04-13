@@ -128,7 +128,7 @@ define
                {TheTimer startTrigger(@Timeout timeout(MsgId) Self)}
                Msgs.MsgId := {Record.adjoinAt Data c Data.c-1}
             else
-               {System.show 'msg '#MsgId#' never arrived'}
+               {System.show 'msg '#MsgId#':'#{Label Data.msg}#' never arrived'}
                Data.outcome = false
                {Dictionary.remove Msgs MsgId}
             end

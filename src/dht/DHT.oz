@@ -195,7 +195,7 @@ define
       end
 
       proc {DeleteItem Event}
-         deleteItem(hk:HKey k:Key s:Secret gid:Gid src:Src tag:dht) = Event
+         deleteItem(hk:HKey k:Key s:Secret gid:Gid src:Src ...) = Event
          Result
       in
          {@DB delete(HKey Key Secret Result)}
