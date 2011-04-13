@@ -432,7 +432,7 @@ define
                                     readers: Item.readers 
                                     op:      write)
          else %% Attempt rewrite with wrong secret
-            Result = BAD_SECRET
+            Result = abort(BAD_SECRET)
             {Abort abort(BAD_SECRET)}
          end
       end
