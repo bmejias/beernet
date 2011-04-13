@@ -40,6 +40,14 @@ define
       end
    end
 
+   proc {PrettyPrint Msg}
+      if {VirtualString.is Msg} then
+         {System.showInfo Msg}
+      else
+         {System.show Msg}
+      end
+   end
+
    proc {Run Args}
       Pbeer
       Key
@@ -58,7 +66,7 @@ define
       Key   = {SetsCommon.capOrKey Args.cap Args.key}
       Trans = {MakeTransaction Key Args.value Args.secret}
       {Pbeer runTransaction(Trans MyPort Args.protocol)}
-      {System.showInfo Outcome.1}
+      {PrettyPrint Outcome.1}
       {Application.exit 0}
    end
 end

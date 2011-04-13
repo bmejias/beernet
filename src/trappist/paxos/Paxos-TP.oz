@@ -35,6 +35,7 @@ define
 
    NO_ACK      = Constants.noAck
    NO_SECRET   = Constants.public
+   NOT_FOUND   = Constants.notFound
 
    fun {New CallArgs}
       Self
@@ -66,9 +67,9 @@ define
          NewItem  = item(hkey:HKey item:TrItem tid:Tid)
          Leader   := TheLeader
          Tmp      = {@DHTman getItem(HKey TrItem.key $)}
-         DHTItem  = if Tmp == 'NOT_FOUND' then
+         DHTItem  = if Tmp == NOT_FOUND then
                         item(key:      TrItem.key
-                             secret:   NO_SECRET
+                             secret:   TrItem.secret
                              value:    Tmp 
                              version:  0
                              readers:  nil
@@ -108,7 +109,16 @@ define
          DHTItem
       in
          DHTItem = {@DHTman getItem(NewItem.hkey NewItem.item.key $)}
-         {PutItemAndAck DHTItem}
+         if DHTItem \= NOT_FOUND then
+            {PutItemAndAck DHTItem}
+         else
+            {@DHTman deleteItem(hk:NewItem.hkey
+                                k:NewItem.item.key
+                                s:NewItem.item.secret
+                                gid:NO_ACK
+                                src:_)}
+            {AckDecision NewItem.item}
+         end
       end
 
       proc {Commit commit}
@@ -122,6 +132,10 @@ define
                            gid:NO_ACK
                            src:_
                            v:{Record.adjoinAt Item locked false})}
+         {AckDecision Item}
+      end
+
+      proc {AckDecision Item}
          {@MsgLayer dsend(to:@Leader.ref ack(key: Item.key
                                              tid: NewItem.tid
                                              tmid:@Leader.id
