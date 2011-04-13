@@ -9,7 +9,6 @@
 functor
 import
    Application
-   Browser
    Open
    OS
    Property
@@ -25,7 +24,6 @@ define
 
    Parse    = AdhocParser.parse %% To parse strings that arrived on the socket
    Say      = System.showInfo %% For feedback to the standard output
-   Browse   = Browser.browse
    Pbeer    %% Part of the network. Used to run the requests
    Blabla   %% For verbose feedback
    Bla      %% For verbose feedback without newline
@@ -46,7 +44,6 @@ define
          try
             {self flush}
             {self read(list:TheMsg)}
-            {Browse TheMsg}
             {Bla "Got "#TheMsg}
             Request = {Parse TheMsg}
             case Request
@@ -59,7 +56,29 @@ define
                if {Label Request} == get then
                   {Pbeer {Record.adjoinAt Request v Result}}
                elseif {List.member {Label Request} [write delete]} then
-                  skip
+                  proc {Trans TM}
+                     {TM {Record.adjoinAt Request r _}}
+                     {TM commit}
+                  end
+                  Client Stream
+               in
+                  Client = {Port.new Stream}
+                  {Pbeer runTransaction(Trans Client paxos)}
+                  case Stream.1
+                  of abort(ErrorCode) then
+                     Result = ErrorCode
+                  else
+                     Result = Stream.1
+                  end
+               elseif {List.member {Label Request} read} then
+                  proc {Trans TM}
+                     {TM {Record.adjoinAt Request v Result}}
+                     {TM commit}
+                  end
+                  Client
+               in
+                  Client = {Port.new _}
+                  {Pbeer runTransaction(Trans Client paxos)}
                else
                   {Pbeer {Record.adjoinAt Request r Result}}
                end
