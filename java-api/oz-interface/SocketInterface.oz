@@ -49,7 +49,7 @@ define
             case Request
             of error(E) then
                {Bla E}
-               {self toSocket("Please, avoid sending rubish!")}
+               {self toSocket("Wrong operation! try again!")}
             else
                Result
             in
@@ -70,23 +70,28 @@ define
                   else
                      Result = Stream.1
                   end
-               elseif {List.member {Label Request} read} then
+                  {System.show Result}
+               elseif {Label Request} == read then
                   proc {Trans TM}
                      {TM {Record.adjoinAt Request v Result}}
                      {TM commit}
                   end
                   Client
                in
+                  {System.show 'going to perform a read'}
                   Client = {Port.new _}
                   {Pbeer runTransaction(Trans Client paxos)}
                else
                   {Pbeer {Record.adjoinAt Request r Result}}
                end
+               {System.show 'waiting for Result'}
                {Wait Result}
+               {System.show 'got it'}
                {self toSocket({Value.toVirtualString Result 100 100})}
             end
             {self readLoop}
-         catch _ then
+         catch E then
+            {Blabla "Got exception: "#{Value.toVirtualString E 100 100}}
             {Blabla "the socket is closed. Client is gone"}
          end
       end
