@@ -68,6 +68,7 @@ import
    %% transactions - read/write operations with replication
    Write          at '../lib/tools/Write.ozf'
    Read           at '../lib/tools/Read.ozf'
+   Erase          at '../lib/tools/Erase.ozf'
    %% killing pbeers
    Kill           at '../lib/tools/Kill.ozf'
 define
@@ -94,8 +95,9 @@ define
       {Say "\tremove\t-k key -v any_value"}
       {Say ""}
       {Say "   Key/value pair operations with replication"}
-      {Say "\twrite\t-k key -v value"}
+      {Say "\twrite\t-k key -v value [--secret secret]"}
       {Say "\tread\t-k key -v value"}
+      {Say "\terase\t-k key [--secret secret]"}
       {Say ""}
       {Say "   Lookup operations"}
       {Say "\tlookup\t-k key"}
@@ -139,6 +141,7 @@ define
                          %% Transactions
                          write:     Write
                          read:      Read
+                         erase:     Erase
                          %% Killing pbeers
                          kill:      Kill
                          %% global help

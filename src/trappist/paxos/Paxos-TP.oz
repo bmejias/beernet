@@ -34,7 +34,7 @@ export
 define
 
    NO_ACK      = Constants.noAck
-   NO_SECRET   = Constants.public
+   NO_SECRET   = Constants.noSecret
    NOT_FOUND   = Constants.notFound
 
    fun {New CallArgs}
@@ -91,7 +91,7 @@ define
             Vote.vote = brewed
             {@DHTman putItem(hk:HKey
                              k:TrItem.key
-                             s:TrItem.secret
+                             s:NO_SECRET
                              gid:NO_ACK
                              src:_
                              v:{AdjoinAt DHTItem locked true})}
@@ -114,7 +114,7 @@ define
          else
             {@DHTman deleteItem(hk:NewItem.hkey
                                 k:NewItem.item.key
-                                s:NewItem.item.secret
+                                s:NO_SECRET
                                 gid:NO_ACK
                                 src:_)}
             {AckDecision NewItem.item}
@@ -128,7 +128,7 @@ define
       proc {PutItemAndAck Item}
          {@DHTman  putItem(hk:NewItem.hkey
                            k:Item.key
-                           s:Item.secret
+                           s:NO_SECRET
                            gid:NO_ACK
                            src:_
                            v:{Record.adjoinAt Item locked false})}
