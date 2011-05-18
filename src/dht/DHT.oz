@@ -45,6 +45,7 @@
 
 functor
 import
+   System
    Component   at '../corecomp/Component.ozf'
    Constants   at '../commons/Constants.ozf'
    Utils       at '../utils/Misc.ozf'
@@ -180,6 +181,12 @@ define
          {Dictionary.remove Gvars Gid}
       end
 
+      %% --- Data Management ------------------------------------------------
+      proc {NewPred newPred(old:OldPred new:NewPred tag:data)}
+         %{System.show 'Going to move DHT data to the new predecessor'}
+      end
+
+
       %% --- Component Setters ----------------------------------------------
       proc {SetDB setDB(ADataBase)}
          @DB := ADataBase
@@ -210,6 +217,8 @@ define
                      setDB:         SetDB
                      setMaxKey:     SetMaxKey
                      setMsgLayer:   SetMsgLayer
+                     %% Data management
+                     newPred:       NewPred
                      )
    in
       local

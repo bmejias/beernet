@@ -321,8 +321,8 @@ define
                      add:              PreAdd
                      remove:           PreRemove
                      readSet:          PreReadSet
-                     createSet:        ToTrappist
-                     destroySet:       ToTrappist
+                     createSet:        PreCreate
+                     destroySet:       PreDestroy
                      )
 
    in
@@ -361,6 +361,8 @@ define
          {StorageSubscriber tagged(@DHT dht)}
          {StorageSubscriber tagged(@Replica symrep)}
          {StorageSubscriber tagged(@Trappist trapp)}
+         {StorageSubscriber tagged(@DHT data)}
+         {StorageSubscriber tagged(@Trappist data)}
          {@MsgLayer setListener(StorageBoard)}
       end
 

@@ -26,6 +26,7 @@
 
 functor
 import
+   System
    Component      at '../corecomp/Component.ozf'
    EagerPaxosTM   at 'eagerpaxos/EagerPaxos-TM.ozf'
    EagerPaxosTP   at 'eagerpaxos/EagerPaxos-TP.ozf'
@@ -155,6 +156,11 @@ define
          {TPs.(Event.tid).(Event.tpid) Event.decision}
       end
 
+      %% --- Data Management ------------------------------------------------
+      proc {NewPred newPred(old:OldPred new:NewPred tag:data)}
+         %{System.show 'Going to move Trappist data to the new predecessor'}
+      end
+
       %% --- Internal to the Pbeer ---
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
          MsgLayer := AMsgLayer
@@ -192,6 +198,8 @@ define
                      %% For the TPs
                      brew:          Brew
                      final:         Final
+                     %% Data management
+                     newPred:       NewPred
                      %% Internal to the Pbeer
                      setMsgLayer:   SetMsgLayer
                      setReplica:    SetReplica

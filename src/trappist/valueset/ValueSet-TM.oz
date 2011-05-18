@@ -464,8 +464,8 @@ define
                                       ))}
       end
 
-      proc {DestroySet Event}
-         skip
+      proc {DestroySet destroySet(k:Key ms:MasterSec c:TheClient)}
+         Client = TheClient
          LocalStore.Key := op(id:   {Name.new}
                               op:   destroySet
                               key:  Key

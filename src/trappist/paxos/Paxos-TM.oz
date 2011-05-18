@@ -38,6 +38,7 @@ define
 
    BAD_SECRET  = Constants.badSecret
    NO_SECRET   = Constants.public
+   NO_VALUE    = Constants.noValue
    Say         = System.showInfo
 
    fun {New Args}
@@ -318,7 +319,7 @@ define
          FinalDecision = Decision
       end
 
-      %% --- Masking Transaction operations write/read/destroy ----
+      %% --- Masking Transaction operations write/read/erase ----
       proc {PreWrite Event}
          case Event
          of write(Key Val) then
@@ -357,21 +358,21 @@ define
          end
       end
 
-      proc {PreDestroy Event}
+      proc {PreErase Event}
          case Event
-         of destroy(Key) then
-            {Destroy destroy(s:NO_SECRET k:Key r:_)}
-         [] destroy(k:Key r:Result) then
-            {Destroy destroy(s:NO_SECRET k:Key r:Result)}
-         [] destroy(s:Secret k:Key r:Result) then
-            {Destroy destroy(s:Secret k:Key r:Result)}
+         of erase(Key) then
+            {Erase erase(s:NO_SECRET k:Key r:_)}
+         [] erase(k:Key r:Result) then
+            {Erase erase(s:NO_SECRET k:Key r:Result)}
+         [] erase(s:Secret k:Key r:Result) then
+            {Erase erase(s:Secret k:Key r:Result)}
          else
             raise
-               error(wrong_invocation(event:destroy
+               error(wrong_invocation(event:erase
                                       found:Event
-                                      mustbe:destroy(s:secret
-                                                     k:key
-                                                     r:result)))
+                                      mustbe:erase(s:secret
+                                                   k:key
+                                                   r:result)))
             end
          end
       end
@@ -420,9 +421,8 @@ define
                                       ))} 
       end
 
-      proc {Destroy destroy(k:_/*Key*/ s:_/*Secret*/ r:_/*Result*/)}
-         %% To be implemented
-         skip
+      proc {Erase erase(k:Key s:Secret r:Result)}
+         {Write write(k:Key v:NO_VALUE s:Secret r:Result)}
       end
 
       proc {Read read(k:Key v:?Val)}
@@ -434,7 +434,10 @@ define
       in
          Item = {GetItem Key}
          %% Either creation of item orelse rewrite with correct secret
-         if Item.version == 0 orelse Item.secret == Secret then
+         if Item.version
+            orelse Item.secret == Secret
+            orelse Item.value == NO_VALUE %% The value was erased
+            then
             LocalStore.Key :=  item(key:     Key
                                     value:   Val 
                                     secret:  Secret
@@ -482,7 +485,7 @@ define
                      %% Operations for the client
                      abort:         Abort
                      commit:        Commit
-                     destroy:       PreDestroy
+                     erase:         PreErase
                      read:          PreRead
                      write:         PreWrite
                      %% Interaction with rTMs

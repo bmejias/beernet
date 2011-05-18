@@ -34,6 +34,7 @@ export
 define
 
    NOT_FOUND   = Constants.notFound
+   NO_VALUE    = Constants.noValue
 
    fun {New CallArgs}
       Self
@@ -68,7 +69,7 @@ define
          DBItem   = if Tmp == NOT_FOUND orelse Tmp.value == NO_VALUE then
                         item(key:      TrItem.key
                              secret:   TrItem.secret
-                             value:    Tmp 
+                             value:    NO_VALUE 
                              version:  0
                              readers:  nil
                              locked:   false)

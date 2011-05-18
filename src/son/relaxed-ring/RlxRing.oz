@@ -343,6 +343,8 @@ define
                {Monitor Src} 
                %{Blabla @(Self.id)#" accepts new pred "#Sender.id}
                PredList := {AddToList @Pred @PredList}
+               %% Tell data management to migrate data in range ]OldPred, Pred]
+               {@Listener newPred(old:OldPred new:@Pred tag:data)}
             else
                %NOT FOR ME - going to route
                {RlxRoute Event Src.id}
