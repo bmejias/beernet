@@ -29,12 +29,15 @@ functor
 import
 %   System
    Component      at '../../corecomp/Component.ozf'
+   Constants      at '../../commons/Constants.ozf'
    HashedList     at '../../utils/HashedList.ozf'
    Utils          at '../../utils/Misc.ozf'
    Timer          at '../../timer/Timer.ozf'
 export
    New
 define
+
+   NO_VALUE    = Constants.noValue
 
    fun {New Args}
       Self
@@ -101,6 +104,7 @@ define
             Results = {CountVotes TheVotes acc(brewed:0
                                                conflict:0
                                                duplicated:0
+                                               bad_secret:0
                                                not_found:0)}
             {DecideOnResults Results {Record.arity Results}}
          end
@@ -120,7 +124,12 @@ define
                Done := true
                {SpreadDecision FinalDecision}
                %% Send to the Client
-               {Port.send Client OutCome}
+               try
+                  {Port.send Client OutCome}
+               catch _ then
+                  %% TODO: improve exception handling
+                  skip
+               end
             end
          end
       end
@@ -383,6 +392,30 @@ define
 
       %% --- Single operations --------------------------------------
 
+      %% Val is the value associated to the keys. It contains a list of
+      %% operations. This function translates that list into a set of ops.
+      fun {OpsListToSet Val}
+         Elements
+      in
+         if Val == NO_VALUE then
+            Val
+         elseif Val.ops == nil then
+            empty
+         else
+            Elements = {HashedList.getValues Val.ops}
+            {List.toTuple set Elements}
+         end
+      end
+
+      fun {BuildSets OpsLists}
+         case OpsLists
+         of Ops|MoreOps then
+            {OpsListToSet Ops}|{BuildSets MoreOps}
+         [] nil then
+            nil
+         end
+      end
+
       proc {AddRemove Event}
          Op Key
       in
@@ -407,18 +440,45 @@ define
       end
 
       proc {ReadSet readSet(k:Key v:Val)}
-         Sets
+         OpsLists Sets
       in
-         Sets = {@Replica getMajoritySet(Key $)}
+         OpsLists = {@Replica getMajority(Key $ sets)}
+         Sets = {BuildSets OpsLists}
          Val = {MergeSets Sets}
       end
 
-      proc {CreateSet Event}
-         skip
+      proc {CreateSet createSet(k:Key s:Secret ms:MasterSec c:TheClient)}
+         Client = TheClient
+         LocalStore.Key := op(id:   {Name.new}
+                              op:   createSet
+                              key:  Key
+                              sec:  Secret
+                              msec: MasterSec)
+         {@Replica  quickBulk(to:@NodeRef.id
+                              initRTM(leader:  @Leader
+                                      tid:     Tid
+                                      protocol:valueset
+                                      client:  Client
+                                      store:   {Dictionary.entries LocalStore}
+                                      tag:     trapp
+                                      ))}
       end
 
       proc {DestroySet Event}
          skip
+         LocalStore.Key := op(id:   {Name.new}
+                              op:   destroySet
+                              key:  Key
+                              msec: MasterSec)
+         {@Replica  quickBulk(to:@NodeRef.id
+                              initRTM(leader:  @Leader
+                                      tid:     Tid
+                                      protocol:valueset
+                                      client:  Client
+                                      store:   {Dictionary.entries LocalStore}
+                                      tag:     trapp
+                                      ))}
+         Client = TheClient
       end
 
       %% --- Various --------------------------------------------------------

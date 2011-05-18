@@ -44,12 +44,14 @@ define
       %Listener
       MsgLayer
       NodeRef
-      DHTman
       Replica
 
       %Timeout
       TMs
       TPs
+      DBMan
+      PairsDB
+      SetsDB
 
       TMmakers = tms(eagerpaxos: EagerPaxosTM
                      paxos:      PaxosTM
@@ -60,6 +62,12 @@ define
                      paxos:      PaxosTP
                      twophase:   TwoPhaseTP
                      valueset:   ValueSetTP
+                     )
+
+      DBs      = dbs(eagerpaxos: PairsDB
+                     paxos:      PairsDB
+                     twophase:   PairsDB
+                     valueset:   SetsDB
                      )
 
       proc {AddTransObj TransDict Tid ObjId Obj}
@@ -138,7 +146,7 @@ define
       in
          TP = {TPmakers.Protocol.new args(tid:Tid)} 
          {TP setMsgLayer(@MsgLayer)}
-         {TP setDHT(@DHTman)}
+         {TP setDB(DBs.Protocol)}
          {AddTransObj TPs Tid {TP getId($)} TP}
          {TP Event}
       end
@@ -148,10 +156,6 @@ define
       end
 
       %% --- Internal to the Pbeer ---
-      proc {SetDHT setDHT(DHTcomponent)}
-         DHTman := DHTcomponent
-      end
-
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
          MsgLayer := AMsgLayer
          NodeRef  := {@MsgLayer getRef($)}
@@ -189,7 +193,6 @@ define
                      brew:          Brew
                      final:         Final
                      %% Internal to the Pbeer
-                     setDHT:        SetDHT
                      setMsgLayer:   SetMsgLayer
                      setReplica:    SetReplica
                      %setTimeout:    SetTimeout
@@ -205,11 +208,14 @@ define
       end
       NodeRef  = {NewCell noref}
       MsgLayer = {NewCell Component.dummy}
-      DHTman   = {NewCell Component.dummy} 
       Replica  = {NewCell Component.dummy}
 
-      TMs   = {Dictionary.new}
-      TPs   = {Dictionary.new}
+      TMs      = {Dictionary.new}
+      TPs      = {Dictionary.new}
+
+      DBMan    = CallArgs.dbman
+      PairsDB  = {DBMan getCreate(name:trapp type:basic db:$)}
+      SetsDB   = {DBMan getCreate(name:sets type:secrets db:$)}
 
       Self
    end

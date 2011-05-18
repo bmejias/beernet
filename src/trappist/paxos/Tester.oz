@@ -67,7 +67,7 @@ define
    proc {QuickRead Key}
       Value
    in
-      {MasterOfPuppets getOne(Key Value)}
+      {MasterOfPuppets getOne(Key Value trapp)}
       {Wait Value}
       {System.show 'Quick Reading'#Key#'we obtained'#Value}
    end
@@ -75,7 +75,7 @@ define
    proc {ReadAll Key}
       Val
    in
-      {MasterOfPuppets getAll(Key Val)}
+      {MasterOfPuppets getAll(Key Val trapp)}
       if {IsList Val} then skip end
       {System.show 'Reading All'#Key#'we obtained'#Val}
    end
@@ -83,7 +83,7 @@ define
    proc {ReadMajority Key}
       Val
    in
-      {MasterOfPuppets getMajority(Key Val)}
+      {MasterOfPuppets getMajority(Key Val trapp)}
       if {IsList Val} then skip end
       {System.show 'Reading Majority'#Key#'we obtained'#Val}
    end

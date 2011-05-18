@@ -89,7 +89,7 @@ define
             end
          end
       in
-         MostItems = {@Replica getMajority(Key $)}
+         MostItems = {@Replica getMajority(Key $ trapp)}
          RemoteItem = {GetNewest MostItems item(key:     Key
                                                 secret:  NO_SECRET
                                                 value:   'NOT_FOUND'
@@ -204,7 +204,12 @@ define
 
       proc {SpreadDecision Decision}
          %% Send to the Client
-         {Port.send Client Decision}
+         try
+            {Port.send Client Decision}
+         catch _ then
+            %% TODO: improve exception handling
+            skip
+         end
          %% Send to all TPs
          for Key in {Dictionary.keys Votes} do
             for TP in TPs.Key do
@@ -374,7 +379,12 @@ define
 
       %% --- Operations for the client --------------------------------------
       proc {Abort Msg}
-         {Port.send Client Msg}
+         try
+            {Port.send Client Msg}
+         catch _ then
+            %% TODO: improve exception handling
+            skip
+         end
          Done := true
          {Suicide}
       end

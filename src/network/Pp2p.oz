@@ -53,7 +53,12 @@ define
       end
 
       proc {PP2PSend pp2pSend(Dest Msg)}
-         {Send Dest SitePort#Msg}
+         try
+            {Port.send Dest SitePort#Msg}
+         catch _ then
+            %% TODO: improve exception handling
+            skip
+         end
       end
 
       proc {HandleMessages Str}

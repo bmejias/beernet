@@ -3,7 +3,7 @@
 functor
 import
    System
-   SimpleSDB      at 'SimpleSDB.ozf'
+   Constants   at '../commons/Constants.ozf'
 export
    Test
 define
@@ -11,9 +11,9 @@ define
    Say      = System.showInfo
    Wisper   = System.printInfo
 
-   NoValue  = SimpleSDB.noValue
-   Success  = SimpleSDB.success
-   BadSecret= SimpleSDB.badSecret
+   NoValue  = Constants.noValue
+   Success  = Constants.success
+   BadSecret= Constants.badSecret
 
    %% --------------------------------------------------------------------
    %% Definition of single test

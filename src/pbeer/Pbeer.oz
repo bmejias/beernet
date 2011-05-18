@@ -31,6 +31,7 @@ import
    Board          at '../corecomp/Board.ozf'
    Component      at '../corecomp/Component.ozf'
    Constants      at '../commons/Constants.ozf'
+   DBManager      at '../database/DBManager.ozf'
    RelaxedRing    at '../son/relaxed-ring/Node.ozf'
    Replication    at '../trappist/SymmetricReplication.ozf'
    TheDHT         at '../dht/DHT.ozf'
@@ -42,12 +43,14 @@ export
 define
 
    NO_SECRET   = Constants.public
+   REPL_FACT   = 4
 
    Say = System.showInfo
 
    fun {New Args}
       Listener % Component's listener
       Node     % Node implementing the behaviour
+      DBMan    % Database manager
       DHT      % DHT functionality
       MsgLayer % Reliable messaging layer
       Replica  % Symmetric replication
@@ -184,6 +187,44 @@ define
       %% --- end forward to DHT with different event name -------------------
 
       %% --- Masking Value-Sets operations ----------------------------------
+      proc {PreCreate Event}
+         case Event
+         of createSet(Key) then
+            {ToTrappist createSet(k:Key
+                                  ms:NO_SECRET
+                                  s:NO_SECRET
+                                  c:{Port.new _})}
+         [] createSet(k:_ ms:_ s:_ c:_) then
+            {ToTrappist Event}
+         else
+            raise
+               error(wrong_invocation(event:createSet
+                                      found:Event
+                                      mustbe:createSet(k:key
+                                                       ms:mastersecret
+                                                       s:updatesecret
+                                                       c:client)))
+            end
+         end
+      end
+
+      proc {PreDestroy Event}
+         case Event
+         of destroySet(Key) then
+            {ToTrappist destroySet(k:Key ms:NO_SECRET c:{Port.new _})}
+         [] destroySet(k:_ ms:_ c:_) then
+            {ToTrappist Event}
+         else
+            raise
+               error(wrong_invocation(event:destroySet
+                                      found:Event
+                                      mustbe:destroySet(k:key
+                                                        ms:mastersecret
+                                                        c:client)))
+            end
+         end
+      end
+
       proc {PreAdd Event}
          {PreAddRemove Event add}
       end
@@ -295,21 +336,22 @@ define
       end
       Node     = {NewCell {RelaxedRing.new Args}}
       MsgLayer = {NewCell {TheMsgLayer.new args}}
-      Trappist = {NewCell {TransLayer.new args}}
+      DBMan    = {NewCell {DBManager.new}}
+      Trappist = {NewCell {TransLayer.new args(dbman:@DBMan)}}
       local
          MaxKey
       in
          MaxKey = {@Node getMaxKey($)}
-         DHT      = {NewCell {TheDHT.new args(maxKey:MaxKey)}}
-         Replica  = {NewCell {Replication.new args(maxKey:MaxKey repFactor:4)}}
+         DHT      = {NewCell {TheDHT.new args(maxKey:MaxKey dbman:@DBMan)}}
+         Replica  = {NewCell {Replication.new args(maxKey:MaxKey
+                                                   repFactor:REPL_FACT
+                                                   dbman:@DBMan)}}
       end
       {@MsgLayer setNode(@Node)}
       {@Node setListener(@MsgLayer)}
       {@DHT setMsgLayer(@MsgLayer)}
       {@Replica setMsgLayer(@MsgLayer)}
-      {@Replica setDHT(@DHT)}
       {@Trappist setMsgLayer(@MsgLayer)}
-      {@Trappist setDHT(@DHT)}
       {@Trappist setReplica(@Replica)}
       local
          StorageBoard StorageSubscriber

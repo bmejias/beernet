@@ -33,8 +33,6 @@ export
    New
 define
 
-   NO_ACK      = Constants.noAck
-   NO_SECRET   = Constants.noSecret
    NOT_FOUND   = Constants.notFound
 
    fun {New CallArgs}
@@ -42,7 +40,7 @@ define
       %Listener
       MsgLayer
       NodeRef
-      DHTman
+      DB
 
       Id
       NewItem
@@ -60,14 +58,14 @@ define
                       protocol:_ 
                       tag:trapp)}
          Tmp
-         DHTItem
+         DBItem
          Vote
       in 
          RTMs     = TheRTMs
          NewItem  = item(hkey:HKey item:TrItem tid:Tid)
          Leader   := TheLeader
-         Tmp      = {@DHTman getItem(HKey TrItem.key $)}
-         DHTItem  = if Tmp == NOT_FOUND then
+         Tmp      = {@DB get(HKey TrItem.key $)}
+         DBItem   = if Tmp == NOT_FOUND orelse Tmp.value == NO_VALUE then
                         item(key:      TrItem.key
                              secret:   TrItem.secret
                              value:    Tmp 
@@ -81,20 +79,15 @@ define
          Vote = vote(vote:    _
                      key:     TrItem.key 
                      secret:  TrItem.secret
-                     version: DHTItem.version 
+                     version: DBItem.version 
                      tid:     Tid 
                      tp:      tp(id:Id ref:@NodeRef)
                      tag:     trapp)
-         if TrItem.version >= DHTItem.version
-            andthen TrItem.secret == DHTItem.secret
-            andthen {Not DHTItem.locked} then
+         if TrItem.version >= DBItem.version
+            andthen TrItem.secret == DBItem.secret
+            andthen {Not DBItem.locked} then
             Vote.vote = brewed
-            {@DHTman putItem(hk:HKey
-                             k:TrItem.key
-                             s:NO_SECRET
-                             gid:NO_ACK
-                             src:_
-                             v:{AdjoinAt DHTItem locked true})}
+            {@DB put(HKey TrItem.key {AdjoinAt DBItem locked true})}
          else
             Vote.vote = denied
          end
@@ -106,17 +99,13 @@ define
       end
 
       proc {Abort abort}
-         DHTItem
+         DBItem
       in
-         DHTItem = {@DHTman getItem(NewItem.hkey NewItem.item.key $)}
-         if DHTItem \= NOT_FOUND then
-            {PutItemAndAck DHTItem}
+         DBItem = {@DB get(NewItem.hkey NewItem.item.key $)}
+         if DBItem \= NOT_FOUND then
+            {PutItemAndAck DBItem}
          else
-            {@DHTman deleteItem(hk:NewItem.hkey
-                                k:NewItem.item.key
-                                s:NO_SECRET
-                                gid:NO_ACK
-                                src:_)}
+            {@DB delete(NewItem.hkey NewItem.item.key)}
             {AckDecision NewItem.item}
          end
       end
@@ -126,12 +115,7 @@ define
       end
 
       proc {PutItemAndAck Item}
-         {@DHTman  putItem(hk:NewItem.hkey
-                           k:Item.key
-                           s:NO_SECRET
-                           gid:NO_ACK
-                           src:_
-                           v:{Record.adjoinAt Item locked false})}
+         {@DB put(NewItem.hkey Item.key {Record.adjoinAt Item locked false})}
          {AckDecision Item}
       end
 
@@ -149,8 +133,8 @@ define
          I = Id
       end
 
-      proc {SetDHT setDHT(ADHT)}
-         DHTman := ADHT
+      proc {SetDB setDB(ADB)}
+         DB := ADB
       end
 
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
@@ -165,7 +149,7 @@ define
                      commit:        Commit
                      %% Various
                      getId:         GetId
-                     setDHT:        SetDHT
+                     setDB:        SetDB
                      setMsgLayer:   SetMsgLayer
                      )
    in
@@ -177,7 +161,7 @@ define
          %Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
-      DHTman   = {NewCell Component.dummy}      
+      DB   = {NewCell Component.dummy}      
 
       Id       = {Name.new}
       NodeRef  = {NewCell noref}

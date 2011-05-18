@@ -27,21 +27,26 @@
 
 functor
 import
+   System
    Constants      at '../../commons/Constants.ozf'
    Component      at '../../corecomp/Component.ozf'
+   HashedList     at '../../utils/HashedList.ozf'
+   Utils          at '../../utils/Misc.ozf'
 export
    New
 define
 
    BAD_SECRET  = Constants.badSecret
    NO_VALUE    = Constants.noValue
+   NO_SECRET   = Constants.noSecret
+   SET_MAX_KEY = Constants.largeKey
 
    fun {New CallArgs}
       Self
       %Listener
       MsgLayer
       NodeRef
-      DHTman
+      DB
 
       Id
       NewOp
@@ -76,12 +81,89 @@ define
             end
          end
       in
-         fun {DecideVote Set SetOps NewOp}
-            if Set == NO_VALUE orelse Set.s == NewOp.sec then
-                  {DecisionLoop {Record.toList SetOps} NewOp 0}
+         fun {DecideVote Set NewOp}
+            if Set == NO_VALUE then
+               if NewOp.op == createSet then
+                  brewed
+               elseif NewOp.op == destroySet then
+                  not_found
+               else
+                  Final.0.(NewOp.op)
+               end
             else
-               BAD_SECRET
+               if {List.member NewOp.op [createSet destroySet]} then
+                  if NewOp.msec == Set.msec then
+                     brewed
+                  else
+                     {System.show 'got a bad secret...'}
+                     BAD_SECRET
+                  end
+               elseif Set.sec == NewOp.sec then
+                  {DecisionLoop {HashedList.getValues Set.ops} NewOp 0}
+               else
+                  BAD_SECRET
+               end
             end
+         end
+      end
+
+      %% WARNING: Creation of set with silent failure
+      proc {CreateSet HKey Key Secret MasterSecret}
+         if {@DB get(HKey Key $)} == NO_VALUE then
+            {@DB put(HKey
+                     Key
+                     set(sec:Secret msec:MasterSecret ops:nil)
+                     MasterSecret
+                     _)}
+         end  %% TODO: Return a reasonable error 
+      end
+
+      %% WARNING: Destruction of set with silent failure
+      proc {DestroySet HKey Key MasterSecret}
+         R
+      in
+         {System.showInfo "Going to destroy set under key "#Key}
+         {@DB delete(HKey Key MasterSecret R)}
+         {Wait R}
+         {System.show R}
+      end
+
+      proc {AddToSet HKey Key Secret Val}
+         Set
+         HVal
+      in
+         Set   = {@DB get(HKey Key $)}
+         HVal  = {Utils.hash Val SET_MAX_KEY}
+         if Set \= NO_VALUE then
+            if Set.sec == Secret then
+               {@DB put(HKey 
+                        Key
+                        set(ops:{HashedList.add Set.ops Val HVal}
+                            sec:Set.sec
+                            msec:Set.msec)
+                        Set.msec
+                        _)}
+            end
+         else
+            {CreateSet HKey Key Secret NO_SECRET}
+            {AddToSet HKey Key Secret Val}
+         end
+      end
+
+      proc {RemoveFromSet HKey Key Secret Val}
+         Set
+         HVal
+      in
+         Set   = {@DB get(HKey Key $)}
+         HVal  = {Utils.hash Val SET_MAX_KEY}
+         if Set \= NO_VALUE andthen Set.sec == Secret then
+            {@DB put(HKey
+                     Key
+                     sets(ops:{HashedList.remove Set.ops Val HVal}
+                          sec:Set.sec
+                          msec:Set.msec)
+                     Set.msec
+                     _)}
          end
       end
 
@@ -95,8 +177,7 @@ define
                       item:   Item 
                       protocol:_ 
                       tag:trapp)}
-         DHTSet
-         DHTSetOps
+         DBSet
          Vote
          Key
       in 
@@ -104,20 +185,22 @@ define
          NewOp    = {Record.adjoinAt Item hkey HKey}
          Leader   := TheLeader
          Key      = Item.key
-         DHTSet   = {@DHTman getItem(HKey Key $)}
-         DHTSetOps= {@DHTman readLocalSet(HKey Key $)}
+         DBSet    = {@DB get(HKey Key $)}
          %% Brewing vote - tmid needs to be added before sending
-         Vote = vote(vote:    {DecideVote DHTSet DHTSetOps NewOp}
+         Vote = vote(vote:    {DecideVote DBSet NewOp}
                      key:     Key 
                      version: 0
                      tid:     Tid 
                      tp:      tp(id:Id ref:@NodeRef)
                      tag:     trapp)
          if Vote.vote == brewed then
-            {@DHTman addToSet(hkey:HKey 
-                              key:Key 
-                              sec:NewOp.sec
-                              val:{AdjoinAt NewOp status tmp})}
+            if NewOp.op == createSet then
+               {CreateSet HKey Key NewOp.sec NewOp.msec}
+            elseif NewOp.op == destroySet then
+               skip
+            else
+               {AddToSet HKey Key NewOp.sec {Record.adjoinAt NewOp status tmp}}
+            end
          end
          {@MsgLayer dsend(to:@Leader.ref 
                           {Record.adjoinAt Vote tmid @Leader.id})}
@@ -126,27 +209,42 @@ define
          end
       end
 
-      proc {RemoveFromSet}
-         {@DHTman removeFromSet(hkey:NewOp.hkey
-                                key:NewOp.key 
-                                sec:NewOp.sec
-                                val:{AdjoinAt NewOp status tmp})}
+      proc {RemoveNewOp}
+         {RemoveFromSet NewOp.hkey
+                        NewOp.key
+                        NewOp.sec
+                        {Record.adjoinAt NewOp status tmp}}
       end
 
       proc {Abort abort}
-         {RemoveFromSet}
+         if NewOp.op == createSet then
+            %% There might be a race condition between adding a operation and
+            %% creating a set.
+            {DestroySet NewOp.hkey NewOp.key NewOp.msec}
+         elseif NewOp.op == destroySet then
+            skip
+         else
+            {RemoveNewOp}
+         end
       end
 
       proc {Commit commit}
-         {RemoveFromSet}
-         {@DHTman addToSet(hkey:NewOp.hkey
-                           key:NewOp.key
-                           sec:NewOp.sec
-                           val:op(id:NewOp.id
-                                  op:NewOp.op
-                                  val:NewOp.val
-                                  sval:NewOp.sval
-                                  status:ok))}
+         {System.showInfo "Got commit... going to "#NewOp.op#" for "#NewOp.key}
+         if NewOp.op == createSet then
+            skip
+         elseif NewOp.op == destroySet then
+            {DestroySet NewOp.hkey NewOp.key NewOp.msec}
+         else 
+            {RemoveNewOp}
+            {AddToSet NewOp.hkey
+                      NewOp.key
+                      NewOp.sec
+                      op(id:NewOp.id
+                         op:NewOp.op
+                         val:NewOp.val
+                         sval:NewOp.sval
+                         status:ok)}
+         end
       end
 
       %% --- Various --------------------------------------------------------
@@ -155,8 +253,8 @@ define
          I = Id
       end
 
-      proc {SetDHT setDHT(ADHT)}
-         DHTman := ADHT
+      proc {SetDB setDB(NewDB)}
+         DB := NewDB
       end
 
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
@@ -171,7 +269,7 @@ define
                      commit:        Commit
                      %% Various
                      getId:         GetId
-                     setDHT:        SetDHT
+                     setDB:         SetDB
                      setMsgLayer:   SetMsgLayer
                      )
    in
@@ -183,7 +281,7 @@ define
          %Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
-      DHTman   = {NewCell Component.dummy}      
+      DB       = {NewCell Component.dummy}      
 
       Id       = {Name.new}
       NodeRef  = {NewCell noref}

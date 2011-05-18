@@ -55,7 +55,7 @@ define
          Item
          RemoteItem
       in
-         RemoteItem = {@Replica getOne(Key $)}
+         RemoteItem = {@Replica getOne(Key $ trapp)}
          Item = if RemoteItem \= 'NOT_FOUND' then
                    {Record.adjoinAt RemoteItem op read}
                 else
@@ -113,7 +113,12 @@ define
       %% --- Events ---
       %% --- Operations for the client ---
       proc {Abort abort}
-         {Port.send Args.client abort}
+         try
+            {Port.send Args.client abort}
+         catch _ then
+            %% TODO: improve exception handling
+            skip
+         end
          Done := true
          {Suicide}
       end
@@ -160,7 +165,12 @@ define
          if {Length Acks.Key} == @RepFactor then
             AckedItems := Key | @AckedItems
             if {Length @AckedItems} == {Length {Dictionary.keys Votes}} then
-               {Port.send Args.client FinalDecision}
+               try
+                  {Port.send Args.client FinalDecision}
+               catch _ then
+                  %% TODO: improve exception handling
+                  skip
+               end
                Done := true
             end
          end

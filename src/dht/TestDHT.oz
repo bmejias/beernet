@@ -26,7 +26,9 @@ define
 
    proc {CreateNetwork}
       %{System.show 'first line'}
+      {Say "Creating Master peer..."}
       MasterOfPuppets = {PbeerMaker.new args}
+      {Say "Master peer created..."}
       %{System.show 'second line'}
       MasterId = {MasterOfPuppets getId($)}
       Pbeers = {List.make SIZE-1}
@@ -76,6 +78,7 @@ define
 
    proc {Bootstrap}
       {CreateNetwork}
+      {Say "Network bootstraped"}
       MaxKey = {MasterOfPuppets getMaxKey($)}
    end
 

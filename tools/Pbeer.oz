@@ -56,6 +56,8 @@ import
    PbeerBaseArgs  at '../lib/tools/PbeerBaseArgs.ozf'
    %% for key/value-set operations
    Add            at '../lib/tools/Add.ozf'
+   CreateSet      at '../lib/tools/CreateSet.ozf'
+   DestroySet     at '../lib/tools/DestroySet.ozf'
    Remove         at '../lib/tools/Remove.ozf'
    ReadSet        at '../lib/tools/ReadSet.ozf'
    %% for kay/value pairs operations
@@ -90,6 +92,8 @@ define
       {Say "\tdelete\t-k key"}
       {Say ""}
       {Say "   Key/value-sets operations"}
+      {Say "\tcreateSet\t-k key [--secret secret] [--msecret mastersecret]"}
+      {Say "\tdestroySet\t-k key [--msecret mastersecret]"}
       {Say "\tadd\t-k key -v any_value"}
       {Say "\treadSet\t-k key"}
       {Say "\tremove\t-k key -v any_value"}
@@ -129,6 +133,8 @@ define
    Subcommands = subcmds(
                          %% Key/Value sets
                          add:       Add
+                         createSet: CreateSet
+                         destroySet:DestroySet
                          remove:    Remove
                          readSet:   ReadSet
                          %% Basic DHT

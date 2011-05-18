@@ -25,6 +25,7 @@ functor
 export
    Add
    Remove
+   GetValues
 define
 
    fun {Add L X HX}
@@ -57,4 +58,12 @@ define
       end
    end
 
+   fun {GetValues L}
+      case L
+      of H|T then
+         H.value|{GetValues T}
+      [] nil then
+         nil
+      end
+   end
 end

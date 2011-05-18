@@ -19,7 +19,7 @@
  *
  * NOTES
  *    
- *    Pre-condition: It needs a messaging layer, the DHT component, and the
+ *    Pre-condition: It needs a messaging layer, a Database manager, and the
  *    Node Reference
  *
  *    Bulk: bulk operations send a message to all peers in the replica set.
@@ -69,10 +69,10 @@ define
       %Listener
       MsgLayer
       NodeRef
-      DHTman
       TheTimer
 
       Args
+      DBMan    % Database Manager
       MaxKey   % Maximum key                       
       Factor   % Replication factor
       Gvars                                        
@@ -90,13 +90,12 @@ define
          NewGid
       end
 
-      proc {RegisterRead Key Val Type GetType}
+      proc {RegisterRead Key Val Type DBid}
          NewGid
       in
          NewGid   = {NextGid}
          Gvars.NewGid := data(var:Val tries:0 state:waiting type:Type)
-         {Bulk bulk(to:Key
-                    read(Key id:NewGid src:@NodeRef get:GetType tag:symrep))}
+         {Bulk bulk(to:Key read(Key id:NewGid src:@NodeRef db:DBid tag:symrep))}
          {TheTimer startTrigger(@Timeout timeout(NewGid) Self)}
       end
 
@@ -199,24 +198,16 @@ define
          Keys = {MakeSymReplicas Key MKey F}
       end
 
-      proc {GetOne getOne(Key ?Val)}
-         {RegisterRead Key Val first getItem}
+      proc {GetOne getOne(Key ?Val DBid)}
+         {RegisterRead Key Val first DBid}
       end
 
-      proc {GetAll getAll(Key ?Vals)}
-         {RegisterRead Key Vals all getItem}
+      proc {GetAll getAll(Key ?Vals DBid)}
+         {RegisterRead Key Vals all DBid}
       end
 
-      proc {GetMajority getMajority(Key ?Vals)}
-         {RegisterRead Key Vals major getItem}
-      end
-
-      proc {GetOneSet getOneSet(Key ?Val)}
-         {RegisterRead Key Val first readLocalSet}
-      end
-
-      proc {GetMajoritySet getMajoritySet(Key ?Vals)}
-         {RegisterRead Key Vals major readLocalSet}
+      proc {GetMajority getMajority(Key ?Vals DBid)}
+         {RegisterRead Key Vals major DBid}
       end
 
       proc {GiveMeYourRef giveMeYourRef(hkey:HKey src:Src tag:symrep)}
@@ -232,10 +223,11 @@ define
          end
       end
 
-      proc {Read read(Key id:Gid src:Src hkey:HKey get:GetType tag:symrep)}
-         Val
+      proc {Read read(Key id:Gid src:Src hkey:HKey db:DBid tag:symrep)}
+         DB Val
       in
-         {@DHTman GetType(HKey Key Val)}
+         DB = {@DBMan get(name:DBid db:$)}
+         {DB get(HKey Key Val)}
          {@MsgLayer dsend(to:Src readBack(value:Val gid:Gid tag:symrep))}
       end
 
@@ -248,8 +240,8 @@ define
          end
       end
 
-      proc {SetDHT setDHT(DHTcomponent)}
-         DHTman := DHTcomponent
+      proc {SetDBMan setDBMan(NewDBMan)}
+         DBMan := NewDBMan
       end
 
       proc {SetFactor setFactor(F)}
@@ -287,14 +279,12 @@ define
                      getFactor:     GetFactor
                      getMajority:   GetMajority
                      getReplicaKeys:GetReplicaKeys
-                     getOneSet:     GetOneSet
-                     getMajoritySet:GetMajoritySet
                      giveMeYourRef: GiveMeYourRef
                      myRef:         MyRef
                      quickBulk:     QuickBulk
                      read:          Read
                      readBack:      ReadBack
-                     setDHT:        SetDHT
+                     setDBMan:      SetDBMan
                      setFactor:     SetFactor
                      setMaxKey:     SetMaxKey
                      setMsgLayer:   SetMsgLayer
@@ -310,7 +300,6 @@ define
          %Listener = FullComponent.listener
       end
       MsgLayer = {NewCell Component.dummy}
-      DHTman   = {NewCell Component.dummy}      
       TheTimer = {Timer.new}
 
       Args     = {Utils.addDefaults CallArgs def(maxKey:    666
@@ -319,6 +308,7 @@ define
       MaxKey   = {NewCell Args.maxKey}
       Factor   = {NewCell Args.repFactor}
       Timeout  = {NewCell Args.timeout}
+      DBMan    = {NewCell Args.dbman}
 
       Gvars    = {Dictionary.new}
       Gid      = {NewCell 0}

@@ -1,9 +1,10 @@
 /*-------------------------------------------------------------------------
  *
- * Remove.oz
+ * DestroySet.oz
  *
- *    pbeer subcommand. It connect to any peer and triggers a readSet
- *    operation.It retrieves the set from the majority of the replicas.
+ *    pbeer subcommand. It connect to any peer and triggers a destroySet
+ *    operation. The set can be destroyed only knowing the master secret.  The
+ *    set is removed from the majority of the replicas hosting the hash key.
  *
  * LICENSE
  *
@@ -35,23 +36,18 @@ define
    proc {Run Args}
       Pbeer
       Key
-      Result
+      MyPort
+      Outcome
    in
       if Args.help then
-         {PbeerBaseArgs.helpMessage [key cap ring store] nil read}
+         {PbeerBaseArgs.helpMessage [key cap ring store msecret] nil destroySet}
          {Application.exit 0}
       end
       Pbeer = {SetsCommon.getPbeer Args.store Args.ring}
-      Key   = {SetsCommon.getCapOrKey Args.cap Args.key}
-      {Pbeer readSet(Key Result)}
-      if Result == empty then
-         {System.showInfo "The set is empty"}
-      else
-         for I in 1..{Record.width Result} do
-            {Wait Result.I}
-            {System.show Result.I}
-         end
-      end
+      MyPort= {Port.new Outcome}
+      Key   = {SetsCommon.capOrKey Args.cap Args.key}
+      {Pbeer destroySet(k:Key ms:Args.msecret c:MyPort)}
+      {System.showInfo Outcome.1}
       {Application.exit 0}
    end
 end

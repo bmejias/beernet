@@ -75,7 +75,9 @@ define
    proc {GetOne Key}
       Value
    in
-      {MasterOfPuppets getOne(Key Value)}
+      %% TODO: remove trapp and make getOne more transparent.
+      %% e.g. make it pass first to trappist and not directly to Replica
+      {MasterOfPuppets getOne(Key Value trapp)}
       {Wait Value}
       {System.show 'Getting one replica of'#Key#'we obtained'#Value}
    end
@@ -83,7 +85,9 @@ define
    proc {GetAll Key}
       Val
    in
-      {MasterOfPuppets getAll(Key Val)}
+      %% TODO: remove trapp and make getAll more transparent.
+      %% e.g. make it pass first to trappist and not directly to Replica
+      {MasterOfPuppets getAll(Key Val trapp)}
       if {IsList Val} then skip end
       {System.show 'Reading All'#Key#'we obtained'#Val}
    end
@@ -91,7 +95,9 @@ define
    proc {GetMajority Key}
       Val
    in
-      {MasterOfPuppets getMajority(Key Val)}
+      %% TODO: remove trapp and make getMajority more transparent.
+      %% e.g. make it pass first to trappist and not directly to Replica
+      {MasterOfPuppets getMajority(Key Val trapp)}
       if {IsList Val} then skip end
       {System.show 'Reading Majority'#Key#'we obtained'#Val}
    end

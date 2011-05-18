@@ -27,21 +27,12 @@
  *    argument.
  *
  *    The basic operations provided for key/value pairs are: put(key value
- *    secret) - get(key) - delete(key secret). The basic operations provided
- *    for key/value-sets are: add(key secret value valuesecret) - remove(key
- *    secret value valuesecret) - readSet(key).
+ *    secret) - get(key) - delete(key secret).
  *
- *    SimpleSDB is used to store key/value pairs and key/value-sets. Both data
- *    storage are protected with secrets. The structure to store key/value
- *    pairs is the following: There is a dictionary to associate each key1 with
- *    its own dictionary. The second dictionary associates key2 to each value.
- *
- *    The structure to store key/value-sets is the following: As with key/value
- *    pairs, the global dictionary for key1 is used. The second dictionary
- *    instead of associating key2 to value, it associates key2 to a record of
- *    the form:
- *
- *       set(add:Dcitionary remove:Dictionary)
+ *    SimpleSDB is used to store key/value pairs which are protected with
+ *    secrets. The structure to store key/value pairs is the following: There
+ *    is a dictionary to associate each key1 with its own dictionary. The
+ *    second dictionary associates key2 to each value.
  *
  *    Each of these dictionaries associates a value to its operation id (opid).
  *    The key of the dictionary corresponds to a hash key for the value. The
@@ -56,16 +47,12 @@ functor
 import
    Component   at '../corecomp/Component.ozf'
    Constants   at '../commons/Constants.ozf'
-   HashedList  at '../utils/HashedList.ozf'
    Utils       at '../utils/Misc.ozf'
-   SimpleSDB    at 'SimpleSDB.ozf'
 export
    New
 define
 
    NO_ACK      = Constants.noAck
-   NO_SECRET   = Constants.noSecret
-   NO_VALUE    = Constants.noValue
 
    fun {New CallArgs}
       Self
@@ -74,6 +61,7 @@ define
 
       Args
       DB
+      DBMan
       Gvars
       Gid
       MaxKey
@@ -100,42 +88,13 @@ define
                          needItem(HKey Key src:@NodeRef gid:NewGid tag:dht))}
       end
 
-      proc {SendSetOperation Key Val Op}
-         HKey
-      in
-         HKey = {Utils.hash Key @MaxKey}
-         {@MsgLayer send(Op(HKey Key Val tag:dht) to:HKey)}
-      end
-
-
       %% --- Handling NeedItem back replies ---------------------------------
 
       proc {HandleBind ClientVar Val}
          ClientVar = Val
       end
 
-      proc {HandleSet ClientVar Val}
-         fun {GetValues L}
-            case L
-            of H|T then
-               H.value|{GetValues T}
-            [] nil then
-               nil
-            end
-         end
-         Elements
-      in
-         if Val == NO_VALUE then
-            ClientVar = Val
-         elseif Val.ops == nil then
-            ClientVar = empty
-         else
-            Elements = {GetValues Val.ops}
-            ClientVar= {List.toTuple set Elements}
-         end
-      end
-
-      ValueHandle = handles(pair:HandleBind set:HandleSet bind:HandleBind)
+      ValueHandle = handles(pair:HandleBind bind:HandleBind)
 
       %% === Events =========================================================
 
@@ -171,20 +130,6 @@ define
                                  src:@NodeRef
                                  gid:NewGid
                                  tag:dht) to:HKey)}
-      end
-
-      %% --- Key/Value-Set API for applications -----------------------------
-
-      proc {Add add(Key Val)}
-         {SendSetOperation Key Val addToSet}
-      end 
-
-      proc {Remove remove(Key Val)}
-         {SendSetOperation Key Val removeFromSet}
-      end
-
-      proc {ReadSet readSet(Key ?Val)}
-         {SendNeedItem Key Val set}
       end
 
       %% --- Events used by system protocols --------------------------------
@@ -235,69 +180,6 @@ define
          {Dictionary.remove Gvars Gid}
       end
 
-      %% WARNING: Creation of set with silent failure
-      proc {CreateSet Event}
-         createSet(hk:HKey k:Key s:Secret ms:MasterSecret ...) = Event
-      in
-         if {@DB get(HKey Key $)} == NO_VALUE then
-            {@DB put(HKey Key set(s:Secret ops:nil) MasterSecret _)}
-         end   
-      end
-
-      %% WARNING: Destruction of set with silent failure
-      proc {DestroySet Event}
-         destroySet(hk:HKey k:Key ms:MasterSecret ...) = Event
-      in
-         case {@DB get(HKey Key $)}
-         of set(s:_ ops:_) then
-            {@DB delete(HKey Key MasterSecret _)}
-         end   
-      end
-
-      proc {AddToSet Event}
-         addToSet(hkey:HKey key:Key sec:Secret val:Val ...) = Event
-         Set
-         HVal
-      in
-         Set   = {@DB get(HKey Key $)}
-         HVal  = {Utils.hash Val @MaxKey}
-         if Set == NO_VALUE then
-            {CreateSet createSet(hk:HKey k:Key s:Secret ms:NO_SECRET)}
-            {AddToSet Event}
-         else
-            if Set.s == Secret then
-               {@DB put(HKey 
-                        Key
-                        set(ops:{HashedList.add Set.ops Val HVal} s:Set.s)
-                        NO_SECRET
-                        _)}
-            end
-         end
-      end
-
-      proc {RemoveFromSet Event}
-         removeFromSet(hkey:HKey key:Key sec:Secret val:Val ...) = Event
-         Set
-         HVal
-      in
-         Set   = {@DB get(HKey Key $)}
-         HVal  = {Utils.hash Val @MaxKey}
-         if Set \= NO_VALUE andthen Set.s == Secret then
-            {@DB put(HKey
-                     Key
-                     sets(ops:{HashedList.remove Set.ops Val HVal} s:Set.s)
-                     NO_SECRET
-                     _)}
-         end
-      end
-
-      proc {ReadLocalSet readLocalSet(HKey Key Val)}
-         Set
-      in
-         Set = {GetItem getItem(HKey Key $)}
-         {ValueHandle.set Val Set}
-      end
-
       %% --- Component Setters ----------------------------------------------
       proc {SetDB setDB(ADataBase)}
          @DB := ADataBase
@@ -317,22 +199,13 @@ define
                      delete:        Delete
                      get:           Get
                      put:           Put
-                     %% Key/Value-Sets
-                     add:           Add
-                     remove:        Remove
-                     readSet:       ReadSet
                      %% System protocols
-                     addToSet:      AddToSet
                      bindResult:    BindResult
-                     createSet:     CreateSet
                      deleteItem:    DeleteItem
-                     destroySet:    DestroySet
                      getItem:       GetItem
                      needItem:      NeedItem
                      needItemBack:  NeedItemBack
                      putItem:       PutItem
-                     removeFromSet: RemoveFromSet
-                     readLocalSet:  ReadLocalSet
                      %% Setters
                      setDB:         SetDB
                      setMaxKey:     SetMaxKey
@@ -348,8 +221,9 @@ define
       end
       MsgLayer = {NewCell Component.dummy}
 
-      Args     = {Utils.addDefaults CallArgs def(maxKey:666 db:{SimpleSDB.new})}
-      DB       = {NewCell Args.db}
+      Args     = {Utils.addDefaults CallArgs def(maxKey:666)}
+      DBMan    = Args.dbman
+      DB       = {NewCell {DBMan getCreate(name:dht type:secrets db:$)}}
       MaxKey   = {NewCell Args.maxKey}
       Gvars    = {Dictionary.new}
       Gid      = {NewCell 0}

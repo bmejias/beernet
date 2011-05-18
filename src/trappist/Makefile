@@ -2,6 +2,7 @@ MAKE = make
 INSTALL = install
 INSTALL_FUNCTOR = $(INSTALL) -m 644
 DESTDIR = ../../lib/trappist/
+BINDIR = ../../bin/
 SRCS = SymmetricReplication Trappist
 SUBDIRS = twophase paxos valueset
 
@@ -9,7 +10,7 @@ all: $(foreach source, $(SRCS), src_$(source)) sublibs
 
 install: check_destdir \
 	$(foreach source, $(SRCS), install_$(source)) \
-	installlibs
+	installlibs install_test
 
 sublibs:$(foreach subdir, $(SUBDIRS), sub_$(subdir))
 
@@ -22,6 +23,10 @@ check_destdir:
 
 install_%:
 	$(INSTALL_FUNCTOR) $(subst install_,,$@).ozf $(DESTDIR)
+
+install_test:
+	if ! test -d $(BINDIR); then mkdir $(BINDIR); fi
+	$(INSTALL) test $(BINDIR)
 
 src_%:
 	ozc -c $(subst src_,,$@).oz -o $(subst src_,,$@).ozf

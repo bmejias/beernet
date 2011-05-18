@@ -35,7 +35,7 @@ define
    fun {New CallArgs}
       Self
       MsgLayer
-      DHTman
+      DB
 
       Id
       NodeRef
@@ -52,13 +52,13 @@ define
                       protocol:_ 
                       tag:trapp)}
          Tmp
-         DHTItem
+         DBItem
          Vote
       in 
          NewItem  = item(hkey:HKey item:TrItem tid:Tid tmid:TMid)
          Leader   = TM
-         Tmp      = {@DHTman getItem(HKey TrItem.key $)}
-         DHTItem  = if Tmp == 'NOT_FOUND' then
+         Tmp      = {@DB get(HKey TrItem.key $)}
+         DBItem   = if Tmp == 'NOT_FOUND' then
                         item(key:      TrItem.key
                              value:    Tmp 
                              version:  0
@@ -70,14 +70,14 @@ define
          %% Brewing vote
          Vote = vote(vote:    _
                      key:     TrItem.key 
-                     version: DHTItem.version 
+                     version: DBItem.version 
                      tid:     Tid 
                      tmid:    TMid
                      tp:      tp(id:Id ref:@NodeRef)
                      tag:     trapp)
-         if TrItem.version >= DHTItem.version andthen {Not DHTItem.locked} then
+         if TrItem.version >= DBItem.version andthen {Not DBItem.locked} then
             Vote.vote = brewed
-            {@DHTman putItem(HKey TrItem.key {AdjoinAt DHTItem locked true})}
+            {@DB put(HKey TrItem.key {AdjoinAt DBItem locked true})}
          else
             Vote.vote = denied
          end
@@ -85,7 +85,7 @@ define
       end
 
       proc {PutItemAndAck HKey Key Item}
-         {@DHTman  putItem(HKey Key {Record.adjoinAt Item locked false})}
+         {@DB  put(HKey Key {Record.adjoinAt Item locked false})}
          {@MsgLayer dsend(to:Leader ack(key: Key
                                         tid: NewItem.tid
                                         tmid:NewItem.tmid
@@ -94,10 +94,10 @@ define
       end
 
       proc {Abort abort}
-         DHTItem
+         DBItem
       in
-         DHTItem = {@DHTman getItem(NewItem.hkey NewItem.item.key $)}
-         {PutItemAndAck NewItem.hkey NewItem.item.key DHTItem}
+         DBItem = {@DB get(NewItem.hkey NewItem.item.key $)}
+         {PutItemAndAck NewItem.hkey NewItem.item.key DBItem}
       end
 
       proc {Commit commit}
@@ -110,8 +110,8 @@ define
          I = Id
       end
 
-      proc {SetDHT setDHT(ADHT)}
-         DHTman := ADHT
+      proc {SetDB setDB(NewDB)}
+         DB := NewDB
       end
 
       proc {SetMsgLayer setMsgLayer(AMsgLayer)}
@@ -126,13 +126,13 @@ define
                      commit:        Commit
                      %% Various
                      getId:         GetId
-                     setDHT:        SetDHT
+                     setDB:         SetDB
                      setMsgLayer:   SetMsgLayer
                      )
    in
       Self     = {Component.new Events}.trigger
       MsgLayer = {NewCell Component.dummy}
-      DHTman   = {NewCell Component.dummy}      
+      DB       = {NewCell Component.dummy}      
 
       NodeRef  = {NewCell noref}
       Id       = {Name.new}

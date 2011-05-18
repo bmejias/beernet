@@ -59,15 +59,30 @@ define
       LogPort
 
       proc {Logger Event}
-         {Port.send LogPort Event}
+         try
+            {Port.send LogPort Event}
+         catch _ then
+            %% TODO: improve exception handling
+            skip
+         end
       end
 
       proc {Closer}
-         {Port.send LogPort close(KeyCloser)}
+         try
+            {Port.send LogPort close(KeyCloser)}
+         catch _ then
+            %% TODO: improve exception handling
+            skip
+         end
       end
 
       proc {SetListener NewListener}
-         {Port.send LogPort setListener(KeyListener NewListener)}
+         try
+            {Port.send LogPort setListener(KeyListener NewListener)}
+         catch _ then
+            %% TODO: improve exception handling
+            skip
+         end
       end
 
       proc {UponEvent EventStream}

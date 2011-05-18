@@ -54,9 +54,11 @@ define
                      "(default: " HASH_KEY ")")
          cap:'#'("  -c, --cap\tFilename to store/retrieve a capability key "
                  "(default: " CAP_FILE ")")
-         secret:'#'("      --secret\tProject updates with secret "
+         secret:'#'("      --secret\tProtect updates with secret "
                  "(default: " NO_SECRET ")")
-         secretval:'#'("       --secretval Project value in a set with secret "
+         secretval:'#'("       --secretval Protect value in a set with secret "
+                 "(default: " NO_SECRET ")")
+         msecret:'#'("     --msecret\tProtect the set with master secret "
                  "(default: " NO_SECRET ")")
          protocol:'#'("  -p, --protocol Transactional protocol to be used "
                       "(default: " TRANS_PROT ")")
@@ -78,6 +80,7 @@ define
                cap(single        char:&c  type:atom   default:CAP_FILE)
                hashkey(single             type:int    default:HASH_KEY)
                key(single        char:&k  type:atom   default:KEY)
+               msecret(single             type:atom   default:NO_SECRET)
                protocol(single   char:&p  type:atom   default:TRANS_PROT)
                ring(single       char:&r  type:atom   default:RING_NAME)
                secret(single              type:atom   default:NO_SECRET)

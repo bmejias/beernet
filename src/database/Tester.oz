@@ -6,7 +6,7 @@ import
    Application
    Property
    System
-   TestDHT        at 'TestDHT.ozf'
+   TestSDB        at 'TestSDB.ozf'
 define
 
    %% For feedback
@@ -18,7 +18,7 @@ define
       {Say "Usage: "#{Property.get 'application.url'}#" <test> [option]"}
       {Say ""}
       {Say "Tests:"}
-      {Say "\tdht\tTest the DHT running on a network"}
+      {Say "\tsdb\tTest the functionality of the simple db with secrets"}
       {Say ""}
       {Say "Options:"}
       {Say "  -h, -?, --help\tThis help"}
@@ -58,8 +58,8 @@ in
    case Args.1
    of Command|_ then
       case Command
-      of "dht" then
-         {FinalMsg {TestDHT.run Args}}
+      of "sdb" then
+         {FinalMsg {TestSDB.run Args}}
       else
          {Say "ERROR: Invalid invocation\n"}
          {Say {Value.toVirtualString Args 100 100}}
