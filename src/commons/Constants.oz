@@ -31,16 +31,20 @@ export
    NoValue
    Public 
    Success
+   SlSize
 define
 
    Abort       = 'ABORT'      % 
    BadSecret   = bad_secret   % Incorrect secret
    ErrorBadSec = error(bad_secret) % Error: Incorrect secret
-   LargeKey    = 1048576      % 2^20
    NoAck       = nack         % Used when no remote answer is needed
    NotFound    = 'NOT_FOUND'  % To be used inside the component as constant
    Public      = public       % No secret
    Success     = 'SUCCESS'    % Correct secret, or new item created
+
+   %% Numbers
+   LargeKey    = 2097152      % 2^21 used for max key
+   SlSize      = 7            % successor list size (because I like 7)
 
    %% aliases
    NoValue  = NotFound

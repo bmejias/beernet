@@ -50,7 +50,6 @@ define
       Fingers     % RingList => sorted using Id first reference
       IdealIds    % Ideals ids to chose the fingers
       K           % Factor k to divide the address space to choose fingers
-      %LogMaxKey   % Frequently used value
       MaxKey      % Maximum value for a key
       Node        % The Node that uses this finger table
       NodeRef     % Node's reference
@@ -189,7 +188,6 @@ define
       Fingers     = {NewCell {RingList.new}}
       Refreshing  = {NewCell nil}
       Refresh     = {NewCell _}
-      %LogMaxKey   = {Float.toInt {Float.log {Int.toFloat @MaxKey+1}}}
       ComLayer    = {NewCell Component.dummy}
       Self
    end

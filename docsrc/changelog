@@ -8,8 +8,18 @@
  */
 
 Beernet-0.9
+
+	New functionality
 	- Adding subcommand stop to beernet tool
+	- Adding secrets to protect data updates on all three data abstractions
+	- Eager data migration on join
+	- Experimental API with Java using plain ASCII socket communication
+
+	Fixes
 	- In beernet --dist=cluster fixed 
+	- Bulk and QuickBulk uses the hash key, not the high level key
+	- Dead ports don't raise exceptions running with Mozart 1.3.2
+	- And several minor bug fixes 
 
 Beernet-0.8
 	- Symmetric replication layer provides a replication set for quick bulk
@@ -18,7 +28,7 @@ Beernet-0.8
 	- Command line tools added: beernet and pbeer
 	- New directory structure from docsrc, src and tools to doc, lib and bin
 	- Better Makefile support with make install
-	- Several bug fixed
+	- Several bug fixes
 
 Beernet-0.7
 	- Trappist provides add/remove/read set operations (alfa)

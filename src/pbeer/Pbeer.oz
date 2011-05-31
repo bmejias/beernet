@@ -337,12 +337,12 @@ define
       Node     = {NewCell {RelaxedRing.new Args}}
       MsgLayer = {NewCell {TheMsgLayer.new args}}
       DBMan    = {NewCell {DBManager.new}}
-      Trappist = {NewCell {TransLayer.new args(dbman:@DBMan)}}
       local
          MaxKey
       in
-         MaxKey = {@Node getMaxKey($)}
+         MaxKey   = {@Node getMaxKey($)}
          DHT      = {NewCell {TheDHT.new args(maxKey:MaxKey dbman:@DBMan)}}
+         Trappist = {NewCell {TransLayer.new args(maxKey:MaxKey dbman:@DBMan)}}
          Replica  = {NewCell {Replication.new args(maxKey:MaxKey
                                                    repFactor:REPL_FACT
                                                    dbman:@DBMan)}}

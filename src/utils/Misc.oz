@@ -22,8 +22,10 @@
 functor
 import
    Pickle
+   System
 export
    AddDefaults
+   Blabla
    DelegatesTo
    DeleteFromList
    Hash
@@ -83,6 +85,21 @@ define
          {@Comp Event}
       end
    end
+
+   %%--- For debug information ---
+   proc {Blabla Text}
+      try
+         {System.showInfo Text}
+      catch _ then
+         {System.show Text}
+      end
+   end
+
+/*
+   proc {Blabla _}
+      skip
+   end
+*/
 
 end
 

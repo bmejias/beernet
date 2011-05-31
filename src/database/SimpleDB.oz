@@ -76,6 +76,47 @@ define
          end
       end
 
+      %% Dump Keys within a range of keys into a list of entries.
+      %% The resulting list is a list of lists.
+      proc {DumpRange dumpRange(From To ?Result)}
+         fun {DumpLoop Entries}
+            case Entries
+            of (Key#Dict)|MoreEntries then
+               if Key >= From andthen Key =< To then
+                  (Key#{Dictionary.entries Dict})|{DumpLoop MoreEntries}
+               else
+                  {DumpLoop MoreEntries}
+               end
+            [] nil then
+               nil
+            end
+         end
+      in
+         Result = {DumpLoop {Dictionary.entries DB}}
+      end
+
+      %% Insert a list of list into the dictionary of dictionaries.
+      proc {Insert insert(Entries Result)}
+         proc {InsertLoop Key1 Items}
+            case Items
+            of (Key2#Val)|MoreItems then
+               {Put put(Key1 Key2 Val)}
+               {InsertLoop Key1 MoreItems}
+            [] nil then
+               skip
+            end
+         end
+      in
+         case Entries
+         of (Key#Items)|MoreEntries then
+            {InsertLoop Key Items}
+            {Insert insert(MoreEntries Result)}
+         [] nil then
+            skip
+         end
+         Result = unit
+      end
+
       Events = events(
                      delete:  Delete
                      get:     Get

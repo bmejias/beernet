@@ -26,8 +26,9 @@
 
 functor
 import
-   System
    Component      at '../corecomp/Component.ozf'
+   Constants      at '../commons/Constants.ozf'
+   Utils          at '../utils/Misc.ozf'
    EagerPaxosTM   at 'eagerpaxos/EagerPaxos-TM.ozf'
    EagerPaxosTP   at 'eagerpaxos/EagerPaxos-TP.ozf'
    PaxosTM        at 'paxos/Paxos-TM.ozf'
@@ -39,6 +40,8 @@ import
 export
    New
 define
+
+   Debug = Utils.blabla
 
    fun {New CallArgs}
       Self
@@ -53,6 +56,7 @@ define
       DBMan
       PairsDB
       SetsDB
+      MaxKey
 
       TMmakers = tms(eagerpaxos: EagerPaxosTM
                      paxos:      PaxosTM
@@ -99,9 +103,12 @@ define
       proc {RunTransaction runTransaction(Trans Client Protocol)}
          TM
       in
-         TM = {TMmakers.Protocol.new args(role:leader client:Client)}
+         TM = {TMmakers.Protocol.new args(role:leader
+                                          client:Client
+                                          maxKey:@MaxKey)}
          {TM setMsgLayer(@MsgLayer)}
          {TM setReplica(@Replica)}
+         {Debug 'Trap: TM object created and ready to call the transaciton'}
          {AddTransObj TMs {TM getTid($)} {TM getId($)} TM}
          {Trans TM}
       end
@@ -115,7 +122,7 @@ define
       proc {ToValueSet Event}
          TM 
       in
-         TM = {TMmakers.valueset.new args(role:leader)}
+         TM = {TMmakers.valueset.new args(role:leader maxKey:@MaxKey)}
          {TM setMsgLayer(@MsgLayer)}
          {TM setReplica(@Replica)}
          {AddTransObj TMs {TM getTid($)} {TM getId($)} TM}
@@ -128,7 +135,9 @@ define
          RTM
       in
          if @NodeRef.id \= Event.leader.ref.id then
-            RTM = {TMmakers.Protocol.new args(role:rtm client:Client)}
+            RTM = {TMmakers.Protocol.new args(role:rtm
+                                              client:Client
+                                              maxKey:@MaxKey)}
             {RTM setMsgLayer(@MsgLayer)}
             {RTM setReplica(@Replica)}
             {AddTransObj TMs Tid {RTM getId($)} RTM}
@@ -158,7 +167,43 @@ define
 
       %% --- Data Management ------------------------------------------------
       proc {NewPred newPred(old:OldPred new:NewPred tag:data)}
-         %{System.show 'Going to move Trappist data to the new predecessor'}
+         proc {DataLoop Froms Tos}
+            case Froms#Tos
+            of (From|MoreFroms)#(To|MoreTos) then
+               PairEntries SetEntries
+            in
+               %% Migrating data of paxos, eagerpaxos and twophase
+               %% They all use PairsDB, refering with DBs.paxos
+               {DBs.paxos dumpRange(From To PairEntries)}
+               {@MsgLayer dsend(to:NewPred insertData(entries:PairEntries
+                                                      db:paxos
+                                                      tag:trapp))}
+               %% Migrating data of the valueset abstraction
+               {DBs.valueset dumpRange(From To SetEntries)}
+               {@MsgLayer dsend(to:NewPred insertData(entries:SetEntries
+                                                      db:valueset
+                                                      tag:trapp))}
+               %% Carry on with the migration
+               {DataLoop MoreFroms MoreTos}
+            [] nil#nil then
+               skip
+            end
+         end
+         FromList
+         ToList
+      in
+         thread
+            %% Safe thread. Does not modify state
+            FromList = OldPred.id|{@Replica getReverseKeys(OldPred.id $)}
+            ToList   = NewPred.id|{@Replica getReverseKeys(NewPred.id $)}
+            {DataLoop FromList ToList}
+          end
+      end
+
+      proc {InsertData insertData(entries:Entries db:DB tag:trapp)}
+         if Entries \= nil then
+            {DBs.DB insert(Entries _/*Result*/)}
+         end
       end
 
       %% --- Internal to the Pbeer ---
@@ -199,6 +244,7 @@ define
                      brew:          Brew
                      final:         Final
                      %% Data management
+                     insertData:    InsertData
                      newPred:       NewPred
                      %% Internal to the Pbeer
                      setMsgLayer:   SetMsgLayer
@@ -206,6 +252,7 @@ define
                      %setTimeout:    SetTimeout
                      %timeout:       TimeoutEvent
                      )
+
    in
       local
          FullComponent
@@ -221,7 +268,12 @@ define
       TMs      = {Dictionary.new}
       TPs      = {Dictionary.new}
 
-      DBMan    = CallArgs.dbman
+      local
+         Args     = {Utils.addDefaults CallArgs def(maxKey:Constants.largeKey)}
+      in
+         DBMan    = Args.dbman
+         MaxKey   = {NewCell Args.maxKey}
+      end
       PairsDB  = {DBMan getCreate(name:trapp type:basic db:$)}
       SetsDB   = {DBMan getCreate(name:sets type:secrets db:$)}
 

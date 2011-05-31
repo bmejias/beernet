@@ -183,9 +183,18 @@ define
 
       %% --- Data Management ------------------------------------------------
       proc {NewPred newPred(old:OldPred new:NewPred tag:data)}
-         %{System.show 'Going to move DHT data to the new predecessor'}
+         Entries
+      in
+         {@DB dumpRange(OldPred.id NewPred.id Entries)}
+         {@MsgLayer dsend(to:NewPred insertData(entries:Entries tag:dht))}
       end
 
+      proc {InsertData insertData(entries:Entries tag:dht)}
+         if Entries \= nil then
+            {System.show 'Inserting entries'#Entries}
+            {@DB insert(Entries _/*Result*/)}
+         end
+      end
 
       %% --- Component Setters ----------------------------------------------
       proc {SetDB setDB(ADataBase)}
@@ -219,6 +228,7 @@ define
                      setMsgLayer:   SetMsgLayer
                      %% Data management
                      newPred:       NewPred
+                     insertData:    InsertData
                      )
    in
       local
@@ -230,7 +240,7 @@ define
       end
       MsgLayer = {NewCell Component.dummy}
 
-      Args     = {Utils.addDefaults CallArgs def(maxKey:666)}
+      Args     = {Utils.addDefaults CallArgs def(maxKey:Constants.largeKey)}
       DBMan    = Args.dbman
       DB       = {NewCell {DBMan getCreate(name:dht type:secrets db:$)}}
       MaxKey   = {NewCell Args.maxKey}

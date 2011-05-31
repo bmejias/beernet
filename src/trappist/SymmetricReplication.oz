@@ -35,8 +35,9 @@
 
 functor
 import
-%   System
+   System
    Component   at '../corecomp/Component.ozf'
+   Constants   at '../commons/Constants.ozf'
    Timer       at '../timer/Timer.ozf'
    Utils       at '../utils/Misc.ozf'
    PbeerList   at '../utils/PbeerList.ozf'
@@ -46,8 +47,8 @@ define
   
    %% Returns a list of 'f' hash keys symmetrically replicated whithin the
    %address space, from 0 to Max. 'f' is the replication Factor. The list
-   %starts with the input Key. 
-   fun {MakeSymReplicas Key Max Factor}
+   %starts with the input Key. Note that Key is a key in the hash table. 
+   fun {MakeSymReplicas HKey Max Factor}
       Increment = Max div Factor
       fun {GetLoop Iter Last}
          if Iter > 0 then
@@ -58,10 +59,8 @@ define
             nil
          end
       end
-      HashKey
    in
-      HashKey = {Utils.hash Key Max}
-      HashKey|{GetLoop Factor-1 HashKey}
+      HKey|{GetLoop Factor-1 HKey}
    end
 
    fun {New CallArgs}
@@ -95,7 +94,8 @@ define
       in
          NewGid   = {NextGid}
          Gvars.NewGid := data(var:Val tries:0 state:waiting type:Type)
-         {Bulk bulk(to:Key read(Key id:NewGid src:@NodeRef db:DBid tag:symrep))}
+         {Bulk bulk(to:{Utils.hash Key @MaxKey}
+                    read(Key id:NewGid src:@NodeRef db:DBid tag:symrep))}
          {TheTimer startTrigger(@Timeout timeout(NewGid) Self)}
       end
 
@@ -150,8 +150,10 @@ define
          DoBulk
       in
          if @RSetOK then 
+            {System.show 'Bulking to the Bulk set'}
             DoBulk = BulkToRSet
          else
+            {System.show 'using the regular bulk'}
             DoBulk = Bulk
          end
          {DoBulk bulk(Msg to:Key)}
@@ -167,10 +169,10 @@ define
       end
 
       %% Bulk message using overlay's routing (logarithmic)
-      proc {Bulk bulk(Msg to:Key)}
+      proc {Bulk bulk(Msg to:HKey)}
          RepKeys
       in
-         RepKeys = {MakeSymReplicas Key @MaxKey @Factor}
+         RepKeys = {MakeSymReplicas HKey @MaxKey @Factor}
          for K in RepKeys do
 %            {System.show @NodeRef.id#'going to bulk to'#K}
             {@MsgLayer send({Record.adjoinAt Msg hkey K} to:K)}
@@ -189,13 +191,24 @@ define
       end
 
       proc {GetReplicaKeys Event}
-         getReplicaKeys(Key Keys ...) = Event
+         getReplicaKeys(HKey Keys ...) = Event
          MKey
          F
       in
          MKey = if {HasFeature Event maxKey} then Event.maxKey else @MaxKey end
          F    = if {HasFeature Event factor} then Event.factor else @Factor end
-         Keys = {MakeSymReplicas Key MKey F}
+         Keys = {MakeSymReplicas HKey MKey F}
+      end
+
+      proc {GetReverseKeys Event}
+         getReverseKeys(HKey Keys ...) = Event
+         MKey
+         F
+      in
+         MKey = if {HasFeature Event maxKey} then Event.maxKey else @MaxKey end
+         F    = if {HasFeature Event factor} then Event.factor else @Factor end
+         %% Removing the original HKey
+         Keys = {MakeSymReplicas HKey MKey F}.2
       end
 
       proc {GetOne getOne(Key ?Val DBid)}
@@ -279,6 +292,7 @@ define
                      getFactor:     GetFactor
                      getMajority:   GetMajority
                      getReplicaKeys:GetReplicaKeys
+                     getReverseKeys:GetReverseKeys
                      giveMeYourRef: GiveMeYourRef
                      myRef:         MyRef
                      quickBulk:     QuickBulk
@@ -302,7 +316,7 @@ define
       MsgLayer = {NewCell Component.dummy}
       TheTimer = {Timer.new}
 
-      Args     = {Utils.addDefaults CallArgs def(maxKey:    666
+      Args     = {Utils.addDefaults CallArgs def(maxKey:    Constants.largeKey
                                                  repFactor: 4
                                                  timeout:   7000)}
       MaxKey   = {NewCell Args.maxKey}

@@ -67,6 +67,7 @@ define
       %AckedItems     % Collect items once enough acks are received 
       Done           % Flag to know when we are done
       MaxHash        % Just to make list more efficient
+      MaxKey         % To use the hash function
 
       %% --- Util functions -------------------------------------------------
 
@@ -172,13 +173,14 @@ define
          end
          %% Initiate TPs per each item. Ask them to vote
          for I in {Dictionary.items LocalStore} do
-            {@Replica  bulk(to:I.key brew(leader:  @Leader
-                                          rtms:    @RTMs
-                                          tid:     Tid
-                                          item:    I
-                                          protocol:valueset
-                                          tag:     trapp
-                                          ))} 
+            {@Replica bulk(to:{Utils.hash I.key @MaxKey}
+                           brew(leader:  @Leader
+                                rtms:    @RTMs
+                                tid:     Tid
+                                item:    I
+                                protocol:valueset
+                                tag:     trapp
+                                ))} 
             Votes.(I.key)  := nil
             Acks.(I.key)   := nil
             TPs.(I.key)    := nil
@@ -564,6 +566,7 @@ define
       %AckedItems  = {NewCell nil}
       Done        = {NewCell false}
       MaxHash     = 10676725
+      MaxKey      = {NewCell Args.maxKey}
       Role        = {NewCell Args.role}
       LocalStore  = {Dictionary.new}
       if @Role == leader then

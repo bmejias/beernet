@@ -38,6 +38,7 @@ functor
 import
    System
    Component   at '../../corecomp/Component.ozf'
+   Constants   at '../../commons/Constants.ozf'
    KeyRanges   at '../../utils/KeyRanges.ozf'   
    Network     at '../../network/Network.ozf'
    PbeerList   at '../../utils/PbeerList.ozf'
@@ -48,7 +49,8 @@ export
    New
 define
    JOIN_WAIT   = 5000      % Milliseconds to wait to retry a join 
-   MAX_KEY     = 1048576   % 2^20
+   MAX_KEY     = Constants.largeKey
+   SL_SIZE     = Constants.slSize
 
    BelongsTo      = KeyRanges.belongsTo
 
@@ -65,7 +67,6 @@ define
    %% --- Exported ---
    fun {New CallArgs}
       Crashed     % List of crashed peers
-      LogMaxKey   % Frequently used value
       MaxKey      % Maximum value for a key
       Pred        % Reference to the predecessor
       PredList    % To remember peers that haven't acked joins of new preds
@@ -75,6 +76,7 @@ define
       SelfRef     % Pbeer reference pbeer(id:<Id> port:<Port>)
       Succ        % Reference to the successor
       SuccList    % Successor List. Used for failure recovery
+      SLSize      % Successor list size
       WishedRing  % Used while trying to join a ring
 
       %% --- Utils ---
@@ -99,7 +101,7 @@ define
                            proc {$ Pbeer}
                               FinalList := {AddToList Pbeer @FinalList}
                            end}
-         FinalList := {RingList.keepAndDrop LogMaxKey @FinalList _/*DropList*/}
+         FinalList := {RingList.keepAndDrop SLSize @FinalList _/*DropList*/}
          % TODO: verify this operation
          %{UnregisterPeers DropList}
          {WatchPeers @FinalList}
@@ -262,7 +264,7 @@ define
          SuccList := {UpdateList @SuccList Src SrcSuccList}
          {Zend @Pred updSuccList(src:@SelfRef
                                  succList:@SuccList
-                                 counter:LogMaxKey)}
+                                 counter:SLSize)}
       end
 
       proc {GetComLayer getComLayer(Res)}
@@ -409,7 +411,7 @@ define
             {Zend @Succ predNoMore(@SelfRef)}
             {Zend @Pred updSuccList(src:@SelfRef
                                     succList:@SuccList
-                                    counter:LogMaxKey)}
+                                    counter:SLSize)}
             Succ := NewSucc
             {Monitor NewSucc}
             {@FingerTable monitor(NewSucc)}
@@ -529,10 +531,13 @@ define
       ComLayer = {NewCell {Network.new}}
       {@ComLayer setListener(Self)}
 
-      Args        = {Utils.addDefaults CallArgs def(firstAck:_ maxKey:MAX_KEY)}
+      Args        = {Utils.addDefaults CallArgs
+                                       def(firstAck:_
+                                           maxKey:MAX_KEY
+                                           slsize:SL_SIZE)}
       FirstAck    = Args.firstAck
       MaxKey      = Args.maxKey
-      LogMaxKey   = {Float.toInt {Float.log {Int.toFloat MaxKey+1}}}
+      SLSize      = Args.slsize
 
       %% Peer State
       if {HasFeature Args id} then

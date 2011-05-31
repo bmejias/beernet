@@ -27,6 +27,7 @@
 functor
 import
    Component      at '../../corecomp/Component.ozf'
+   Utils          at '../../utils/Misc.ozf'
 export
    New
 define
@@ -49,6 +50,7 @@ define
       VotedItems     % Collect items once enough votes are received 
       AckedItems     % Collect items once enough acks are received 
       Done           % Flag to know when we are done
+      MaxKey         % To use the hash function
 
       %% --- Util functions ---
       fun lazy {GetRemote Key}
@@ -130,13 +132,14 @@ define
          %% - Decide on commit or abort
          %% - Spread decision to TPs
          for I in {Dictionary.items LocalStore} do
-            {@Replica  bulk(to:I.key brew(tm:   @NodeRef
-                                          tid:  Tid
-                                          tmid: Id
-                                          item: I
-                                          protocol:twophase
-                                          tag:  trapp
-                                          ))} 
+            {@Replica bulk(to:{Utils.hash I.key @MaxKey}
+                           brew(tm:   @NodeRef
+                                tid:  Tid
+                                tmid: Id
+                                item: I
+                                protocol:twophase
+                                tag:  trapp
+                                ))} 
             Votes.(I.key)  := nil
             Acks.(I.key)   := nil
             TPs.(I.key)    := nil
@@ -248,6 +251,7 @@ define
       VotedItems  = {NewCell nil}
       AckedItems  = {NewCell nil}
       Done        = {NewCell false}
+      MaxKey      = {NewCell Args.MaxKey}
 
       Self
    end

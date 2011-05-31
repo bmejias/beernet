@@ -28,10 +28,10 @@
 
 functor
 import
-   System
    Component      at '../../corecomp/Component.ozf'
    Constants      at '../../commons/Constants.ozf'
    Timer          at '../../timer/Timer.ozf'
+   Utils          at '../../utils/Misc.ozf'
 export
    New
 define
@@ -39,8 +39,9 @@ define
    BAD_SECRET  = Constants.badSecret
    NO_SECRET   = Constants.public
    NO_VALUE    = Constants.noValue
-   Say         = System.showInfo
 
+   Debug       = Utils.blabla
+   
    fun {New Args}
       Self
       Suicide
@@ -68,6 +69,7 @@ define
       VotedItems     % Collect items once enough votes are received 
       %AckedItems     % Collect items once enough acks are received 
       Done           % Flag to know when we are done
+      MaxKey         % To use the hash function
 
       %% --- Util functions -------------------------------------------------
       fun lazy {GetRemote Key}
@@ -184,13 +186,14 @@ define
          end
          %% Initiate TPs per each item. Ask them to vote
          for I in {Dictionary.items LocalStore} do
-            {@Replica  bulk(to:I.key brew(leader:  @Leader
-                                          rtms:    @RTMs
-                                          tid:     Tid
-                                          item:    I
-                                          protocol:paxos
-                                          tag:     trapp
-                                          ))} 
+            {@Replica bulk(to:{Utils.hash I.key @MaxKey}
+                           brew(leader:  @Leader
+                                rtms:    @RTMs
+                                tid:     Tid
+                                item:    I
+                                protocol:paxos
+                                tag:     trapp
+                                ))} 
             Votes.(I.key)  := nil
             Acks.(I.key)   := nil
             TPs.(I.key)    := nil
@@ -302,7 +305,7 @@ define
 
       proc {RegisterRTM registerRTM(rtm:NewRTM tmid:_ tid:_ tag:trapp)}
          RTMs := NewRTM|@RTMs
-         if {List.length @RTMs} == @RepFactor then %% Should be RepFactor - 1?
+         if {List.length @RTMs} == @RepFactor-1 then 
             %% We are done with initialization. We start with validation
             {StartValidation}
          end
@@ -347,7 +350,7 @@ define
          [] read(k:Key v:Result) then
             {Read read(k:Key v:Result)}
          [] read(s:_ k:Key v:Result) then
-            {Say "Transaction Warning: secrets are not used for reading"}
+            {Debug "Transaction Warning: secrets are not used for reading"}
             {Read read(k:Key v:Result)}
          else
             raise
@@ -411,14 +414,31 @@ define
       * - Propagate decision to TPs
       */
 
-         {@Replica  quickBulk(to:@NodeRef.id 
-                              initRTM(leader:  @Leader
-                                      tid:     Tid
-                                      protocol:paxos
-                                      client:  Client
-                                      store:   {Dictionary.entries LocalStore}
-                                      tag:     trapp
-                                      ))} 
+         %% Do not run the whole voting process
+         %% if there are only read operations
+         Write = {NewCell false}
+      in
+         for I in {Dictionary.entries LocalStore} do
+            if I.2.op == write then
+               Write := true
+            end
+         end
+         if @Write then
+            {@Replica quickBulk(to:@NodeRef.id 
+                                initRTM(leader:  @Leader
+                                        tid:     Tid
+                                        protocol:paxos
+                                        client:  Client
+                                        store:   {Dictionary.entries LocalStore}
+                                        tag:     trapp
+                                        ))} 
+            {Debug '#'('Going to start the validation... quick bulk to '
+                       @NodeRef.id)}
+         else
+            {Debug "Nothing to write.... just releasing logs"}
+            {SpreadDecision commit}
+            {Debug "after spread decision"}
+         end
       end
 
       proc {Erase erase(k:Key s:Secret r:Result)}
@@ -432,9 +452,12 @@ define
       proc {Write write(k:Key v:Val s:Secret r:Result)}
          Item
       in
+         {Debug 'Going to write key'#Key#'with value'#Val}
          Item = {GetItem Key}
+         {Wait Item}
+         {Debug 'Item retrieved'#Item}
          %% Either creation of item orelse rewrite with correct secret
-         if Item.version
+         if Item.version == 0
             orelse Item.secret == Secret
             orelse Item.value == NO_VALUE %% The value was erased
             then
@@ -533,6 +556,7 @@ define
       VotedItems  = {NewCell nil}
       %AckedItems  = {NewCell nil}
       Done        = {NewCell false}
+      MaxKey      = {NewCell Args.maxKey}
       Role        = {NewCell Args.role}
       LocalStore  = {Dictionary.new}
       if @Role == leader then
