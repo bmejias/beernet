@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Important. The username p2ps does not have a known password associated.
+# In order to upload the site you need to store your public ssh key on
+# the server. Currently, Boriss has access to the site.
+
+rsync -avPzlC -e ssh --delete --exclude='*.tket' \
+. p2ps@beernet.info.ucl.ac.be:/var/www/p2ps
+
