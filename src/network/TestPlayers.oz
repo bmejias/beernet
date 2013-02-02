@@ -16,6 +16,7 @@ define
 
    fun {MakePp2pPingPongPlayer}
       Id
+      Blabla
       Flag
       ComLayer
       Self
@@ -32,20 +33,20 @@ define
          case Msg
          of ping(I) then
             if I > 0 then
-               {System.show Id#ping(I)}
+               {Blabla Id#ping(I)}
                {Delay 100 + {OS.rand} mod 100}
                {ComLayer pp2pSend(Src pong(I-1))}
             else
-               {System.show Id#ping(I)}
+               {Blabla Id#ping(I)}
                Flag = unit
             end
          [] pong(I) then
             if I > 0 then
-               {System.show Id#pong(I)}
+               {Blabla Id#pong(I)}
                {Delay 100 + {OS.rand} mod 100}
                {ComLayer pp2pSend(Src ping(I-1))}
             else
-               {System.show Id#pong(I)}
+               {Blabla Id#pong(I)}
                Flag = unit
             end
          else
@@ -71,10 +72,17 @@ define
          Flag = TheFlag
       end
 
+      proc {SetBlabla Event}
+         setBlabla(TheBlabla) = Event
+      in
+         Blabla = TheBlabla
+      end
+
       Events = events(
                   initPing:      InitPing
                   getRef:        GetRef
                   pp2pDeliver:   Pp2pDeliver
+                  setBlabla:     SetBlabla
                   setId:         SetId
                   setFlag:       SetFlag
                   )
@@ -91,6 +99,7 @@ define
    %% point-to-point link.
    fun {MakeNetworkPingPongPlayer}
       Id
+      Blabla
       Flag
       ComLayer
       OtherPlayer
@@ -107,11 +116,11 @@ define
          ping(I) = Event
       in
          if I > 0 then
-            {System.show Id#ping(I)}
+            {Blabla Id#ping(I)}
             {Delay 100 + {OS.rand} mod 100}
             {ComLayer sendTo(OtherPlayer pong(I-1))}
          else
-            {System.show Id#ping(I)}
+            {Blabla Id#ping(I)}
             Flag = unit
          end
       end
@@ -120,11 +129,11 @@ define
          pong(I) = Event
       in
          if I > 0 then
-            {System.show Id#pong(I)}
+            {Blabla Id#pong(I)}
             {Delay 100 + {OS.rand} mod 100}
             {ComLayer sendTo(OtherPlayer ping(I-1))}
          else
-            {System.show Id#pong(I)}
+            {Blabla Id#pong(I)}
             Flag = unit
          end
       end
@@ -148,6 +157,12 @@ define
          Flag = TheFlag
       end
 
+      proc {SetBlabla Event}
+         setBlabla(TheBlabla) = Event
+      in
+         Blabla = TheBlabla
+      end
+
       proc {SetLogger Event}
          setLogger(NewLogger) = Event
       in
@@ -165,6 +180,7 @@ define
                   getRef:           GetRef
                   ping:             Ping
                   pong:             Pong
+                  setBlabla:        SetBlabla
                   setId:            SetId
                   setFlag:          SetFlag
                   setLogger:        SetLogger
