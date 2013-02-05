@@ -1,28 +1,13 @@
 functor
-import
-   Connection
-   Pickle
-   Network  at 'Network.ozf'
+export
+   Run
 define
-   PbeersIds = [foo flets bar]
-   Pbeers
-   ComLayer
-
-   fun {GetPbeers L}
-      case L
-      of H|T then
-         {Connection.take {Pickle.load H}}|{GetPbeers T}
-      [] nil then
-         nil
-      end
-   end
-
    proc {ConnectPbeers L}
-      proc {ConnectPbeer Pbeer L}
+      proc {ConnectPbeer PbeerRef L}
          case L
-         of H|T then
-            {ComLayer sendTo(H connectTo(Pbeer))}
-            {ConnectPbeer Pbeer T}
+         of NextPbeer|MorePbeers then
+            {NextPbeer connectTo(PbeerRef)}
+            {ConnectPbeer PbeerRef MorePbeers}
          [] nil then
             skip
          end
@@ -30,17 +15,20 @@ define
    in
       case L
       of H|T then
-         {ConnectPbeer H T}
+         HRef
+      in
+         {H getRef(HRef)}
+         {ConnectPbeer HRef T}
          {ConnectPbeers T}
       [] nil then
          skip
       end
    end
 
-in
-   ComLayer = {Network.new}
-   Pbeers = {GetPbeers PbeersIds}
-   {ConnectPbeers Pbeers}
+   proc {Run Pbeers}
+      {ConnectPbeers Pbeers}
+      {Delay 5000}
+   end
 end
 
 

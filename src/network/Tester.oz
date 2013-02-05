@@ -7,7 +7,9 @@ import
    Application
    Property
    System
-   TestPlayers at 'TestPlayers.ozf'
+   TestFailDet       at 'TestFailDet.ozf'
+   TestFailDetNode   at 'TestFailDetNode.ozf'
+   TestPlayers       at 'TestPlayers.ozf'
 
 define
    
@@ -58,6 +60,7 @@ in
       Blabla = proc {$ _} skip end
    end
 
+   /* TEST Perfect point-to-point (Pp2p) */
    local
       SiteA
       SiteB
@@ -78,6 +81,7 @@ in
       {Say 'finishing Pp2pPingPong'}
    end
 
+   /* TEST: Network component */
    local
       SiteA
       SiteB
@@ -97,6 +101,24 @@ in
       {SiteA initPing(10 {SiteB getRef($)})}
       {Wait Finish}
       {Say 'finishing NetworkPingPong'}
+   end
+
+   /* TEST: Failure detector */
+   {Say "Test: Failure detector"}
+   local
+      fun {BuildPbeers PbeerIds}
+         case PbeerIds
+         of NodeId|MoreIds then
+            {Blabla "Launching node "#NodeId}
+            {TestFailDetNode.makeNode NodeId}|{BuildPbeers MoreIds}
+         [] nil then
+            nil
+         end
+      end
+      Pbeers
+   in
+      Pbeers = {BuildPbeers [foo flets bar]}
+      {TestFailDet.run Pbeers}
    end
    {Application.exit 0}
 end

@@ -19,11 +19,13 @@ src_%:
 
 alltests: tester testerdist testerfaildetector
 
-tester: Tester.oz TestPlayers.oz
+tester: Tester.oz TestPlayers.oz TestFailDet.oz TestFailDetNode.oz
+	ozc -c TestFailDetNode.oz -o TestFailDetNode.ozf
+	ozc -c TestFailDet.oz -o TestFailDet.ozf
 	ozc -c TestPlayers.oz -o TestPlayers.ozf
 	ozc -x Tester.oz -o tester
 
-testerdist: tester TesterDistNode.oz TesterDist.oz
+testerdist: TesterDistNode.oz TesterDist.oz
 	ozc -x TesterDistNode.oz -o testerDistNode
 	ozc -x TesterDist.oz -o testerDist
 

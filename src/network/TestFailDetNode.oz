@@ -1,13 +1,13 @@
 functor
 import
-   Application
    Connection
    Pickle
    System
-   Board             at '../corecomp/Board.ozf'
    Component         at '../corecomp/Component.ozf'
    Network           at 'Network.ozf'
    FailureDetector   at 'FailureDetector.ozf'
+export
+   MakeNode
 define
 
    fun {MakeNode Id}
@@ -44,6 +44,12 @@ define
          {System.showInfo "I got contact with "#Pbeer.id}
       end
 
+      proc {GetRef Event}
+         getRef(Ref) = Event
+      in
+         Ref = @SelfRef
+      end
+
       proc {SetRef Event}
          setRef(Ref) = Event
       in
@@ -61,7 +67,8 @@ define
                   crash:      Crash
                   ping:       Ping
                   pong:       Pong
-                  setRef:     setRef
+                  getRef:     GetRef
+                  setRef:     SetRef
                   toTicket:   ToTicket
                   )
    in
@@ -72,17 +79,4 @@ define
       SelfRef = {Cell.new {ComLayer getRef($)}}
       Self
    end
-
-   Args = try
-             {Application.getArgs
-              record(id(single type:atom default:none)
-                    )}
-          catch _ then
-             {System.showInfo 'Unrecognised arguments'}
-             {Application.exit 1}
-          end
-   ThisNode
-in
-   ThisNode = {MakeNode Args.id}
-   {ThisNode toTicket(Args.id)}
 end
